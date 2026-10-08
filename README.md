@@ -100,7 +100,7 @@ node pq.mjs conformance                          # valid → true; tampered / wr
 cd .. && node scripts/check-site.mjs             # no network, no dependencies
 ```
 
-## The primitive (verified, and undocumented anywhere else)
+## The primitive
 
 | Thing | Value |
 |---|---|
