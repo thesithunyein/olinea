@@ -51,7 +51,41 @@ ok(homeBad.length === 0, `landing internal links are /, /docs/, /app/ or /#ancho
 
 console.log('--- vault console ---');
 ok(count(app, '<title>Vault console — Olinea</title>') === 1, 'app title');
-ok(['c1', 'c2', 'c3', 'c4'].every((id) => count(app, `id="${id}"`) === 1), 'the four steps exist');
+ok(['key', 'vault', 'authorize', 'activity'].every((n) =>
+  count(app, `id="tab-${n}"`) === 1 && count(app, `id="panel-${n}"`) === 1), 'four tabs and four panels exist');
+const appIds = [...app.matchAll(/id="([a-zA-Z0-9_-]+)"/g)].map((m) => m[1]);
+ok(new Set(appIds).size === appIds.length, 'app has no duplicate element ids');
+
+/* The stylesheet contains [role="tabpanel"] too, so anything counting markup has to look at the
+   markup with the stylesheet removed, or it passes for the wrong reason. */
+const appMarkup = app.replace(/<style>[\s\S]*?<\/style>/g, '');
+const attr = (s, name) => (s.match(new RegExp(`(?:^|\\s)${name}="([^"]*)"`)) || [])[1];
+const tabs = [...appMarkup.matchAll(/<button class="tab" id="(tab-[a-z]+)"([^>]*)>/g)]
+  .map(([, id, rest]) => ({ id, rest }));
+const panels = [...appMarkup.matchAll(/<section id="(panel-[a-z]+)"([^>]*)>/g)]
+  .map(([, id, rest]) => ({ id, rest })).filter((p) => attr(p.rest, 'role') === 'tabpanel');
+ok(tabs.length === 4, 'the markup declares four tabs');
+ok(tabs.every((t) => attr(t.rest, 'role') === 'tab'), 'every tab says it is a tab');
+ok(panels.length === 4, 'the markup declares four panels');
+ok(tabs.every((t) => appIds.includes(attr(t.rest, 'aria-controls'))), 'every tab points at a panel that exists');
+ok(tabs.every((t) => attr(t.rest, 'aria-controls') === attr(t.rest, 'data-panel')), 'each tab points at the panel it shows');
+ok(panels.every((p) => tabs.some((t) => t.id === attr(p.rest, 'aria-labelledby'))), 'every panel is labelled by a tab that exists');
+ok(panels.every((p) => tabs.some((t) => attr(t.rest, 'aria-controls') === p.id)), 'every panel is the one its tab points at');
+ok(tabs.filter((t) => attr(t.rest, 'aria-selected') === 'true').length === 1, 'exactly one tab starts selected');
+/* A tablist is one stop in the page's tab order; the arrow keys move inside it. Otherwise a screen
+   reader walks four buttons to do one job. */
+ok(tabs.filter((t) => attr(t.rest, 'tabindex') === '0').length === 1, 'exactly one tab starts in the tab order');
+ok(tabs.filter((t) => attr(t.rest, 'tabindex') === '-1').length === 3, 'the rest are reachable only by the arrow keys');
+ok(/ArrowRight/.test(app) && /ArrowLeft/.test(app) && /'Home'/.test(app) && /'End'/.test(app),
+  'the arrow, Home and End keys move between the tabs');
+ok(/tab\.tabIndex = on \? 0 : -1/.test(app), 'moving a tab also moves the tab-order stop');
+
+/* A real app never hands its user an infrastructure address, and never shows them a deploy
+   command containing a private key. Both were in here once; both are now regressions. */
+ok(count(app, 'id="factory-in"') === 0, 'the app never asks the user to paste a factory address');
+ok(!app.includes('$ARC_PK'), 'the app never shows a deploy command with a private key in it');
+ok(app.includes('Vaults open with the next deployment'), 'with nothing deployed the app says so in plain language');
+ok(app.includes('beforeunload'), 'closing the tab with a key in memory asks first');
 ok(/new Worker\('\/app\/worker\.js', \{ type: 'module' \}\)/.test(app), 'the worker is loaded as a module from /app/');
 ok(worker.includes('olinea/slh-dsa/v1'), 'the derivation salt is versioned');
 ok(count(worker, 'olinea/slh-dsa/v1') === 1, 'the derivation salt is defined in one place');
@@ -72,23 +106,47 @@ ok(count(app, 'authorizationDigest') >= 2, 'the app cross-checks its digest agai
 ok(app.includes('createVault') && app.includes('deposit') && app.includes('release'),
   'the app can create, fund and spend from a vault');
 ok(count(app, 'retryCount: 0') === 3, 'transports do not retry definitive reverts');
-ok(app.includes("'olinea:slh-dsa/v1'") === false, 'the derivation label is not duplicated in the app');
+/* The derivation itself lives only in the worker. The app may display the label, but it must not
+   perform the HKDF step itself, or the two would be able to drift apart. */
+ok(count(worker, "const DERIVATION_SALT = 'olinea/slh-dsa/v1'") === 1, 'the salt is declared once, in the worker');
+ok(!app.includes('hkdf('), 'the app does not repeat the key derivation');
 
 ok(app.includes('not deployed'), 'the app is honest that the factory is not deployed');
-ok(app.includes('Unaudited'), 'the app is honest about the audit status');
+ok(/unaudited/i.test(app), 'the app is honest about the audit status');
 ok(app.includes('denylist'), 'the app repeats the Circle denylist limit');
-ok(app.includes('localStorage') && app.includes('pocket change'), 'the throwaway account is labelled honestly');
+ok(app.includes('localStorage') && /gas, nothing more/.test(app), 'the built-in account is labelled honestly');
 ok(app.includes('7,856') || app.includes('7856'), 'the app states the real signature size');
 
 const appRefs = [...app.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);
 const appBad = appRefs.filter((h) => h !== '/' && h !== '/docs/' && h !== '/app/');
 ok(appBad.length === 0, `app internal links are /, /docs/ or /app/ (bad: ${appBad.join(', ') || 'none'})`);
-
-const appIds = [...app.matchAll(/id="([a-zA-Z0-9_-]+)"/g)].map((m) => m[1]);
-ok(new Set(appIds).size === appIds.length, 'app has no duplicate element ids');
 for (const b of ['b-new', 'b-derive', 'b-prove', 'b-create', 'b-deposit', 'b-sign', 'b-release']) {
   ok(appIds.includes(b), `the app has an element for #${b}`);
 }
+
+/* --- the check tool ---
+   A recipient has no key, no wallet and nothing to spend, so nothing about it may be gated on a
+   key, and nothing the file says about itself may be taken on trust. */
+const verifyAt = appMarkup.indexOf('id="verify-card"');
+ok(count(app, 'id="verify-card"') === 1, 'the check tool is in the markup once');
+ok(verifyAt > appMarkup.indexOf('id="panel-authorize"') && verifyAt < appMarkup.indexOf('id="panel-activity"'),
+  'the check tool sits in the Authorize panel, not loose on every panel');
+ok(!/verify-card'\)\.hidden/.test(app), 'the check tool is never hidden behind a key');
+ok(count(app, 'const digestFor =') === 1 && count(app, 'digestFor(') === 2,
+  'the digest a file arrives with is recomputed by the same code that builds a real one');
+ok(count(app, "const RELEASE_TYPES =") === 1 && count(app, 'inputs: RELEASE_TYPES') === 2,
+  'the builder and the checker share one description of a release');
+ok(app.includes('decodeAbiParameters') && !app.includes('decodeFunctionData'),
+  'the calldata is checked by selector and then decoded with explicit types');
+ok(app.includes('RELEASE_SELECTOR') && app.includes('V.toFunctionSelector'),
+  'the selector the check compares against is derived, not typed in');
+ok(count(app, 'V.parseUnits(') === 1, 'amounts are parsed in one place, in USDC');
+ok(app.includes('HISTORY_WINDOW = 20_000n') && !app.includes('1_000_000n'),
+  'the log scan is bounded to a window a public RPC will actually answer');
+ok(/net-block'\)\.textContent = ''/.test(app), 'the block number is withdrawn the moment the RPC stops answering');
+ok(/sendable: failed\.length === 0 && vaultKey !== null && accepted !== false/.test(app),
+  'sending is offered only where the chain itself confirmed the signature');
+ok(count(app, 'PQ_SIG_BYTES = 7856') === 1, 'the signature length the file checks use is the measured one');
 
 const factory = readFileSync('contracts/src/OlineaFactory.sol', 'utf8');
 ok(factory.includes('function createVault(bytes calldata verifyingKey)'), 'the factory really has createVault(bytes)');
