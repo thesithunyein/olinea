@@ -129,8 +129,9 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
   }
   .btn:hover:not(:disabled) { background: var(--acc2); border-color: var(--acc2); }
-  .btn.ghost { background: #fff; color: var(--ink); border-color: #cfded8; font-weight: 500; }
-  .btn.ghost:hover:not(:disabled) { border-color: var(--ink); background: var(--sunken); }
+  /* The secondary button is an outline in the reference: white fill, a green rule, a green label. */
+  .btn.ghost { background: #fff; color: var(--ink); border-color: var(--acc); font-weight: 500; }
+  .btn.ghost:hover:not(:disabled) { background: var(--sunken); color: var(--acc2); border-color: var(--acc2); }
   .btn.danger { background: #fff; color: var(--bad); border-color: #fecdca; font-weight: 500; }
   .btn.danger:hover:not(:disabled) { background: #fef3f2; border-color: var(--bad); }
   .btn.sm { font-size: 12.5px; padding: 7px 12px; min-height: 34px; }
@@ -158,9 +159,18 @@
   .chip.no { color: var(--bad); border-color: #fecdca; background: #fef3f2; }
   .chip.warn { color: var(--warn); border-color: #fedf89; background: #fffaeb; }
 
+  /* -------------------------------------------------------------- progress */
+  /* A flow reads better as three steps than as three cards: a green fill on a light track, with
+     the step you are actually on spelled out underneath. */
+  .steps { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 13px 0 9px; }
+  .steps-in { height: 100%; width: 0; border-radius: 999px; background: var(--acc); transition: width .35s ease; }
+  #step-now { color: var(--ink); font-size: 14px; font-weight: 500; margin: 2px 0 0; }
+  #step-cap { color: var(--dim); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  #step-cap.done { color: var(--good); }
+
   /* --------------------------------------------------------------- evidence */
   .kv { display: grid; grid-template-columns: 152px minmax(0, 1fr); gap: 0 16px; font-size: 13px; margin: 16px 0 0; }
-  .kv dt { color: var(--dim); padding: 10px 0; border-top: 1px solid var(--line2); }
+  .kv dt { color: var(--ink); padding: 10px 0; border-top: 1px solid var(--line2); }
   .kv dd { margin: 0; padding: 10px 0; border-top: 1px solid var(--line2); color: var(--fg); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.55; overflow-wrap: anywhere; }
   .hexline { display: flex; align-items: center; gap: 8px; }
   .hexline code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -506,6 +516,13 @@
     </div>
 
     <div id="auth-body" hidden>
+      <div class="card" id="auth-steps">
+        <h2>Transaction status</h2>
+        <p id="step-now">Not signed yet</p>
+        <div class="steps" id="step-bar" role="progressbar" aria-label="Authorization progress" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><div class="steps-in" id="step-fill"></div></div>
+        <p id="step-cap">Step 1 of 3 &mdash; sign it</p>
+      </div>
+
       <div class="card">
         <h2>Authorize a payment</h2>
         <p>One signature binds recipient, amount and nonce. Arc mainnet checks it <em>before</em> anything is sent, so a release cannot fail on the signature.</p>
@@ -658,7 +675,7 @@ const VAULT_EVENTS = [
 const state = {
   mnemonic: '', index: 0, vk: '', fingerprint: '', sig: '', calldata: '', digest: '',
   account: null, mode: '', vault: '', vaultFrom: null, vaultMine: false, gasOk: false, busy: false, proof: null,
-  authVerified: null, checked: null, gasBal: '', vaultBal: '',
+  authVerified: null, checked: null, released: null, gasBal: '', vaultBal: '',
 };
 
 /* ------------------------------------------------------------------ viem */
@@ -1074,7 +1091,7 @@ $('b-reveal').onclick = () => {
 $('b-copy-again').onclick = () => copyText(state.mnemonic, 'Words copied — keep them offline');
 $('b-lock').onclick = () => {
   state.mnemonic = ''; state.vk = ''; state.sig = ''; state.calldata = '';
-  state.proof = null; state.authVerified = null; state.account = null; state.mode = '';
+  state.proof = null; state.authVerified = null; state.released = null; state.account = null; state.mode = '';
   renderKey(); renderProof(); renderAuth();
   toast('Locked');
 };
@@ -1389,6 +1406,27 @@ const bundleFor = () => JSON.stringify({
   chainId: CONFIG.chainId, vault: state.vault, digest: state.digest, signature: state.sig,
   calldata: state.calldata, verifyingKey: '0x' + state.vk, createdAt: state.signedAt,
 }, null, 2);
+/* The flow is three steps and the reference shows how far along you are, so this does too. Nothing
+   here is inferred: a step is done only when the thing itself happened in this tab. */
+function renderSteps() {
+  const sent = !!state.released;
+  const checked = sent || state.authVerified === true;
+  const signed = sent || !!state.sig;
+  const done = sent ? 3 : checked ? 2 : signed ? 1 : 0;
+  const step = Math.min(3, done + 1);
+  $('step-now').textContent = sent
+    ? `Sent on Arc mainnet in block ${state.released.block.toLocaleString()}`
+    : !signed ? 'Not signed yet'
+    : state.authVerified === false ? 'Arc mainnet rejected this signature, so it is not going to be sent'
+    : checked ? 'Arc mainnet accepted it. The release is ready to send'
+    : 'Signed. Arc mainnet has not confirmed it';
+  $('step-fill').style.width = (done / 3 * 100) + '%';
+  $('step-bar').setAttribute('aria-valuenow', String(done));
+  $('step-cap').className = sent ? 'done' : '';
+  $('step-cap').textContent = sent
+    ? 'Step 3 of 3 — sent'
+    : `Step ${step} of 3 — ${['sign it', 'check it on mainnet', 'send it'][step - 1]}`;
+}
 function renderAuth() {
   const has = !!state.sig;
   $('auth-result').hidden = !has;
@@ -1396,6 +1434,7 @@ function renderAuth() {
   /* Never offer to send something Arc mainnet has already rejected. */
   $('b-release').disabled = !has || !state.account || state.authVerified === false;
   paintCopies();
+  renderSteps();
 }
 $('b-sign').onclick = async () => {
   if (state.busy) return;
@@ -1485,6 +1524,7 @@ $('b-release').onclick = async () => {
     toast('Released');
     $('verdict').innerHTML = `<div class="verdict ok"><span class="glyph">&#10003;</span><div>
       <strong>Released on Arc mainnet</strong><small>Block ${receipt.blockNumber} · <a href="https://explorer.arc.io/tx/${hash}" target="_blank" rel="noopener">view the transaction</a></small></div></div>`;
+    state.released = { block: Number(receipt.blockNumber), hash };
     state.sig = ''; state.calldata = '';
     renderAuth();
     if (state.vault) { await paintVault(); }

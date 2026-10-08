@@ -180,6 +180,20 @@ ok(count(app, 'const HEADINGS =') === 1
   'every section says what it is at the top of the page');
 ok(app.includes('name="color-scheme" content="light"') && /--bg:#fff/.test(app),
   'the console is a light surface, the way a product is');
+/* The reference shows a flow as three steps, so the Authorize panel does too - and a step counts
+   as done only when the signature, the precompile or the receipt itself said so. */
+ok(appMarkup.indexOf('id="auth-steps"') > appMarkup.indexOf('id="auth-body"')
+  && count(app, 'id="step-fill"') === 1, 'the authorization flow says how far along it is');
+ok(count(app, 'function renderSteps()') === 1 && /renderAuth\(\)\s*\{[\s\S]*?renderSteps\(\);/.test(app),
+  'and repaints itself with the panel it belongs to');
+ok(app.includes('const checked = sent || state.authVerified === true')
+  && app.includes("$('step-bar').setAttribute('aria-valuenow', String(done))"),
+  'a step is done only when the chain or the signature said so');
+/* The bar itself carries the role, so the number has to land on the bar and not on the card. */
+ok(/<div class="steps" id="step-bar" role="progressbar"/.test(appMarkup),
+  'and the progress bar reports it on the element that claims to be one');
+ok(/\.btn\.ghost\s*\{[^}]*border-color:\s*var\(--acc\)/.test(app),
+  'the secondary button is an outline, the way the reference draws it');
 
 const factory = readFileSync('contracts/src/OlineaFactory.sol', 'utf8');
 ok(factory.includes('function createVault(bytes calldata verifyingKey)'), 'the factory really has createVault(bytes)');
