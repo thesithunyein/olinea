@@ -1,0 +1,8 @@
+# Local only — never pushed
+LOCAL/
+*.local.md
+
+# Tooling
+.vercel/
+node_modules/
+.DS_Store

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Olinea — post-quantum USDC on Arc</title>
+<meta name="description" content="Olinea is a USDC vault on Arc that releases funds only when a post-quantum signature (SLH-DSA-SHA2-128s, FIPS 205) verifies on-chain. The primitive is live on Arc mainnet; this page documents the verified ABI.">
+<meta property="og:title" content="Olinea — post-quantum USDC on Arc">
+<meta property="og:description" content="USDC a quantum computer can't move. Built on Arc's post-quantum signature precompile.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128273;</text></svg>">
+<style>
+  :root {
+    --bg: #0a0c10; --panel: #11141b; --line: #1e2430;
+    --ink: #e8ecf3; --dim: #8b96a8; --accent: #6ee7b7; --warn: #fca5a5; --code: #0d1016;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
+  header { border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; }
+  .brand { display: flex; align-items: baseline; gap: 10px; font-weight: 650; letter-spacing: .02em; }
+  .brand small { color: var(--dim); font-weight: 400; letter-spacing: 0; }
+  h1 { font-size: clamp(30px, 5.4vw, 52px); line-height: 1.1; margin: 56px 0 14px; letter-spacing: -.02em; }
+  h2 { font-size: 22px; margin: 48px 0 12px; letter-spacing: -.01em; }
+  p.lede { font-size: 19px; color: #c3cbd8; max-width: 62ch; margin: 0 0 26px; }
+  .strip {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 8px; font-size: 13px; color: var(--dim);
+  }
+  .chip { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px; }
+  .chip b { color: var(--ink); font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .card h3 { margin: 0 0 8px; font-size: 15px; letter-spacing: .01em; }
+  .card p { margin: 0; color: var(--dim); font-size: 14.5px; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 6px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  td.ok { color: var(--accent); font-weight: 600; }
+  td.no { color: var(--warn); font-weight: 600; }
+  pre {
+    background: var(--code); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 12px 0;
+  }
+  .bad { color: var(--warn); }
+  .good { color: var(--accent); }
+  ol.steps { padding-left: 22px; }
+  ol.steps li { margin: 10px 0; }
+  footer { border-top: 1px solid var(--line); margin-top: 64px; padding: 24px 0 40px; color: var(--dim); font-size: 14px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; }
+  .muted { color: var(--dim); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">Olinea <small>post-quantum USDC · Arc</small></div>
+    <div class="mono"><a href="https://github.com/thesithunyein/olinea">github</a></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <h1>USDC a quantum computer can’t move.</h1>
+  <p class="lede">
+    Olinea is a USDC vault on Arc that releases funds <em>only</em> when a post-quantum signature —
+    SLH-DSA-SHA2-128s, FIPS 205 — verifies on-chain. No elliptic curves. No ECDSA to forge.
+    Arc is the only mainnet with a precompile for this, and its ABI is not in any documentation.
+    We mapped it, then proved it works.
+  </p>
+
+  <div class="strip">
+    <span class="chip"><b>Arc mainnet</b> · chain 5042</span>
+    <span class="chip">precompile <b>0x1800…0004</b></span>
+    <span class="chip">selector <b>0xbf4db8ba</b></span>
+    <span class="chip">vault + app <b>shipping this week</b></span>
+  </div>
+
+  <h2>Verified on mainnet, not on a whiteboard</h2>
+  <p class="muted">
+    Every result below is a real call to Arc mainnet’s PQ precompile with a real SLH-DSA keypair
+    generated in JavaScript. No wallet, no testnet, no mock.
+  </p>
+
+  <table>
+    <thead><tr><th>Test</th><th>On-chain result</th></tr></thead>
+    <tbody>
+      <tr><td>Real signature + matching message</td><td class="ok">true</td></tr>
+      <tr><td>1-bit tampered signature</td><td class="no">false</td></tr>
+      <tr><td>Wrong public key, valid signature</td><td class="no">false</td></tr>
+      <tr><td>Valid signature, different message</td><td class="no">false</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid">
+    <div class="card"><h3>verifySlhDsaSha2128s</h3><p class="mono">(bytes verifyingKey /*32 B*/, bytes message, bytes signature /*7856 B*/) → bool</p></div>
+    <div class="card"><h3>Cost</h3><p>382,879 gas ≈ <b>$0.0077</b> per verification at Arc’s pinned 20 Gwei base fee.</p></div>
+    <div class="card"><h3>Signing</h3><p>Keypair generated and signed in the browser — pure JS, no native crypto, no extension.</p></div>
+  </div>
+
+  <h2>The line that decides everything</h2>
+  <p class="muted">
+    A malformed call reverts, but a <em>cryptographically invalid</em> signature returns
+    <code>false</code> without reverting. A contract that checks only “did the call succeed”
+    accepts <em>every forged signature on earth</em>:
+  </p>
+  <pre><span class="bad">// WRONG — true for every forgery</span>
+(bool ok, ) = PRECOMPILE.staticcall(data);
+require(ok, "verify failed");
+
+<span class="good">// CORRECT — the signature is a value, not an exception</span>
+(bool ok, bytes memory ret) = PRECOMPILE.staticcall(data);
+require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
+
+  <h2>How Olinea works</h2>
+  <ol class="steps">
+    <li><b>Deposit</b> USDC into the vault and register a 32-byte hash-based verifying key. No Arc account is needed to hold the key.</li>
+    <li><b>Authorize</b> a release in your browser: recipient, amount, nonce — signed with SLH-DSA. The chain, vault, recipient, amount and nonce are bound into the signed message, so signatures can’t be replayed.</li>
+    <li><b>Verify and send</b>: anyone can relay the authorization. The vault asks the precompile, decodes the boolean, and only then transfers the USDC.</li>
+  </ol>
+
+  <h2>Why it matters before quantum computers arrive</h2>
+  <p class="lede">
+    Long-lived keys are already being harvested to be broken later. Meanwhile a 32-byte hash-based key,
+    kept offline, cannot be forged even by a fully compromised hot wallet — so Olinea is useful today
+    as a second authorization factor on a treasury, and necessary tomorrow for the same reason
+    post-quantum standards exist at all.
+  </p>
+
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div>Built by Sithu Nyein · Arc mainnet · 2026</div>
+    <div class="mono"><a href="https://github.com/thesithunyein/olinea">source</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
