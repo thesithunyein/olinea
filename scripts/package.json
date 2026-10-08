@@ -1,0 +1,14 @@
+{
+  "name": "olinea-scripts",
+  "private": true,
+  "type": "module",
+  "description": "PQ keygen, vault authorization, and mainnet conformance checks for Olinea.",
+  "scripts": {
+    "conformance": "node pq.mjs conformance",
+    "keygen": "node pq.mjs keygen"
+  },
+  "dependencies": {
+    "@noble/post-quantum": "^0.7.1",
+    "viem": "^2.21.0"
+  }
+}

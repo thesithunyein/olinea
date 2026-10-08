@@ -9,3 +9,7 @@ node_modules/
 
 .vercel
 .env*
+
+# Foundry build artifacts
+contracts/out/
+contracts/cache/

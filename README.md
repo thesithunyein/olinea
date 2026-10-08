@@ -8,9 +8,12 @@ Live site: **https://olinea.sithunyein.com**
 ## Status
 
 - [x] ABI of Arc's PQ precompile mapped and verified against mainnet (see below)
-- [ ] `QDayVault`-style contract deployed to Arc mainnet
+- [x] `OlineaVault.sol` + conformance suite — **17 Foundry tests green**, and the vault's exact
+      authorization digest verified against the **real mainnet precompile** (`node scripts/pq.mjs conformance`, 3/3)
+- [ ] Vault deployed to Arc mainnet
 - [ ] Web app: browser keygen, deposit, authorize, verify
-- [ ] Public evidence: verifying transaction, negative cases, tests
+- [ ] Public evidence: the verifying transaction
+
 
 ## The primitive (verified, undocumented anywhere else)
 
@@ -36,6 +39,20 @@ require(ok, "verify failed");
 (bool ok, bytes memory ret) = PRECOMPILE.staticcall(data);
 require(ok && abi.decode(ret, (bool)), "invalid PQ signature");
 ```
+
+## Contracts
+
+`contracts/` holds the vault: a USDC vault whose releases are authorized by an SLH-DSA-SHA2-128s
+signature verified on-chain through Arc's PQ precompile. No owner, no admin, no upgrade path.
+
+```bash
+cd contracts && forge test          # 17 tests
+cd ../scripts && npm install && node pq.mjs conformance   # real mainnet precompile, no wallet
+```
+
+Read [contracts/README.md](contracts/README.md) for the two load-bearing details (the precompile's
+`false`-without-revert footgun, and the digest binding that blocks replay) and the one-shot mainnet
+runbook. The vault is unaudited; see the honest limits there.
 
 ## License
 
