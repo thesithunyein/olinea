@@ -5,103 +5,112 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vault console — Olinea</title>
 <meta name="description" content="Olinea vault console: back up 24 words, derive an SLH-DSA key in your browser, prove it against Arc mainnet's post-quantum precompile for free, and issue authorizations that cannot fail on the signature.">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='none' stroke='white' stroke-width='14'/></svg>">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='none' stroke='%230b3b2e' stroke-width='14'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --fg:#fff; --line:#1e2430; --line2:#141a23; --dim:#8b96a8; --body:#a9b3c2;
-    --acc:#6ee7b7; --bad:#fca5a5; --warn:#fcd34d; --panel:#080a0e; --sunken:#0d1016;
-    --barh: 49px; --pad: clamp(16px, 4vw, 40px);
+    --bg:#fff; --panel:#fff; --sunken:#f8faf9; --line:#e3e9e5; --line2:#eef2f0;
+    --ink:#0b3b2e; --fg:#13251e; --body:#4a5a53; --dim:#71837b;
+    --acc:#0b3b2e; --acc2:#08543d; --link:#0b6b4f;
+    --good:#15803d; --bad:#b42318; --warn:#b45309;
+    --pad: clamp(18px, 4vw, 32px); --wide: 1100px;
+    --shadow: 0 1px 2px rgba(16,24,40,.04);
   }
   * { box-sizing: border-box; }
   /* An author rule carrying a class outranks the user agent's [hidden] rule, so a hidden flex row
      still painted as an empty greyed-out button. Nothing marked hidden may ever be drawn. */
   [hidden] { display: none !important; }
-  html { scroll-behavior: smooth; scroll-padding-top: calc(var(--barh, 49px) + 62px); }
+  html { scroll-behavior: smooth; }
   html, body {
-    margin: 0; background: #000; color: var(--fg); font-family: 'Poppins', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    /* clip, not hidden: overflow-x:hidden would make body a scroll container and kill sticky */
-    overflow-x: clip;
+    margin: 0; background: var(--bg); color: var(--fg); font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: clip;
   }
   code, pre, .mono, input, textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  a { color: var(--acc); }
+  a { color: var(--link); text-underline-offset: 2px; }
   button, input, textarea { font-size: inherit; }
 
-  /* ----------------------------------------------------------------- app bar */
+  /* ------------------------------------------------------------------ app bar */
   .appbar {
-    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px;
-    padding: 12px var(--pad); border-bottom: 1px solid var(--line2);
-    background: rgba(0,0,0,.86); backdrop-filter: blur(14px);
+    position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
   }
-  .brand { display: flex; align-items: center; gap: 9px; color: #fff; text-decoration: none; font-size: 15px; white-space: nowrap; }
-  .brand-mark { display: block; width: 24px; height: 24px; border: 5.5px solid #fff; border-radius: 50%; flex: none; }
-  .brand b { font-weight: 700; }
+  .appbar-in {
+    max-width: var(--wide); margin: 0 auto; padding: 0 var(--pad);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 62px;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font-size: 15.5px; white-space: nowrap; }
+  .brand-mark { display: block; width: 22px; height: 22px; border: 5px solid var(--ink); border-radius: 50%; flex: none; }
+  .brand b { font-weight: 700; letter-spacing: -.01em; }
   .brand span { color: var(--dim); font-weight: 400; }
-  .appnav { display: flex; align-items: center; gap: 22px; list-style: none; margin: 0 0 0 auto; padding: 0; font-size: 14px; }
-  .appnav a { color: #fff; text-decoration: none; font-weight: 500; opacity: .78; }
-  .appnav a:hover, .appnav a[aria-current="page"] { opacity: 1; }
-  .appnav a[aria-current="page"] { color: var(--acc); }
-  .statusdot { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
-  .statusdot i { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex: none; }
-  .statusdot.on { color: #b8f5dc; border-color: #1d3b2e; background: #0a1712; }
-  .statusdot.on i { background: var(--acc); }
-  .statusdot.off { color: #f6c9c9; border-color: #3b1d1d; background: #170a0a; }
-  .statusdot.off i { background: var(--bad); }
-
-  /* ------------------------------------------------------------------- shell */
-  .shell { max-width: 940px; margin: 0 auto; padding: clamp(20px, 3.4vh, 32px) var(--pad) 72px; }
-  .eyebrow { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--acc); margin: 0 0 7px; font-weight: 500; }
-  h1 { font-size: clamp(21px, 2.6vw, 26px); font-weight: 700; letter-spacing: -.024em; margin: 0; line-height: 1.2; }
-  .sub { color: var(--body); font-size: 14px; line-height: 1.6; margin: 6px 0 0; max-width: 62ch; }
-  .sub .hi { color: #fff; font-weight: 500; }
-
-  /* -------------------------------------------------------------- dashboard */
-  /* The console's front page: five facts, each one a way into the tab that owns it. Read at a
-     glance, so the tabs below are for working rather than for finding out where you are. */
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(152px, 1fr)); gap: 10px; margin: 22px 0 0; }
-  .stat {
-    appearance: none; font: inherit; text-align: left; cursor: pointer; color: inherit;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px;
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .stat:hover { border-color: #2f3947; background: #0b0e13; }
-  .stat-lbl { font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: var(--dim); font-weight: 500; }
-  .stat-val { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: #fff; letter-spacing: -.01em; }
-  .stat-val i { width: 7px; height: 7px; border-radius: 50%; background: #3a4454; flex: none; }
-  .stat.on .stat-val i { background: var(--acc); }
-  .stat.warn .stat-val i { background: var(--warn); }
-  .stat.no .stat-val i { background: var(--bad); }
-  .stat-sub { font-size: 11.5px; color: var(--dim); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  .statusdot { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--body); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; white-space: nowrap; background: #fff; }
+  .statusdot i { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
+  .statusdot.on { color: #067647; border-color: #abefc6; background: #ecfdf3; }
+  .statusdot.on i { background: #17b26a; }
+  .statusdot.off { color: var(--bad); border-color: #fecdca; background: #fef3f2; }
+  .statusdot.off i { background: #f04438; }
 
   /* -------------------------------------------------------------------- tabs */
-  /* Pinned under the app bar: the section you are in should not scroll away. */
-  .tabs {
-    position: sticky; top: var(--barh, 49px); z-index: 15; background: #000; display: flex; gap: 4px;
-    margin: 24px 0 0; border-bottom: 1px solid var(--line2); overflow-x: auto; scrollbar-width: none;
-  }
-  .tabs::-webkit-scrollbar { display: none; }
+  /* The section you are in lives in the bar, so it never scrolls away. */
+  .tabs { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0 auto; padding: 0; min-height: 62px; }
   .tab {
-    appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--dim);
-    font: inherit; font-size: 14px; font-weight: 500; padding: 11px 15px; cursor: pointer; white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+    appearance: none; background: none; border: 0; font: inherit; font-size: 14px; font-weight: 500;
+    color: var(--body); padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 7px;
   }
-  .tab:hover { color: #fff; }
-  .tab[aria-selected="true"] { color: #fff; border-bottom-color: var(--acc); }
-  .tab .tick { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); flex: none; }
-  .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible {
-    outline: 2px solid #4b8f74; outline-offset: 2px;
+  .tab:hover { color: var(--ink); background: var(--sunken); }
+  .tab[aria-selected="true"] { color: var(--ink); font-weight: 600; }
+  .tab .tick { width: 6px; height: 6px; border-radius: 50%; background: #17b26a; flex: none; }
+  .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible,
+  .stat:focus-visible, .copy:focus-visible {
+    outline: 2px solid var(--link); outline-offset: 2px;
   }
-  [role="tabpanel"] { padding-top: 24px; }
+  [role="tabpanel"] { padding: 22px 0 0; }
 
-  /* ------------------------------------------------------------------- cards */
-  .card { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: clamp(18px, 3vw, 24px); margin: 0 0 16px; }
-  .card h2 { font-size: 17px; font-weight: 600; letter-spacing: -.015em; margin: 0 0 6px; }
-  .card h3 { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); font-weight: 500; margin: 22px 0 10px; }
+  .btn.account { font-size: 13px; padding: 9px 16px; }
+
+  /* ---------------------------------------------------------------- shell */
+  .shell { max-width: var(--wide); margin: 0 auto; padding: 30px var(--pad) 72px; }
+  .eyebrow { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--link); margin: 0 0 8px; font-weight: 600; }
+  h1 { font-size: clamp(24px, 3vw, 30px); font-weight: 700; letter-spacing: -.022em; margin: 0; line-height: 1.2; color: var(--ink); }
+  .sub { color: var(--body); font-size: 14.5px; line-height: 1.6; margin: 7px 0 0; max-width: 64ch; }
+  .sub .hi { color: var(--ink); font-weight: 500; }
+  h2.sec { font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; margin: 30px 0 12px; }
+  h2.sec:first-child { margin-top: 0; }
+
+  /* ------------------------------------------------------------- dashboard */
+  /* Five facts, each one a way into the tab that owns it. Read at a glance, so the tabs are for
+     working rather than for finding out where you are. */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(184px, 1fr)); gap: 14px; }
+  .stat {
+    appearance: none; font: inherit; text-align: left; cursor: pointer; color: inherit;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 7px; box-shadow: var(--shadow);
+  }
+  .stat:hover { border-color: #c9d6d0; }
+  .stat-lbl { font-size: 12.5px; color: var(--ink); font-weight: 500; }
+  .stat-val { font-size: clamp(19px, 1.8vw, 23px); font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; }
+  .stat-sub { font-size: 12.5px; color: var(--dim); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .stat.on .stat-sub { color: var(--good); }
+  .stat.warn .stat-sub { color: var(--warn); }
+  .stat.no .stat-sub { color: var(--bad); }
+
+  /* ---------------------------------------------------------- next step */
+  .next { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: space-between; }
+  .next h2 { margin: 0 0 4px; }
+  .next .btn { flex: none; }
+
+  /* ------------------------------------------------------------------ cards */
+  .card {
+    border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+    padding: 20px 22px; margin: 0 0 16px; box-shadow: var(--shadow);
+  }
+  .card h2 { font-size: 16.5px; font-weight: 600; color: var(--ink); letter-spacing: -.012em; margin: 0 0 6px; }
+  .card h3 { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--dim); font-weight: 600; margin: 22px 0 10px; }
   .card p { color: var(--body); font-size: 13.5px; line-height: 1.66; margin: 0 0 0; max-width: 68ch; }
   .card p + p { margin-top: 10px; }
   .plain { color: var(--body); font-size: 13px; line-height: 1.7; padding-left: 18px; margin: 12px 0 0; max-width: 68ch; }
@@ -111,126 +120,134 @@
   .stack > * + * { margin-top: 12px; }
   .between { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: space-between; }
   .muted { color: var(--dim); font-size: 12.5px; line-height: 1.65; max-width: 68ch; }
-  .muted a { color: var(--body); }
+  .muted a { color: var(--link); }
 
-  /* ---------------------------------------------------------------- controls */
+  /* --------------------------------------------------------------- controls */
   .btn {
-    appearance: none; border: 1px solid #fff; background: #fff; color: #06070a; font-weight: 600;
-    font-size: 13.5px; padding: 11px 18px; border-radius: 9px; cursor: pointer; min-height: 44px;
+    appearance: none; border: 1px solid var(--acc); background: var(--acc); color: #fff; font-weight: 600;
+    font-size: 13.5px; padding: 11px 18px; border-radius: 8px; cursor: pointer; min-height: 44px;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
   }
-  .btn:hover:not(:disabled) { background: #dfe6f0; }
-  .btn.ghost { background: transparent; color: #fff; border-color: #303a4a; font-weight: 500; }
-  .btn.ghost:hover:not(:disabled) { border-color: #5b667a; background: #0d1016; }
-  .btn.danger { background: transparent; color: var(--bad); border-color: #3b1d1d; font-weight: 500; }
-  .btn.danger:hover:not(:disabled) { background: #170a0a; border-color: #6b2323; }
+  .btn:hover:not(:disabled) { background: var(--acc2); border-color: var(--acc2); }
+  .btn.ghost { background: #fff; color: var(--ink); border-color: #cfded8; font-weight: 500; }
+  .btn.ghost:hover:not(:disabled) { border-color: var(--ink); background: var(--sunken); }
+  .btn.danger { background: #fff; color: var(--bad); border-color: #fecdca; font-weight: 500; }
+  .btn.danger:hover:not(:disabled) { background: #fef3f2; border-color: var(--bad); }
   .btn.sm { font-size: 12.5px; padding: 7px 12px; min-height: 34px; }
-  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn.wide { width: 100%; }
-  label { display: block; font-size: 12px; color: var(--dim); margin: 0 0 6px; }
+  label { display: block; font-size: 12.5px; color: var(--ink); font-weight: 500; margin: 0 0 6px; }
   input[type=text], input[type=number], textarea {
-    width: 100%; background: var(--sunken); border: 1px solid var(--line); border-radius: 9px;
-    color: #eef2f8; padding: 11px 12px; min-height: 44px;
+    width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    color: var(--fg); padding: 11px 12px; min-height: 44px;
   }
   textarea { min-height: 92px; resize: vertical; line-height: 1.6; }
-  input::placeholder, textarea::placeholder { color: #5d6a7e; }
-  input:focus, textarea:focus { outline: none; border-color: #4b5666; }
+  input::placeholder, textarea::placeholder { color: #9aa8a2; }
+  input:focus, textarea:focus { outline: none; border-color: var(--link); box-shadow: 0 0 0 3px rgba(11,107,79,.14); }
   .field { margin-top: 14px; }
-  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
   .check { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--body); cursor: pointer; }
-  .check input { margin: 3px 0 0; accent-color: #6ee7b7; width: 16px; height: 16px; flex: none; }
+  .check input { margin: 3px 0 0; accent-color: var(--link); width: 16px; height: 16px; flex: none; }
   .inline { display: flex; gap: 8px; align-items: flex-start; }
   .inline > input { flex: 1; }
   .inline > .btn { flex: none; }
 
   /* ------------------------------------------------------------------ chips */
-  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--line); color: var(--dim); }
-  .chip.ok { color: var(--acc); border-color: #1d3b2e; background: #0a1712; }
-  .chip.no { color: var(--bad); border-color: #3b1d1d; background: #170a0a; }
-  .chip.warn { color: var(--warn); border-color: #4a3c17; background: #16120a; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--line); color: var(--body); background: var(--sunken); }
+  .chip.ok { color: #067647; border-color: #abefc6; background: #ecfdf3; }
+  .chip.no { color: var(--bad); border-color: #fecdca; background: #fef3f2; }
+  .chip.warn { color: var(--warn); border-color: #fedf89; background: #fffaeb; }
 
   /* --------------------------------------------------------------- evidence */
-  .kv { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 8px 16px; font-size: 12.8px; margin: 16px 0 0; }
-  .kv dt { color: var(--dim); }
-  .kv dd { margin: 0; color: #dbe3ee; font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.55; overflow-wrap: anywhere; }
+  .kv { display: grid; grid-template-columns: 152px minmax(0, 1fr); gap: 0 16px; font-size: 13px; margin: 16px 0 0; }
+  .kv dt { color: var(--dim); padding: 10px 0; border-top: 1px solid var(--line2); }
+  .kv dd { margin: 0; padding: 10px 0; border-top: 1px solid var(--line2); color: var(--fg); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.55; overflow-wrap: anywhere; }
   .hexline { display: flex; align-items: center; gap: 8px; }
   .hexline code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .copy { appearance: none; background: none; border: 0; color: var(--dim); cursor: pointer; font: inherit; font-size: 11px;
+  .copy { appearance: none; background: none; border: 0; color: var(--link); cursor: pointer; font: inherit; font-size: 11.5px;
     padding: 2px 6px; border-radius: 5px; flex: none; }
-  .copy:hover { color: #fff; background: #161b24; }
+  .copy:hover { background: var(--sunken); text-decoration: underline; }
   @media (pointer: coarse) { .copy { padding: 8px 10px; } }
-  .verdict { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 11px; border: 1px solid var(--line); }
-  .verdict.ok { border-color: #1d3b2e; background: #08150f; }
-  .verdict.no { border-color: #3b1d1d; background: #150808; }
-  .verdict .glyph { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 700; }
-  .verdict.ok .glyph { background: #12351f; color: var(--acc); }
-  .verdict.no .glyph { background: #35121a; color: var(--bad); }
-  .verdict strong { display: block; font-size: 14px; font-weight: 600; color: #fff; }
+  .verdict { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--sunken); }
+  .verdict.ok { border-color: #abefc6; background: #f6fef9; }
+  .verdict.no { border-color: #fecdca; background: #fffbfa; }
+  .verdict .glyph { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; font-weight: 700; background: #eaecf0; color: var(--body); }
+  .verdict.ok .glyph { background: #d1fadf; color: #067647; }
+  .verdict.no .glyph { background: #fee4e2; color: var(--bad); }
+  .verdict strong { display: block; font-size: 14.5px; font-weight: 600; color: var(--ink); }
   .verdict small { color: var(--body); font-size: 12.5px; }
   .empty { text-align: center; padding: 34px 20px; }
-  .empty .glyph { width: 44px; height: 44px; margin: 0 auto 14px; border-radius: 50%; border: 1.5px solid #2b3444; display: grid; place-items: center; color: var(--dim); font-size: 18px; }
+  .empty .glyph { width: 44px; height: 44px; margin: 0 auto 14px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; color: var(--dim); font-size: 18px; background: var(--sunken); }
   .empty h2 { margin-bottom: 8px; }
   .empty p { max-width: 46ch; margin: 0 auto; }
 
   /* ---------------------------------------------------------------- balance */
-  .balance { font-size: clamp(28px, 5vw, 40px); font-weight: 600; letter-spacing: -.03em; color: #fff; line-height: 1.1; }
+  .balance { font-size: clamp(28px, 5vw, 38px); font-weight: 700; letter-spacing: -.03em; color: var(--ink); line-height: 1.1; }
   .balance span { font-size: 15px; color: var(--dim); font-weight: 400; margin-left: 8px; letter-spacing: 0; }
 
   /* ---------------------------------------------------------------- words */
   .words { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 7px; margin: 14px 0 0; }
-  .w { background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: #eef2f8; font-family: ui-monospace, Menlo, Consolas, monospace; }
-  .w i { font-style: normal; color: #5d6a7e; margin-right: 7px; font-size: 11px; }
+  .w { background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--fg); font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .w i { font-style: normal; color: var(--dim); margin-right: 7px; font-size: 11px; }
   .blur { filter: blur(5px); user-select: none; }
 
-  /* ------------------------------------------------------------------- logs */
-  .hist { border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
-  .histrow { display: grid; grid-template-columns: 84px 110px minmax(0, 1fr) auto; gap: 12px; align-items: baseline;
-    padding: 11px 14px; font-size: 12.5px; border-bottom: 1px solid var(--line2); background: #0a0c11; }
+  /* ------------------------------------------------------------------ tables */
+  .hist { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+  .histrow {
+    display: grid; grid-template-columns: 96px 128px minmax(0, 1fr) auto; gap: 14px; align-items: baseline;
+    padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--line2); background: #fff;
+  }
   .histrow:last-child { border-bottom: 0; }
-  .histrow .kind { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
-  .histrow b { color: #fff; font-weight: 600; }
-  .histrow .mono { color: var(--dim); overflow-wrap: anywhere; }
-  .histrow a { font-size: 11.5px; text-decoration: none; color: var(--body); }
-  .histrow a:hover { color: #fff; }
-  .good { color: var(--acc); } .bad { color: var(--bad); } .warnc { color: var(--warn); }
+  .histrow .kind { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+  .histrow b { color: var(--ink); font-weight: 600; }
+  .histrow .mono { color: var(--body); overflow-wrap: anywhere; }
+  .histrow a { font-size: 12.5px; }
+  .good { color: var(--good); } .bad { color: var(--bad); } .warnc { color: var(--warn); }
+  /* The word in the first column is the verdict, so it carries the colour, not the row. */
+  .histrow .kind.good { color: var(--good); }
+  .histrow .kind.bad { color: var(--bad); }
+  .histrow .kind.warnc { color: var(--warn); }
+  /* A row whose label spans the rest of the line only needs two columns to start with. */
+  #selfcheck .histrow, #p7 .histrow { grid-template-columns: 106px minmax(0, 1fr); }
 
   /* --------------------------------------------------------------- progress */
   .prog { margin-top: 16px; }
   .prog p { margin: 0 0 9px; font-size: 13px; color: var(--body); }
-  .prog .t { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .bar { height: 3px; background: var(--line2); border-radius: 2px; overflow: hidden; }
-  .bar i { display: block; height: 100%; width: 42%; background: var(--acc); animation: slide 1.35s ease-in-out infinite; }
+  .prog .t { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; background: #eaeef0; border-radius: 999px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 42%; background: var(--link); border-radius: 999px; animation: slide 1.35s ease-in-out infinite; }
   @keyframes slide { 0% { transform: translateX(-105%); } 100% { transform: translateX(250%); } }
 
   /* ------------------------------------------------------------------ notes */
-  .note { border-left: 2px solid #2b3444; padding: 3px 0 3px 14px; margin: 16px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.66; max-width: 68ch; }
-  .note.warn { border-color: #6b5320; color: #e8d6a6; }
-  .note.bad { border-color: #6b2323; color: #f6c9c9; }
-  pre.cmd { background: #0b0d12; border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow-x: auto; font-size: 11.8px; line-height: 1.6; color: #dbe3ee; margin: 12px 0 0; }
+  .note { border-left: 3px solid var(--line); padding: 3px 0 3px 14px; margin: 16px 0 0; color: var(--body); font-size: 12.5px; line-height: 1.66; max-width: 68ch; }
+  .note.warn { border-color: #fec84b; color: #93370d; }
+  .note.bad { border-color: #fda29b; color: var(--bad); }
+  pre.cmd { background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 11.8px; line-height: 1.6; color: var(--fg); margin: 12px 0 0; }
   details.adv { border-top: 1px solid var(--line2); margin-top: 20px; padding-top: 14px; }
-  details.adv summary { cursor: pointer; font-size: 12.5px; color: var(--dim); }
-  details.adv summary:hover { color: #fff; }
-  details.adv[open] summary { color: #fff; margin-bottom: 4px; }
+  details.adv summary { cursor: pointer; font-size: 12.5px; color: var(--body); }
+  details.adv summary:hover { color: var(--ink); }
+  details.adv[open] summary { color: var(--ink); margin-bottom: 4px; }
 
   /* ----------------------------------------------------------------- toasts */
   .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 50; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: max-content; max-width: calc(100vw - 32px); }
-  .toast { background: #12161d; border: 1px solid #2b3444; color: #eef2f8; font-size: 13px; padding: 10px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: rise .18s ease-out; }
-  .toast.bad { border-color: #6b2323; color: #f6c9c9; }
+  .toast { background: #fff; border: 1px solid var(--line); color: var(--ink); font-size: 13px; padding: 10px 16px; border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,40,.12); animation: rise .18s ease-out; }
+  .toast.bad { border-color: #fda29b; color: var(--bad); }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  footer.foot { border-top: 1px solid var(--line2); margin-top: 34px; padding-top: 20px; color: var(--dim); font-size: 12.5px; line-height: 1.75; }
+  footer.foot { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 22px; color: var(--body); font-size: 12.5px; line-height: 1.75; }
+  footer.foot strong { color: var(--ink); }
 
-  @media (max-width: 760px) {
-    .appnav li.opt { display: none; }
-    /* Five tiles fit a desktop in one row and fold to two columns down here, where the odd one
-       left over takes the whole width rather than leaving a hole beside it. */
-    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
-    .stat { padding: 11px 12px; }
-    .statusdot { padding: 5px 10px; }
-    .kv { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
-    .kv dd { margin-bottom: 10px; }
-    .histrow { grid-template-columns: 84px minmax(0, 1fr); }
+  @media (max-width: 860px) {
+    /* The bar wraps: brand and the account button on one line, the sections on their own. */
+    .appbar-in { padding-top: 10px; padding-bottom: 10px; }
+    .tabs { order: 3; flex-basis: 100%; margin: 0; min-height: 0; overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { padding: 8px 10px; }
+    .shell { padding-top: 22px; }
+    .kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .kv dt { border-top: 1px solid var(--line2); padding-bottom: 0; }
+    .kv dd { padding-top: 4px; }
+    .histrow { grid-template-columns: 88px minmax(0, 1fr); }
     .histrow a, .histrow .mono { grid-column: 2; }
   }
 </style>
@@ -238,61 +255,80 @@
 <body>
 
 <header class="appbar">
-  <a class="brand" href="/"><span class="brand-mark"></span><span><b>Olinea</b> <span>Vault</span></span></a>
-  <ul class="appnav">
-    <li class="opt"><a href="/">Product</a></li>
-    <li class="opt"><a href="/docs/">Docs</a></li>
-    <li><a href="/app/" aria-current="page">Console</a></li>
-    <li class="opt"><a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">GitHub</a></li>
-  </ul>
-  <span class="statusdot" id="net"><i></i><span id="net-text">connecting…</span></span>
+  <div class="appbar-in">
+    <a class="brand" href="/"><span class="brand-mark"></span><span><b>Olinea</b> <span>Vault</span></span></a>
+
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview" data-panel="panel-overview" tabindex="0">Dashboard <span class="tick" id="tick-overview" hidden></span></button>
+      <button class="tab" id="tab-key" role="tab" aria-selected="false" aria-controls="panel-key" data-panel="panel-key" tabindex="-1">Key <span class="tick" id="tick-key" hidden></span></button>
+      <button class="tab" id="tab-vault" role="tab" aria-selected="false" aria-controls="panel-vault" data-panel="panel-vault" tabindex="-1">Vault <span class="tick" id="tick-vault" hidden></span></button>
+      <button class="tab" id="tab-authorize" role="tab" aria-selected="false" aria-controls="panel-authorize" data-panel="panel-authorize" tabindex="-1">Authorize</button>
+      <button class="tab" id="tab-activity" role="tab" aria-selected="false" aria-controls="panel-activity" data-panel="panel-activity" tabindex="-1">Activity</button>
+    </nav>
+
+    <div class="bar-right">
+      <span class="statusdot" id="net"><i></i><span id="net-text">connecting…</span></span>
+      <button class="btn account" id="b-account" type="button">Connect wallet</button>
+    </div>
+  </div>
 </header>
 
 <main class="shell">
 
   <p class="eyebrow" id="eyebrow">Post-quantum authorization · Arc mainnet</p>
-  <h1 id="headline">Console</h1>
-  <p class="sub" id="subline">
-    A 24-word backup makes an <span class="hi">SLH-DSA</span> key in this tab. Nothing leaves this device.
-  </p>
+  <h1 id="headline">Dashboard</h1>
+  <p class="sub" id="subline">Your key, your vault, and what Arc mainnet says about both.</p>
 
-  <!-- The five facts worth knowing before money moves. Each tile opens the tab that owns the work. -->
-  <section class="stats" aria-label="Console at a glance">
-    <button class="stat" type="button" data-goto="panel-key" id="stat-key">
-      <span class="stat-lbl">Key</span>
-      <span class="stat-val"><i></i><span id="stat-key-v">No key</span></span>
-      <span class="stat-sub" id="stat-key-s">create one first</span>
-    </button>
-    <button class="stat" type="button" data-goto="panel-key" id="stat-proof">
-      <span class="stat-lbl">Proof</span>
-      <span class="stat-val"><i></i><span id="stat-proof-v">Not proven</span></span>
-      <span class="stat-sub" id="stat-proof-s">free, on Arc mainnet</span>
-    </button>
-    <button class="stat" type="button" data-goto="panel-vault" id="stat-vault">
-      <span class="stat-lbl">Vault</span>
-      <span class="stat-val"><i></i><span id="stat-vault-v">None</span></span>
-      <span class="stat-sub" id="stat-vault-s">not deployed yet</span>
-    </button>
-    <button class="stat" type="button" data-goto="panel-vault" id="stat-gas">
-      <span class="stat-lbl">Gas account</span>
-      <span class="stat-val"><i></i><span id="stat-gas-v">None</span></span>
-      <span class="stat-sub" id="stat-gas-s">pays gas only</span>
-    </button>
-    <button class="stat" type="button" data-goto="panel-activity" id="stat-chain">
-      <span class="stat-lbl">Chain</span>
-      <span class="stat-val"><i></i><span id="stat-chain-v">connecting…</span></span>
-      <span class="stat-sub" id="net-block">—</span>
-    </button>
+  <!-- ============================================================== OVERVIEW -->
+  <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+
+    <h2 class="sec">Account Overview</h2>
+    <!-- Five facts, each one a way into the tab that owns the work. -->
+    <div class="stats" aria-label="Account at a glance">
+      <button class="stat" type="button" data-goto="panel-key" id="stat-key">
+        <span class="stat-lbl">Key</span>
+        <span class="stat-val" id="stat-key-v">None</span>
+        <span class="stat-sub" id="stat-key-s">create one first</span>
+      </button>
+      <button class="stat" type="button" data-goto="panel-key" id="stat-proof">
+        <span class="stat-lbl">Proof</span>
+        <span class="stat-val" id="stat-proof-v">Not proven</span>
+        <span class="stat-sub" id="stat-proof-s">free, no account</span>
+      </button>
+      <button class="stat" type="button" data-goto="panel-vault" id="stat-vault">
+        <span class="stat-lbl">Vault</span>
+        <span class="stat-val" id="stat-vault-v">—</span>
+        <span class="stat-sub" id="stat-vault-s">not deployed yet</span>
+      </button>
+      <button class="stat" type="button" data-goto="panel-vault" id="stat-gas">
+        <span class="stat-lbl">Gas account</span>
+        <span class="stat-val" id="stat-gas-v">None</span>
+        <span class="stat-sub" id="stat-gas-s">pays gas only</span>
+      </button>
+      <button class="stat" type="button" data-goto="panel-activity" id="stat-chain">
+        <span class="stat-lbl">Chain height</span>
+        <span class="stat-val" id="stat-chain-v">—</span>
+        <span class="stat-sub" id="net-block">connecting…</span>
+      </button>
+    </div>
+
+    <h2 class="sec">Next step</h2>
+    <div class="card next">
+      <div>
+        <h2 id="next-title">Create your key</h2>
+        <p class="muted" id="next-line" style="margin-top:6px">24 words, made on this device. Nothing leaves it.</p>
+      </div>
+      <button class="btn" id="next-btn" type="button">Create a key</button>
+    </div>
+
+    <h2 class="sec">System</h2>
+    <div class="card">
+      <div id="selfcheck"></div>
+    </div>
   </section>
 
-  <nav class="tabs" role="tablist" aria-label="Sections">
-    <button class="tab" id="tab-key" role="tab" aria-selected="true" aria-controls="panel-key" data-panel="panel-key" tabindex="0">Key <span class="tick" id="tick-key" hidden></span></button>
-    <button class="tab" id="tab-vault" role="tab" aria-selected="false" aria-controls="panel-vault" data-panel="panel-vault" tabindex="-1">Vault <span class="tick" id="tick-vault" hidden></span></button>
-    <button class="tab" id="tab-authorize" role="tab" aria-selected="false" aria-controls="panel-authorize" data-panel="panel-authorize" tabindex="-1">Authorize</button>
-    <button class="tab" id="tab-activity" role="tab" aria-selected="false" aria-controls="panel-activity" data-panel="panel-activity" tabindex="-1">Activity</button>
-  </nav>
-
   <!-- ==================================================================== KEY -->
+
   <section id="panel-key" role="tabpanel" aria-labelledby="tab-key">
 
     <div id="key-start" class="card">
@@ -551,16 +587,11 @@
       <h2>Activity</h2>
       <p>Read from Arc mainnet, not a local log. If it is not here, it did not happen.</p>
       <div id="activity" style="margin-top:18px"><p class="muted">Nothing yet. Prove your key on the Key tab.</p></div>
-    </div>
-    <div class="card">
-      <h3 style="margin-top:0">Checks</h3>
-      <div id="selfcheck"></div>
-    </div>
-  </section>
+    </div></section>
 
   <footer class="foot">
     <p style="margin-top:0">
-      <strong style="color:#fff">Status.</strong> Vaults are not deployed on Arc mainnet yet — the repository's <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> is the source of truth.
+      <strong>Status.</strong> Vaults are not deployed on Arc mainnet yet — the repository's <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> is the source of truth.
     </p>
     <ul class="plain">
       <li><strong>Unaudited.</strong> New code, and a test suite is not a review.</li>
@@ -773,6 +804,14 @@ function humanError(err) {
 /* The tab strip is one stop in the page's tab order and the arrow keys move inside it, so a
  * screen reader hears a set of tabs rather than four unrelated buttons. */
 const TABS = [...document.querySelectorAll('.tab')];
+/* Each section is a page: it says what it is at the top, and it starts at the top. */
+const HEADINGS = {
+  'panel-overview': ['Dashboard', 'Your key, your vault, and what Arc mainnet says about both.'],
+  'panel-key': ['Your key', 'A 24-word backup makes an SLH-DSA key in this tab. Nothing leaves this device.'],
+  'panel-vault': ['Your vault', 'One transaction to create it. After that, only a signature from your key moves what it holds.'],
+  'panel-authorize': ['Authorize a payment', 'One signature binds recipient, amount and nonce, and Arc mainnet checks it before anything is sent.'],
+  'panel-activity': ['Activity', 'Read from Arc mainnet, not from a log kept in this tab.'],
+};
 function show(panelId, { focus = true } = {}) {
   for (const tab of TABS) {
     const on = tab.dataset.panel === panelId;
@@ -780,7 +819,9 @@ function show(panelId, { focus = true } = {}) {
     tab.tabIndex = on ? 0 : -1;
     $(tab.dataset.panel).hidden = !on;
   }
-  if (focus) $(panelId).scrollIntoView({ block: 'start', behavior: 'smooth' });
+  const [title, line] = HEADINGS[panelId] || [];
+  if (title) { $('headline').textContent = title; $('subline').textContent = line; }
+  if (focus) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 for (const tab of TABS) {
   tab.addEventListener('click', () => show(tab.dataset.panel));
@@ -801,9 +842,18 @@ $('b-goto-key1').onclick = gotoKey;
 $('b-goto-key2').onclick = gotoKey;
 
 /* ---------------------------------------------------------- at a glance */
-/* Four facts this tab can know about itself; the chain tile belongs to net(), which is the only
- * thing that can answer it. Every tile is a way into the tab that owns the work, so "where am I"
- * is answered by looking rather than by reading. */
+/* Four cards this tab can know about itself; the chain card belongs to net(), which is the only
+ * thing that can answer it. Every card is a way into the tab that owns the work, so "where am I"
+ * is answered by looking rather than by reading. A remembered vault with no key loaded is neither
+ * yours nor provably anyone else's, so that card shows what it remembers and says no more. */
+/* A copy button beside a dash copies a dash. It appears when there is something to copy. */
+function paintCopies() {
+  for (const btn of document.querySelectorAll('.copy')) {
+    const el = $(btn.dataset.copy);
+    const text = el ? el.textContent.trim() : '';
+    btn.hidden = !text || text === '—';
+  }
+}
 function setStat(name, kind, value, sub) {
   $('stat-' + name).className = 'stat' + (kind ? ' ' + kind : '');
   $('stat-' + name + '-v').textContent = value;
@@ -811,29 +861,56 @@ function setStat(name, kind, value, sub) {
 }
 function renderStats() {
   const hasKey = !!state.vk;
-  setStat('key', hasKey ? 'on' : '', hasKey ? 'Unlocked' : 'No key',
-    hasKey ? state.fingerprint : 'create one first');
+  setStat('key', hasKey ? 'on' : '', hasKey ? state.fingerprint : 'None',
+    hasKey ? 'unlocked in this tab' : 'create one first');
 
   const p = state.proof;
   setStat('proof', p ? (p.ok ? 'on' : 'no') : '', p ? (p.ok ? 'Verified' : 'Rejected') : 'Not proven',
-    p ? `${p.when} ms on Arc mainnet` : 'free, no account');
+    p ? `Arc mainnet agreed in ${p.when} ms` : 'free, no account');
 
-  /* A remembered vault with no key loaded is neither yours nor provably anyone else's, so the tile
-   * shows the address it remembers and says plainly that it cannot say more than that. */
   const live = !!CONFIG.factory;
-  const told = !!state.vk;
   const v = state.vault;
-  const mine = told && state.vaultMine;
-  setStat('vault', live ? (!v ? '' : mine ? 'on' : told ? 'no' : '') : 'warn',
-    !live || !v ? 'None' : mine ? 'Yours' : told ? 'Other key' : hex(v, 5),
-    !live ? 'not deployed yet' : !v ? 'create one on the Vault tab'
-      : mine || told ? state.vaultBal || hex(v, 5) : 'no key loaded');
+  const mine = hasKey && state.vaultMine;
+  setStat('vault', live ? (!v ? '' : mine ? 'on' : hasKey ? 'no' : '') : 'warn',
+    v && state.vaultBal ? state.vaultBal : '—',
+    !live ? 'not deployed yet'
+      : !v ? 'none yet — create one on the Vault tab'
+        : mine ? `yours · ${hex(v, 5)}`
+          : hasKey ? 'this vault answers to another key' : `remembered · ${hex(v, 5)}`);
 
-  setStat('gas', state.account ? 'on' : '',
-    state.account ? (state.mode === 'demo' ? 'Built-in' : 'Wallet') : 'None',
-    state.account ? state.gasBal || hex(state.account.address, 5) : 'pays gas only');
+  setStat('gas', state.account ? 'on' : '', state.account ? state.gasBal || 'Connected' : 'None',
+    state.account ? (state.mode === 'demo' ? 'built-in account, gas only' : 'your wallet, gas only')
+      : 'pays gas only');
+
+  $('b-account').textContent = state.account ? hex(state.account.address, 4) : 'Connect wallet';
+  /* Nothing to create a vault with is not a button to press: no factory, no gas, or already made. */
+  $('b-create').disabled = !canCreate();
+  paintCopies();
+  $('tick-key').hidden = !hasKey;
+  $('tick-vault').hidden = !mine;
+  $('tick-overview').hidden = !(hasKey && p?.ok && v);
+  renderNext();
 }
 for (const tile of document.querySelectorAll('.stat')) tile.onclick = () => show(tile.dataset.goto);
+
+/* One instruction at a time, in the order the money has to move. The card names a single next
+ * action and opens the tab that does it, so the dashboard never asks anyone to work out what to
+ * do first. */
+function renderNext() {
+  const setup = !state.vk
+    ? ['Create your key', '24 words, made on this device. Nothing leaves it.', 'Create a key', 'panel-key']
+    : !state.proof?.ok
+      ? ['Prove your key', 'Arc mainnet checks one signature for free — the same call a vault makes before it moves USDC.', 'Prove it now', 'panel-key']
+      : state.vault
+        ? ['Authorize a payment', 'One signature binds recipient, amount and nonce. Check it on mainnet before anyone pays gas.', 'Go to Authorize', 'panel-authorize']
+        : !CONFIG.factory
+          ? ['Vaults are not deployed yet', 'Your key already works. The Vault tab says what is missing, and what it costs.', 'Read the status', 'panel-vault']
+          : ['Create your vault', 'One transaction, about two cents of gas, and it answers to this key alone.', 'Go to Vault', 'panel-vault'];
+  $('next-title').textContent = setup[0];
+  $('next-line').textContent = setup[1];
+  $('next-btn').textContent = setup[2];
+  $('next-btn').onclick = () => show(setup[3]);
+}
 
 /* --------------------------------------------------- session (public data) */
 /* The secret is never stored. Only the verifying key and fingerprint are, so a reload can show you
@@ -875,11 +952,7 @@ function renderKey() {
   $('lock-auth').hidden = hasKey;
   $('vault-soon').hidden = !hasKey || !!CONFIG.factory;
   $('vault-live').hidden = !hasKey || !CONFIG.factory;
-  $('auth-body').hidden = !hasKey;
-  $('subline').innerHTML = hasKey
-    ? 'Your key is unlocked in this tab. Prove it, then authorize a payment.'
-    : 'A 24-word backup makes an <span class="hi">SLH-DSA</span> key in this tab. Nothing leaves this device.';
-  renderStats();
+  $('auth-body').hidden = !hasKey;  renderStats();
 }
 
 /* --------------------------------------------------------- 1. create key */
@@ -1093,7 +1166,7 @@ function paintAccount() {
       ]);
       $('a-bal').textContent = `${V.formatUnits(gas, 18)} USDC`;
       $('a-usdc').textContent = `${V.formatUnits(usdc, 6)} USDC`;
-      state.gasBal = `${V.formatUnits(gas, 18)} USDC gas`;
+      state.gasBal = `${V.formatUnits(gas, 18)} USDC`;
       renderStats();
       state.gasOk = gas > 0n;
       $('b-create').disabled = !canCreate();
@@ -1322,6 +1395,7 @@ function renderAuth() {
   if (!has) $('d-json').textContent = '';
   /* Never offer to send something Arc mainnet has already rejected. */
   $('b-release').disabled = !has || !state.account || state.authVerified === false;
+  paintCopies();
 }
 $('b-sign').onclick = async () => {
   if (state.busy) return;
@@ -1686,18 +1760,20 @@ async function net() {
     const [chainId, block] = await Promise.all([call(() => reads.getChainId(), 2), call(() => reads.getBlockNumber(), 2)]);
     if (chainId !== CONFIG.chainId) throw new Error(`rpc is chain ${chainId}`);
     $('net').className = 'statusdot on';
-    $('net-text').textContent = 'Arc mainnet';
-    $('stat-chain').className = 'stat on';
-    $('stat-chain-v').textContent = 'Arc mainnet';
-    $('net-block').textContent = `block ${Number(block).toLocaleString()}`;
+    $('net-text').textContent = 'Arc mainnet';    $('stat-chain').className = 'stat on';
+    $('stat-chain-v').textContent = Number(block).toLocaleString();
+    /* The endpoint is worth naming, but not the whole hostname: which of the two answered is all
+       anyone needs when a number looks wrong. */
+    const endpoint = CONFIG.rpc.replace(/^https?:\/\//, '').split('/')[0];
+    const host = /^[\d.:]+$/.test(endpoint) ? endpoint : endpoint.replace(/^rpc\./, '').split('.')[0];
+    $('net-block').textContent = `Arc mainnet · ${host}`;
     /* Which endpoint answered is the first thing anyone asks when a number looks wrong. */
     $('net').title = `Arc mainnet · chain ${chainId} · ${CONFIG.rpc.replace(/^https?:\/\//, '')}`;
     return true;
   } catch {
     $('net').className = 'statusdot off';
-    $('net-text').textContent = 'no RPC';
-    $('stat-chain').className = 'stat warn';
-    $('stat-chain-v').textContent = 'no RPC';
+    $('net-text').textContent = 'no RPC';    $('stat-chain').className = 'stat warn';
+    $('stat-chain-v').textContent = '—';
     /* A block number that was true a minute ago is a lie next to the words "no RPC". */
     $('net-block').textContent = '';
     $('net').title = 'Nothing is answering on the Arc RPC right now';
@@ -1726,11 +1802,8 @@ async function boot() {
   markActivity();
   if (state.vault) { await paintVault(); }
 }
-/* The tab strip pins itself under the app bar, so the bar's height is measured rather than
- * assumed — the bar wraps at narrow widths, and a guessed offset would leave a gap or an overlap. */
-const measureBar = () => document.documentElement.style.setProperty('--barh', document.querySelector('.appbar').offsetHeight + 'px');
-measureBar();
-addEventListener('resize', measureBar);
+/* The account pill is the one thing in the bar that is about you rather than about the chain. */
+$('b-account').onclick = () => show('panel-vault');
 await boot();
 setInterval(() => { net(); renderSelfcheck(); }, 30_000);
 </script>

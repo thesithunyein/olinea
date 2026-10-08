@@ -51,8 +51,8 @@ ok(homeBad.length === 0, `landing internal links are /, /docs/, /app/ or /#ancho
 
 console.log('--- vault console ---');
 ok(count(app, '<title>Vault console — Olinea</title>') === 1, 'app title');
-ok(['key', 'vault', 'authorize', 'activity'].every((n) =>
-  count(app, `id="tab-${n}"`) === 1 && count(app, `id="panel-${n}"`) === 1), 'four tabs and four panels exist');
+ok(['overview', 'key', 'vault', 'authorize', 'activity'].every((n) =>
+  count(app, `id="tab-${n}"`) === 1 && count(app, `id="panel-${n}"`) === 1), 'five sections exist, in the order the money moves');
 const appIds = [...app.matchAll(/id="([a-zA-Z0-9_-]+)"/g)].map((m) => m[1]);
 ok(new Set(appIds).size === appIds.length, 'app has no duplicate element ids');
 
@@ -64,9 +64,9 @@ const tabs = [...appMarkup.matchAll(/<button class="tab" id="(tab-[a-z]+)"([^>]*
   .map(([, id, rest]) => ({ id, rest }));
 const panels = [...appMarkup.matchAll(/<section id="(panel-[a-z]+)"([^>]*)>/g)]
   .map(([, id, rest]) => ({ id, rest })).filter((p) => attr(p.rest, 'role') === 'tabpanel');
-ok(tabs.length === 4, 'the markup declares four tabs');
+ok(tabs.length === 5, 'the markup declares five tabs');
 ok(tabs.every((t) => attr(t.rest, 'role') === 'tab'), 'every tab says it is a tab');
-ok(panels.length === 4, 'the markup declares four panels');
+ok(panels.length === 5, 'the markup declares five panels');
 ok(tabs.every((t) => appIds.includes(attr(t.rest, 'aria-controls'))), 'every tab points at a panel that exists');
 ok(tabs.every((t) => attr(t.rest, 'aria-controls') === attr(t.rest, 'data-panel')), 'each tab points at the panel it shows');
 ok(panels.every((p) => tabs.some((t) => t.id === attr(p.rest, 'aria-labelledby'))), 'every panel is labelled by a tab that exists');
@@ -75,7 +75,7 @@ ok(tabs.filter((t) => attr(t.rest, 'aria-selected') === 'true').length === 1, 'e
 /* A tablist is one stop in the page's tab order; the arrow keys move inside it. Otherwise a screen
    reader walks four buttons to do one job. */
 ok(tabs.filter((t) => attr(t.rest, 'tabindex') === '0').length === 1, 'exactly one tab starts in the tab order');
-ok(tabs.filter((t) => attr(t.rest, 'tabindex') === '-1').length === 3, 'the rest are reachable only by the arrow keys');
+ok(tabs.filter((t) => attr(t.rest, 'tabindex') === '-1').length === 4, 'the rest are reachable only by the arrow keys');
 ok(/ArrowRight/.test(app) && /ArrowLeft/.test(app) && /'Home'/.test(app) && /'End'/.test(app),
   'the arrow, Home and End keys move between the tabs');
 ok(/tab\.tabIndex = on \? 0 : -1/.test(app), 'moving a tab also moves the tab-order stop');
@@ -163,12 +163,23 @@ const SECOND_LINE = { 'stat-chain': 'net-block' };
 ok(tiles.every((t) => appIds.includes(t.id) && appIds.includes(`${t.id}-v`)
   && appIds.includes(SECOND_LINE[t.id] || `${t.id}-s`)), 'every tile has a value and a line under it');
 const statsAt = appMarkup.indexOf('class="stats"');
-ok(statsAt > 0 && statsAt < appMarkup.indexOf('id="panel-key"'), 'the dashboard sits above the tabs, not inside one of them');
+ok(statsAt > appMarkup.indexOf('id="panel-overview"') && statsAt < appMarkup.indexOf('id="panel-key"'),
+  'the dashboard is the Overview section, ahead of the sections it summarises');
 ok(count(app, 'function renderStats()') === 1 && count(app, 'renderStats();') >= 5,
   'the tiles are repainted from state rather than written once');
-ok(count(app, 'id="net-block"') === 1, 'the chain tile owns the block number');
-ok(app.includes('measureBar') && /top: var\(--barh/.test(app),
-  'the tab strip pins itself under the app bar, measured rather than guessed');
+ok(count(app, 'id="net-block"') === 1, 'the chain card owns the height of the chain');
+/* The sections are the bar's own navigation now, so they cannot scroll away with the content. */
+const navAt = appMarkup.indexOf('<nav class="tabs"');
+ok(appMarkup.indexOf('<header class="appbar">') >= 0 && navAt > appMarkup.indexOf('<header class="appbar">')
+  && navAt < appMarkup.indexOf('</header>'), 'the sections live in the app bar');
+ok(/\.appbar\s*\{[^}]*position:\s*sticky/.test(app), 'and the bar stays put');
+ok(count(app, 'function renderNext()') === 1 && count(app, 'renderNext()') >= 2 && app.includes('id="next-btn"'),
+  'the dashboard names one next action and opens the tab that does it');
+ok(count(app, 'const HEADINGS =') === 1
+  && ['panel-overview', 'panel-key', 'panel-vault', 'panel-authorize', 'panel-activity'].every((id) => app.includes(`'${id}': [`)),
+  'every section says what it is at the top of the page');
+ok(app.includes('name="color-scheme" content="light"') && /--bg:#fff/.test(app),
+  'the console is a light surface, the way a product is');
 
 const factory = readFileSync('contracts/src/OlineaFactory.sol', 'utf8');
 ok(factory.includes('function createVault(bytes calldata verifyingKey)'), 'the factory really has createVault(bytes)');
