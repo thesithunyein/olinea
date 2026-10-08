@@ -78,15 +78,15 @@
   .card { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: clamp(18px, 3vw, 24px); margin: 0 0 16px; }
   .card h2 { font-size: 17px; font-weight: 600; letter-spacing: -.015em; margin: 0 0 6px; }
   .card h3 { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); font-weight: 500; margin: 22px 0 10px; }
-  .card p { color: var(--body); font-size: 13.5px; line-height: 1.66; margin: 0 0 0; }
+  .card p { color: var(--body); font-size: 13.5px; line-height: 1.66; margin: 0 0 0; max-width: 68ch; }
   .card p + p { margin-top: 10px; }
-  .plain { color: var(--body); font-size: 13px; line-height: 1.7; padding-left: 18px; margin: 12px 0 0; }
+  .plain { color: var(--body); font-size: 13px; line-height: 1.7; padding-left: 18px; margin: 12px 0 0; max-width: 68ch; }
   .plain li { margin: 6px 0; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
   .row.tight { margin-top: 12px; }
   .stack > * + * { margin-top: 12px; }
   .between { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: space-between; }
-  .muted { color: var(--dim); font-size: 12.5px; line-height: 1.65; }
+  .muted { color: var(--dim); font-size: 12.5px; line-height: 1.65; max-width: 68ch; }
   .muted a { color: var(--body); }
 
   /* ---------------------------------------------------------------- controls */
@@ -179,7 +179,7 @@
   @keyframes slide { 0% { transform: translateX(-105%); } 100% { transform: translateX(250%); } }
 
   /* ------------------------------------------------------------------ notes */
-  .note { border-left: 2px solid #2b3444; padding: 3px 0 3px 14px; margin: 16px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.66; }
+  .note { border-left: 2px solid #2b3444; padding: 3px 0 3px 14px; margin: 16px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.66; max-width: 68ch; }
   .note.warn { border-color: #6b5320; color: #e8d6a6; }
   .note.bad { border-color: #6b2323; color: #f6c9c9; }
   pre.cmd { background: #0b0d12; border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow-x: auto; font-size: 11.8px; line-height: 1.6; color: #dbe3ee; margin: 12px 0 0; }
@@ -226,8 +226,7 @@
   <p class="eyebrow" id="eyebrow">Post-quantum authorization · Arc mainnet</p>
   <h1 id="headline">Your key. Your vault. Nothing in between.</h1>
   <p class="sub" id="subline">
-    Back up 24 words. They derive an <span class="hi">SLH-DSA</span> key in this tab that a quantum
-    computer cannot forge. Start by creating one — it costs nothing, and Arc mainnet will check it for free.
+    24 words make an <span class="hi">SLH-DSA</span> key in this tab. Free to create, free for Arc mainnet to verify.
   </p>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
@@ -242,8 +241,7 @@
 
     <div id="key-start" class="card">
       <h2>Create your key</h2>
-      <p>24 words, generated on this device. They are the only copy — no reset, no support line. If they are
-        lost, anything the key protects is unspendable by anyone, including us.</p>
+      <p>24 words, made on this device. The only copy — no reset, no support. Lose them and the money is unspendable by anyone.</p>
       <div class="row">
         <button class="btn" id="b-new">Create a new key</button>
         <button class="btn ghost" id="b-restore">Restore from a backup</button>
@@ -255,7 +253,7 @@
           <button class="btn ghost sm" id="b-blur">Hide</button>
           <button class="btn ghost sm" id="b-copy-words">Copy words</button>
         </div>
-        <label class="check"><input type="checkbox" id="ack"> I have written these 24 words down, in order, and I understand nobody can restore them for me.</label>
+        <label class="check"><input type="checkbox" id="ack"> I've written these 24 words down, in order. Nobody can restore them.</label>
       </div>
 
       <div id="pane-restore" hidden>
@@ -277,8 +275,7 @@
           <label for="idx">Vault index</label>
           <input type="number" id="idx" value="0" min="0" max="255" step="1">
         </div>
-        <p class="muted" style="margin-top:10px">One backup opens as many vaults as you like. The index is mixed into the
-          derivation, so index 0 and index 1 are unrelated keys. Leave it at 0 unless you know why you are changing it.</p>
+        <p class="muted" style="margin-top:10px">One backup opens many vaults. The index is mixed into the derivation, so index 0 and index 1 are unrelated keys. Leave it at 0.</p>
       </details>
     </div>
 
@@ -287,7 +284,7 @@
         <div class="between">
           <div>
             <h2 style="margin:0">Key ready</h2>
-            <p class="muted" style="margin-top:5px">Held in this tab. It disappears when you close or lock it.</p>
+            <p class="muted" style="margin-top:5px">In this tab only. Closing or locking clears it.</p>
           </div>
           <span class="chip ok" id="k-chip">in memory</span>
         </div>
@@ -305,8 +302,7 @@
           <div class="words" id="words-again"></div>
           <div class="row tight"><button class="btn ghost sm" id="b-copy-again">Copy words</button></div>
         </div>
-        <p class="muted" style="margin-top:12px">Proving signs one message and asks Arc's own precompile to check it.
-          It costs nothing, needs no account, and is the exact call a vault makes before moving USDC.</p>
+        <p class="muted" style="margin-top:12px">Proving signs one message and asks Arc's precompile to check it. Free, no account — the same call a vault makes before moving USDC.</p>
         <div id="p2"></div>
       </div>
     </div>
@@ -314,8 +310,7 @@
     <div id="key-locked" hidden>
       <div class="card">
         <h2>Unlock your key</h2>
-        <p>This browser knows the key fingerprint <span class="mono" id="k-remembered">—</span> but not the key itself —
-          it is never stored. Enter your 24 words to unlock and use it again.</p>
+        <p>This browser remembers your fingerprint <span class="mono" id="k-remembered">—</span> — never the key. Enter your 24 words to use it again.</p>
         <div class="field">
           <label for="unlock-in">Your 24 words</label>
           <textarea id="unlock-in" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="word word word …"></textarea>
@@ -334,7 +329,7 @@
     <div id="lock-vault" class="card empty" hidden>
       <div class="glyph">&#9679;</div>
       <h2>Create a key first</h2>
-      <p>Your vault is built around a key, so the key comes first. It takes about a minute and costs nothing.</p>
+      <p>A vault is built around a key. Make one first — a minute, free.</p>
       <div class="row" style="justify-content:center"><button class="btn" id="b-goto-key1">Go to Key</button></div>
     </div>
 
@@ -342,29 +337,25 @@
       <div class="between">
         <div>
           <h2 style="margin:0">Vaults open with the next deployment</h2>
-          <p class="muted" style="margin-top:5px">One transaction, about two cents of gas, and it is yours.</p>
+          <p class="muted" style="margin-top:5px">One transaction. About two cents of gas.</p>
         </div>
         <span class="chip warn" id="v-soon-chip">not live yet</span>
       </div>
-      <p style="margin-top:16px">Everything else is ready and tested: this console creates the vault from your key,
-        funds it, and only ever moves USDC when your key signs. What is missing is two cents of gas, because this
-        project has no funding and Arc has no faucet on mainnet.</p>
+      <p style="margin-top:16px">The rest is ready: this console creates the vault from your key, funds it, and moves USDC only when your key signs. What is missing is two cents of gas — the project has no funding and Arc mainnet has no faucet.</p>
       <ul class="plain">
-        <li>Nothing is lost by waiting — your key works the moment a vault exists, and your backup is all you need to keep.</li>
-        <li>You can still use the <strong>Authorize</strong> tab today: give it the address your vault will live at,
-          sign, and Arc's mainnet precompile verifies it for free. That is the same check a real release makes.</li>
+        <li>Nothing is lost by waiting. Your key works the moment a vault exists.</li>
+        <li><strong>Authorize</strong> works today: give it the address your vault will live at, sign, and Arc's precompile verifies it free — the same check a real release makes.</li>
         <li>The <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">repository status</a>
-          is the single source of truth and is updated when this changes.</li>
+          is the source of truth for this.</li>
       </ul>
-      <p class="muted" style="margin-top:16px">Nothing to fill in, nothing to paste. This page will grow a Create
-        button by itself when the factory address is published.</p>
+      <p class="muted" style="margin-top:16px">Nothing to paste. This page grows a Create button when the factory is published.</p>
     </div>
 
     <div id="vault-live" hidden>
       <div class="card">
         <div class="between">
           <div><h2 style="margin:0">Gas account</h2>
-            <p class="muted" style="margin-top:5px">Pays for transactions. It can never move your vault's USDC.</p></div>
+            <p class="muted" style="margin-top:5px">Pays gas only. It can never move your vault's USDC.</p></div>
           <span class="chip" id="a-mode">not connected</span>
         </div>
         <dl class="kv">
@@ -401,8 +392,7 @@
             <input type="text" id="dep-in" value="10.00" inputmode="decimal" spellcheck="false" aria-label="Amount of USDC to deposit">
             <button class="btn" id="b-deposit">Deposit</button>
           </div>
-          <p class="muted" style="margin-top:10px">Two transactions: an approval, then the deposit. Once it is in,
-            the only thing that can move it is a signature from your key — including for you.</p>
+          <p class="muted" style="margin-top:10px">Approve, then deposit. After that, only a signature from your key can move it — yours included.</p>
         </div>
         <div id="p5"></div>
       </div>
@@ -419,15 +409,14 @@
     <div id="lock-auth" class="card empty" hidden>
       <div class="glyph">&#9679;</div>
       <h2>Create a key first</h2>
-      <p>An authorization is signed by your key, so the key comes first.</p>
+      <p>Authorizations are signed by your key. Make one first.</p>
       <div class="row" style="justify-content:center"><button class="btn" id="b-goto-key2">Go to Key</button></div>
     </div>
 
     <div id="auth-body" hidden>
       <div class="card">
         <h2>Authorize a payment</h2>
-        <p>One signature binds the recipient, the amount and a nonce, and it is checked against Arc mainnet
-          <em>before</em> anything is sent — so a release cannot fail on the signature.</p>
+        <p>One signature binds recipient, amount and nonce. Arc mainnet checks it <em>before</em> anything is sent, so a release cannot fail on the signature.</p>
         <div class="grid2" style="margin-top:16px">
           <div><label for="to-in">Recipient</label>
             <input type="text" id="to-in" spellcheck="false" autocomplete="off" placeholder="0x…" inputmode="text"></div>
@@ -460,8 +449,7 @@
         </div>
         <span id="d-json" hidden></span>
         <p class="muted" style="margin-top:12px" id="relay-note">
-          The signature is portable: anyone can send the release and pay the gas, and it still only moves this
-          amount, to this recipient, once.
+          Portable: anyone can send the release and pay the gas, and it still moves this amount, to this recipient, once.
         </p>
       </div>
 
@@ -471,8 +459,7 @@
           <label for="vault-in">Vault address</label>
           <input type="text" id="vault-in" spellcheck="false" autocomplete="off" placeholder="0x…">
         </div>
-        <p class="muted" style="margin-top:10px">Usually filled in from the Vault tab. The digest binds this address, so a
-          signature made for one vault is worthless in any other.</p>
+        <p class="muted" style="margin-top:10px">Usually filled from the Vault tab. The digest binds this address, so a signature for one vault is worthless in another.</p>
       </details>
     </div>
 
@@ -482,8 +469,7 @@
       <div class="between">
         <div>
           <h2 style="margin:0">Check an authorization you were handed</h2>
-          <p class="muted" style="margin-top:5px">Read-only. No key, no wallet, no gas — for whoever is
-            being paid, or whoever is asked to relay it.</p>
+          <p class="muted" style="margin-top:5px">Read-only. No key, no wallet, no gas — for whoever gets paid, or relays it.</p>
         </div>
         <span class="chip" id="v-chip">nothing loaded</span>
       </div>
@@ -497,8 +483,7 @@
         <button class="btn ghost" id="b-bundle-file">Open a file…</button>
         <button class="btn ghost" id="b-bundle-send" disabled>Send it and pay the gas</button>
       </div>
-      <p class="muted" style="margin-top:12px">Checking costs nothing and asks for nothing. Sending needs a
-        gas account from the Vault tab — and anyone can send a valid authorization, which is the point of it.</p>
+      <p class="muted" style="margin-top:12px">Checking is free. Sending needs a gas account from the Vault tab — and anyone can send a valid authorization.</p>
       <input type="file" id="bundle-file" accept="application/json,.json" hidden>
       <div id="p7"></div>
     </div>
@@ -508,8 +493,8 @@
   <section id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" hidden>
     <div class="card">
       <h2>Activity</h2>
-      <p>Everything below is read from Arc mainnet, not from a local log. If it is not here, it did not happen.</p>
-      <div id="activity" style="margin-top:18px"><p class="muted">Nothing yet. Prove your key on the Key tab to make the first entry.</p></div>
+      <p>Read from Arc mainnet, not a local log. If it is not here, it did not happen.</p>
+      <div id="activity" style="margin-top:18px"><p class="muted">Nothing yet. Prove your key on the Key tab.</p></div>
     </div>
     <div class="card">
       <h3 style="margin-top:0">Checks</h3>
@@ -519,12 +504,14 @@
 
   <footer class="foot">
     <p style="margin-top:0">
-      <strong style="color:#fff">Status &amp; limits.</strong> Vaults are not deployed on Arc mainnet yet — see the
-      repository's <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status section</a>.
-      The contracts are unaudited. USDC on Arc still honours Circle's denylist, so a key that survives quantum computers
-      does not protect you from a freeze. Only the release path is post-quantum; a deposit is an ordinary ERC-20 transfer.
-      Lose your 24 words and the money is unspendable by anyone, permanently.
+      <strong style="color:#fff">Status.</strong> Vaults are not deployed on Arc mainnet yet — the repository's <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> is the source of truth.
     </p>
+    <ul class="plain">
+      <li><strong>Unaudited.</strong> New code, and a test suite is not a review.</li>
+      <li><strong>Release only.</strong> A deposit is an ordinary ERC-20 transfer.</li>
+      <li><strong>Circle's denylist still applies.</strong> No key stops a freeze.</li>
+      <li><strong>No recovery.</strong> Lose your 24 words and the money is gone, permanently.</li>
+    </ul>
     <p>
       <a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">Source</a> ·
       <a href="/docs/">Documentation</a> ·
@@ -799,8 +786,8 @@ function renderKey() {
   $('vault-live').hidden = !hasKey || !CONFIG.factory;
   $('auth-body').hidden = !hasKey;
   $('subline').innerHTML = hasKey
-    ? 'Your key is unlocked in this tab. Prove it on Arc mainnet, then use it to authorize a payment.'
-    : 'Back up 24 words. They derive an <span class="hi">SLH-DSA</span> key in this tab that a quantum computer cannot forge. Start by creating one — it costs nothing, and Arc mainnet will check it for free.';
+    ? 'Key unlocked in this tab only. Prove it, then authorize a payment.'
+    : '24 words make an <span class="hi">SLH-DSA</span> key in this tab. Free to create, free for Arc mainnet to verify.';
   $('eyebrow').textContent = hasKey ? 'Key unlocked · in this tab only' : 'Post-quantum authorization · Arc mainnet';
 }
 
@@ -900,7 +887,7 @@ $('b-unlock').onclick = async () => {
   if (want && !same) {
     state.mnemonic = ''; state.vk = ''; state.fingerprint = want.fp;
     renderKey(); renderProof(); renderAuth();
-    say($('p3u'), 'Those words open a different key than the one this browser remembers. Nothing was unlocked.', 'bad');
+    say($('p3u'), 'Those words open a different key than this browser remembers. Nothing was unlocked.', 'bad');
     return;
   }
   remember();
@@ -1016,10 +1003,10 @@ function paintAccount() {
       $('b-create').disabled = !canCreate();
       painter();
       $('a-note').innerHTML = gas === 0n
-        ? 'This account has no gas. Send a couple of dollars of USDC on Arc to the address above — that pays for the one transaction that creates your vault. It can never move your vault&rsquo;s USDC.'
+        ? 'No gas. Send a couple of dollars of USDC on Arc to the address above — it pays for the one transaction that creates your vault, and can never move your vault&rsquo;s USDC.'
         : (state.mode === 'demo'
-          ? 'A key this page generated, kept in this browser alone. Use it for gas, nothing more — clearing this browser&rsquo;s data loses the key for good.'
-          : 'Connected wallet. It pays gas and owns the vault; it can never move the vault&rsquo;s USDC.');
+          ? 'A key this page made, kept in this browser alone. Use it for gas, nothing more — clearing browser data loses it.'
+          : 'Connected wallet. Pays gas, owns the vault — and can never move its USDC.');
       renderVerify();
     } catch (err) { say($('p4'), esc(humanError(err)), 'bad'); }
   })();
@@ -1092,7 +1079,7 @@ async function paintVault() {
    * letting a red chip carry the whole warning. */
   $('a-foreign').hidden = mine;
   $('a-foreign').innerHTML = mine ? '' :
-    'This vault answers to a different key. Deposits into it are ordinary transfers, and the only thing that can move them out is a signature from that other key — not yours.';
+    'This vault answers to a different key. Only that other key can move what you deposit here — not yours.';
   $('dep-wrap').hidden = false;
   $('b-create').disabled = !canCreate();
   try {
@@ -1249,7 +1236,7 @@ $('b-sign').onclick = async () => {
       agree = same ? '<span class="good">yes — identical to the vault&rsquo;s own hash</span>' : `<span class="bad">no — the vault says ${onchain}</span>`;
       if (!same) throw new Error('digest mismatch');
     } catch (err) {
-      if (/mismatch/.test(err.message)) throw new Error('The vault computes a different digest. Stopping rather than signing something wrong.');
+      if (/mismatch/.test(err.message)) throw new Error('The vault computes a different digest. Signing stopped.');
       agree = 'vault not readable — the digest above is computed locally';
     }
     const t0 = performance.now();
@@ -1386,21 +1373,21 @@ async function checkBundle(raw) {
   let b = null;
   try { b = JSON.parse(raw); } catch { /* the shape check below says so in words a person can use */ }
   if (!b || typeof b !== 'object' || Array.isArray(b)) {
-    say(node, 'That is not an authorization file. Paste the whole thing, braces and all.', 'bad');
+    say(node, 'That is not an authorization file. Paste the whole thing.', 'bad');
     return;
   }
   const missing = BUNDLE_NEEDS.filter((k) => typeof b[k] !== 'string' || !b[k].trim());
   if (missing.length) {
-    say(node, `This file has no <code>${missing.join('</code>, no <code>')}</code>. An authorization carries all four, so this is something else.`, 'bad');
+    say(node, `This file has no <code>${missing.join('</code>, no <code>')}</code>. An authorization carries all four.`, 'bad');
     return;
   }
   if (!V.isAddress(b.vault)) { say(node, 'The vault address in this file is not an address.', 'bad'); return; }
   if (!isHex(b.verifyingKey, 64)) {
-    say(node, 'The verifying key in this file is not the 32-byte key an SLH-DSA-128s vault holds.', 'bad');
+    say(node, 'That verifying key is not the 32-byte key an SLH-DSA-128s vault holds.', 'bad');
     return;
   }
   if (!/^0x[0-9a-f]*$/i.test(b.signature) || bytes(b.signature) !== PQ_SIG_BYTES) {
-    say(node, `The signature in this file is ${bytes(b.signature).toLocaleString()} bytes. Every SLH-DSA-128s signature is exactly ${PQ_SIG_BYTES.toLocaleString()}, so this file is malformed.`, 'bad');
+    say(node, `${bytes(b.signature).toLocaleString()} bytes of signature — every SLH-DSA-128s signature is exactly ${PQ_SIG_BYTES.toLocaleString()}, so this file is malformed.`, 'bad');
     return;
   }
   /* The selector decides whether this is a release at all; only then is the body taken apart, with
@@ -1414,7 +1401,7 @@ async function checkBundle(raw) {
   try {
     [to, amount, nonce, inCalldata] = V.decodeAbiParameters(RELEASE_TYPES, `0x${String(b.calldata).slice(10)}`);
   } catch {
-    say(node, 'That calldata starts like a release but its arguments do not decode. The file has been damaged, or edited by something that did not understand it.', 'bad');
+    say(node, 'That calldata starts like a release but does not decode. The file has been damaged or edited.', 'bad');
     return;
   }
   if (!V.isAddress(to)) { say(node, 'The recipient inside that calldata is not an address.', 'bad'); return; }
@@ -1483,11 +1470,11 @@ async function checkBundle(raw) {
 
     const head = failed.length
       ? (spentOnly
-        ? ['&#8226;', 'Already spent', `Nonce ${nonce} is used on chain, so the vault would refuse this a second time. Everything else about the file agrees.`]
-        : ['&#10005;', 'Do not relay this', `${failed[0].label}. The vault would refuse it, and whoever sends it pays the gas either way.`])
+        ? ['&#8226;', 'Already spent', `Nonce ${nonce} is used on chain, so the vault would refuse it again. The rest of the file agrees.`]
+        : ['&#10005;', 'Do not relay this', `${failed[0].label}. The vault would refuse it — and the sender pays the gas anyway.`])
       : (unknown.length
-        ? ['?', 'Nothing in this file contradicts itself', `Arc answered what it could. ${unknown.length === 1 ? 'One line' : unknown.length + ' lines'} below could not be checked today — read ${unknown.length === 1 ? 'it' : 'them'} before anyone pays gas.`]
-        : ['&#10003;', 'Ready to relay', `Arc mainnet accepted the signature, the vault holds this key, and nonce ${nonce} is unspent. Whoever sends it pays only gas; ${V.formatUnits(amount, 6)} USDC then goes to ${hex(to, 6)}.`]);
+        ? ['?', 'Nothing in this file contradicts itself', `Arc answered what it could. ${unknown.length === 1 ? 'One line' : unknown.length + ' lines'} below could not be checked — read ${unknown.length === 1 ? 'it' : 'them'} before paying gas.`]
+        : ['&#10003;', 'Ready to relay', `Arc mainnet accepted the signature, the vault holds this key, and nonce ${nonce} is unspent. ${V.formatUnits(amount, 6)} USDC goes to ${hex(to, 6)}. Whoever sends it pays only gas.`]);
 
     node.innerHTML = `
       <div class="verdict ${kind === 'no' ? 'no' : kind === 'ok' ? 'ok' : ''}" style="margin-top:16px">
@@ -1509,8 +1496,8 @@ async function checkBundle(raw) {
       <span id="vb-vault" hidden>${b.vault}</span>
       <span id="vb-digest" hidden>${digest}</span>
       <span id="vb-calldata" hidden>${b.calldata}</span>
-      ${vaultKey === null ? `<p class="note">Nothing is deployed at the vault address in this file, so the key in it cannot be tied to a vault yet. The day one exists, that line reads the vault&rsquo;s own copy of the key and settles it.</p>` : ''}
-      ${vmErr ? `<p class="note warn">Arc&rsquo;s verifier could not be reached (${esc(humanError(vmErr))}). The vault checks the signature itself, so this can still succeed — but whoever sends it is paying to find out.</p>` : ''}`;
+      ${vaultKey === null ? `<p class="note">Nothing is deployed at that vault address yet, so the key in this file cannot be tied to a vault. Once one exists, that line settles it.</p>` : ''}
+      ${vmErr ? `<p class="note warn">Arc&rsquo;s verifier did not answer (${esc(humanError(vmErr))}). The vault checks the signature itself, so this can still succeed — but the sender is paying to find out.</p>` : ''}`;
     renderVerify();
     toast(failed.length ? 'Not sendable' : 'Checked against Arc mainnet', failed.length ? 'bad' : '');
   } catch (err) {
@@ -1565,7 +1552,7 @@ $('b-bundle-send').onclick = async () => {
 function markActivity() {
   const node = $('activity');
   if (!state.proof) {
-    node.innerHTML = '<p class="muted">Nothing yet. Prove your key on the Key tab to make the first entry.</p>';
+    node.innerHTML = '<p class="muted">Nothing yet. Prove your key on the Key tab.</p>';
     return;
   }
   const p = state.proof;
@@ -1588,8 +1575,7 @@ function renderSelfcheck() {
   $('selfcheck').innerHTML = `<div class="hist">${rows.map(([label, ok]) => `<div class="histrow">
       <span class="kind ${ok ? 'good' : ''}">${ok ? 'ready' : 'waiting'}</span>
       <b style="grid-column:2 / -1">${label}</b></div>`).join('')}</div>
-    <p class="muted" style="margin-top:12px">This is the app checking itself, not the chain. Everything else on this
-      page is read from Arc mainnet.</p>`;
+    <p class="muted" style="margin-top:12px">The app checking itself. Every other number here is read from Arc mainnet.</p>`;
 }
 
 /* -------------------------------------------------------------- network */

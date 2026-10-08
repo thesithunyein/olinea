@@ -59,9 +59,9 @@
     margin: clamp(40px, 7vh, 68px) 0 14px; padding-top: 26px; border-top: 1px solid #14171d;
   }
   article h3 { font-size: 15.5px; font-weight: 600; margin: 26px 0 8px; letter-spacing: .01em; }
-  article p { color: var(--body); font-size: 15.5px; line-height: 1.72; margin: 0 0 16px; max-width: 72ch; }
+  article p { color: var(--body); font-size: 15.5px; line-height: 1.72; margin: 0 0 16px; max-width: 68ch; }
   article > p.lede { font-size: clamp(16.5px, 1.7vw, 19px); color: #c3cbd8; line-height: 1.65; }
-  article ul, article ol.plain { color: var(--body); font-size: 15.5px; line-height: 1.72; padding-left: 22px; margin: 0 0 16px; max-width: 72ch; }
+  article ul, article ol.plain { color: var(--body); font-size: 15.5px; line-height: 1.72; padding-left: 22px; margin: 0 0 16px; max-width: 68ch; }
   article li { margin: 8px 0; }
   a.text { color: #6ee7b7; text-decoration: none; }
   a.text:hover { text-decoration: underline; }
@@ -156,13 +156,9 @@
 
     <h2 id="overview">Overview</h2>
     <p>
-      The vault holds USDC through the ERC-20 interface at
-      <code>0x3600000000000000000000000000000000000000</code> and releases it only when a
-      32-byte hash-based verifying key fixed at deployment authorizes the transfer. The verifying
-      key is not an elliptic-curve key, so a quantum computer that breaks ECDSA cannot forge a
-      release.
+      The vault holds USDC through the ERC-20 interface at <code>0x3600000000000000000000000000000000000000</code> and releases it only for a 32-byte hash-based key fixed at deployment. That key is not an elliptic-curve key: breaking ECDSA does not forge a release.
     </p>
-    <p>Two details are load-bearing, and both are easy to get wrong:</p>
+    <p>Two details carry the design:</p>
     <ol class="plain">
       <li>
         <strong>The precompile returns <code>false</code> for a forged signature without
@@ -170,23 +166,17 @@
         <em>every</em> forgery. See <a class="text" href="#security">Security model</a>.
       </li>
       <li>
-        <strong>The signed message binds everything.</strong> The key signs exactly
-        <code>keccak256(abi.encode(chainId, vault, to, amount, nonce))</code>, so an authorization
-        cannot be replayed on another chain, in another vault, for another recipient or amount, or
-        twice in the same vault. See <a class="text" href="#digest">Authorization digest</a>.
+        The key signs exactly <code>keccak256(abi.encode(chainId, vault, to, amount, nonce))</code>, so an authorization cannot be replayed on another chain, in another vault, for another recipient or amount, or twice in the same vault. See <a class="text" href="#digest">Authorization digest</a>.
       </li>
     </ol>
 
     <figure class="diagram">
       <img src="/docs/architecture.svg" width="1200" height="700"
            alt="The browser derives an SLH-DSA key from 24 words in a Web Worker and signs a 32-byte digest that binds the chain id, the vault, the recipient, the amount and a nonce. The signature is relayed to an OlineaVault on Arc, which asks the post-quantum precompile for a boolean and only then transfers USDC.">
-      <figcaption>
-        Everything left of the dashed line runs on the user's machine, in a browser, with no account
-        and no server. The digest in the middle is the whole authorization: change any one of its five
-        fields and the signature is worthless somewhere else. The vault makes one extra call that a
-        careless implementation would skip — it asks the precompile and requires the answer to be
-        <code>true</code>, because a forged signature comes back as a <em>successful</em> call.
-        <a class="text" href="/docs/architecture.svg">Open the diagram full size</a>.
+      <figcaption>        Left of the dashed line is your machine — no account, no server. The digest is the whole
+        authorization: change any one of its five fields and the signature is worthless elsewhere. The
+        vault asks the precompile and requires <code>true</code> before it moves anything.
+        <a class="text" href="/docs/architecture.svg">Full size</a>
       </figcaption>
     </figure>
 
@@ -195,10 +185,10 @@
       <table class="data">
         <thead><tr><th>Component</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td>PQ precompile ABI</td><td>Mapped from Circle's public <code>arc-node</code> source and verified against Arc mainnet — real signature <code>true</code>; tampered signature, wrong key and mismatched message all <code>false</code></td></tr>
+          <tr><td>PQ precompile ABI</td><td>Mapped from Circle's public <code>arc-node</code> source, then verified against Arc mainnet: real signature <code>true</code>; tampered signature, wrong key and wrong message all <code>false</code></td></tr>
           <tr><td>OlineaVault.sol</td><td>17 Foundry tests green; its exact authorization digest verified against the live mainnet precompile (3/3)</td></tr>
           <tr><td>OlineaFactory.sol</td><td>10 Foundry tests green; one transaction per vault, no owner and nothing to administer</td></tr>
-          <tr><td>Vault console</td><td>Runs against Arc mainnet — key derivation, the precompile proof and every read are live; the create, deposit and release path is verified end to end on a local chain</td></tr>
+          <tr><td>Vault console</td><td>Live against Arc mainnet — key derivation, the precompile proof and every read; the create, deposit and release path is verified end to end on a local chain</td></tr>
           <tr><td>Arc mainnet deployment</td><td>Not yet deployed — <a class="text" href="#deploy">runbook</a></td></tr>
           <tr><td>Independent audit</td><td class="no">None</td></tr>
         </tbody>
@@ -207,28 +197,18 @@
 
     <h2 id="quickstart">Quickstart</h2>
     <p>
-      Everything that touches the real precompile costs nothing and needs no wallet: verification is
-      a read call, so you can check the vault's authorization path against Arc mainnet before you
-      deploy anything.
+      Verifying is a read call — free, no wallet. You can check the whole authorization path against Arc mainnet before deploying anything.
     </p>
     <h3>From the browser</h3>
-    <p>
-      <a class="text" href="/app/">The vault console</a> is the same path without a terminal: it
-      generates a 24-word backup, derives the SLH-DSA key from it in this browser, proves the key
-      against Arc mainnet's precompile for free, creates a vault through the factory, funds it, and
-      checks each authorization on-chain <em>before</em> sending the release. Nothing is uploaded and
-      there is no account to make — which matters, because Arc's own console and faucet are
-      unreachable from some jurisdictions.
+    <p>      <a class="text" href="/app/">The vault console</a> does the same without a terminal: 24 words
+      become an SLH-DSA key in the browser, the key is proven free against Arc's precompile, and every
+      release is checked on-chain <em>before</em> it is sent. Nothing is uploaded.
     </p>
     <div class="note">
       <p>
-        <strong>The console has one rule the CLI does not.</strong> Its 24 words are fed through
-        PBKDF2 and then HKDF with the salt <code>olinea/slh-dsa/v1</code> and the info
-        <code>vault/&lt;index&gt;</code> to produce the 48-byte seed that
-        <code>slh_dsa_sha2_128s.keygen</code> takes. noble describes that deterministic keygen as a
-        library hook, not a FIPS 205 derivation, so the noble version is pinned and the salt is
-        versioned: <strong>a backup made under a later salt will not open a vault made under this
-        one</strong>. Changing an index gives a different, unrelated vault from the same backup.
+        <strong>The console has one rule the CLI does not.</strong> Its 24 words go through PBKDF2 then HKDF — salt <code>olinea/slh-dsa/v1</code>, info <code>vault/&lt;index&gt;</code> — to make the 48-byte seed <code>slh_dsa_sha2_128s.keygen</code> takes. </p>
+      <p>
+        noble calls that keygen a library hook, not a FIPS 205 derivation. So the version is pinned and the salt is versioned: <strong>a backup made under a later salt will not open a vault made under this one.</strong> A different index gives an unrelated vault from the same backup.
       </p>
     </div>
 <pre><code><span class="cmt"># the vault and its test suite</span>
@@ -241,9 +221,7 @@ node pq.mjs keygen                            <span class="cmt"># SLH-DSA keypai
 node pq.mjs conformance                       <span class="cmt"># real mainnet precompile, no wallet</span></code></pre>
     <div class="note">
       <p>
-        <strong>Keep the key.</strong> <code>keygen</code> writes the secret key to
-        <code>scripts/keys/pq-key.json</code>, which is gitignored. Lose it and any funds in a vault
-        built on it are unrecoverable — there is no admin escape hatch.
+        <strong>Keep the key.</strong> <code>keygen</code> writes it to <code>scripts/keys/pq-key.json</code> (gitignored). Lose it and the funds in that vault are unrecoverable — there is no admin escape hatch.
       </p>
     </div>
 
@@ -259,8 +237,7 @@ node pq.mjs conformance                       <span class="cmt"># real mainnet p
 <span class="cmt">// verifyingKey_  32-byte SLH-DSA-SHA2-128s verifying key; any other length reverts</span>
 <span class="cmt">// verifier_      address(0) -&gt; the canonical Arc precompile 0x1800..0004</span></code></pre>
     <p>
-      <code>verifier_</code> is an override that exists only so the test suite can inject a fake
-      verifier. Production deployments pass <code>address(0)</code>.
+      <code>verifier_</code> exists only so tests can inject a fake verifier. Production passes <code>address(0)</code>.
     </p>
 
     <h3>Read</h3>
@@ -284,7 +261,7 @@ node pq.mjs conformance                       <span class="cmt"># real mainnet p
         <thead><tr><th>Function</th><th>Effect</th></tr></thead>
         <tbody>
           <tr><td><code>deposit(uint256 amount)</code></td><td>Pulls USDC from the caller. Open to anyone; a deposit grants no rights over the balance</td></tr>
-          <tr><td><code>release(address to, uint256 amount, uint256 nonce, bytes signature)</code></td><td>Transfers USDC when the signature is a valid authorization. Anyone may relay; the relayer gains nothing</td></tr>
+          <tr><td><code>release(address to, uint256 amount, uint256 nonce, bytes signature)</code></td><td>Transfers USDC for a valid authorization. Anyone may relay; the relayer gains nothing</td></tr>
         </tbody>
       </table>
     </div>
@@ -314,14 +291,10 @@ error TransferFailed();</code></pre>
     <p>The signing key never touches the chain. It signs one 32-byte digest per release:</p>
 <pre><code>digest = keccak256(abi.encode(block.chainid, address(vault), to, amount, nonce))</code></pre>
     <p>
-      Because all five values are inside the digest, a signature is valid for exactly one release:
-      moving it to another chain changes <code>chainid</code>, moving it to another vault changes
-      the vault address, and replaying it in the same vault fails on the consumed nonce. Nonces are
-      per-vault and need not be sequential — they only have to be unique.
+      All five values are inside the digest, so a signature is valid for exactly one release: another chain changes <code>chainid</code>, another vault changes the address, and a replay in the same vault fails on the consumed nonce. Nonces are per-vault and need not be sequential — only unique.
     </p>
     <p>
-      The digest is passed to the precompile as the message with no additional hashing by the
-      caller: the vault passes <code>abi.encodePacked(digest)</code>, 32 bytes.
+      The digest is the message, with no extra hashing by the caller: the vault passes <code>abi.encodePacked(digest)</code>, 32 bytes.
     </p>
 
     <h2 id="precompile">PQ precompile reference</h2>
@@ -341,10 +314,7 @@ error TransferFailed();</code></pre>
 
     <h3>When it reverts</h3>
     <p>
-      Only malformed input reverts: <code>Input too short</code>, <code>Invalid selector</code>,
-      <code>Invalid verifying key length</code>, <code>Invalid signature length</code>. A
-      cryptographically invalid signature is a <em>value</em>, not an exception, and that asymmetry
-      is the entire footgun.
+      Only malformed input reverts: <code>Input too short</code>, <code>Invalid selector</code>, <code>Invalid verifying key length</code>, <code>Invalid signature length</code>. An invalid signature is a <em>value</em>, not an exception — that asymmetry is the whole footgun.
     </p>
 
     <h3>Calling it correctly</h3>
@@ -356,18 +326,11 @@ require(ok, "verify failed");
 (bool ok, bytes memory ret) = PQ.staticcall(data);
 require(ok &amp;&amp; ret.length == 32 &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</code></pre>
     <p>
-      The precompile lives in Arc's execution layer rather than in upstream EVM, so calling it in a
-      local test suite requires Arc Foundry (<code>arc-anvil --network arc</code>), whose prebuilt
-      binaries currently cover Linux and macOS (Apple Silicon) only. Olinea's suite therefore injects
-      the verifier and proves the real precompile against mainnet instead.
+      The precompile is in Arc's execution layer, not upstream EVM, so a local test suite needs Arc Foundry (<code>arc-anvil --network arc</code>) — prebuilt for Linux and macOS (Apple Silicon) only. Olinea's suite injects the verifier and proves the real precompile against mainnet instead.
     </p>
     <div class="note">
       <p>
-        <strong>Units on Arc.</strong> USDC is exposed twice on one balance: natively with 18
-        decimals for gas, and through the ERC-20 interface at
-        <code>0x3600000000000000000000000000000000000000</code> with 6 decimals for transfers.
-        Mixing them is a 10<sup>12</sup> error. Olinea only ever uses the 6-decimal view; gas is
-        <code>2 × 10⁻⁸</code> USDC per gas unit.
+        <strong>Units on Arc.</strong> USDC appears twice on one balance: natively with 18 decimals for gas, and as ERC-20 at <code>0x3600000000000000000000000000000000000000</code> with 6 for transfers. Mixing them is a 10<sup>12</sup> error. Olinea only uses the 6-decimal view; gas is <code>2 × 10⁻⁸</code> USDC per unit.
       </p>
     </div>
 
@@ -380,25 +343,23 @@ node pq.mjs conformance [--vault 0x..]</code></pre>
         <thead><tr><th>Command</th><th>What it does</th></tr></thead>
         <tbody>
           <tr><td><code>keygen</code></td><td>Generates an SLH-DSA-SHA2-128s keypair and writes it to <code>scripts/keys/pq-key.json</code></td></tr>
-          <tr><td><code>authorize</code></td><td>Prints the digest and the signature for one release, plus a ready-to-run <code>cast send</code> line. <code>--check</code> verifies the signature against the live mainnet precompile</td></tr>
-          <tr><td><code>conformance</code></td><td>Runs three cases — valid digest, tampered signature, different digest — against the real precompile. Exits non-zero on any failure, so it works as a pre-deploy gate</td></tr>
+          <tr><td><code>authorize</code></td><td>Prints the digest, the signature for one release and a ready-to-run <code>cast send</code> line. <code>--check</code> verifies it against the live mainnet precompile</td></tr>
+          <tr><td><code>conformance</code></td><td>Runs three cases — valid digest, tampered signature, different digest — against the real precompile, and exits non-zero on failure, so it works as a pre-deploy gate</td></tr>
         </tbody>
       </table>
     </div>
     <p>
-      Set <code>ARC_RPC</code> to point at a different Arc endpoint; the default is
-      <code>https://rpc.drpc.mainnet.arc.io</code>, since Arc's own RPC hosts are not reachable from
-      every jurisdiction.
+      Set <code>ARC_RPC</code> for a different endpoint. The default is <code>https://rpc.drpc.mainnet.arc.io</code>, because Arc's own RPC hosts are not reachable from every jurisdiction.
     </p>
 
     <h2 id="security">Security model</h2>
     <p>What the contract guarantees:</p>
     <ul>
-      <li><strong>One key, nothing else.</strong> No owner, no admin, no pause, no upgrade, no delegate. There is no code path that moves USDC except a valid post-quantum authorization.</li>
+      <li><strong>One key, nothing else.</strong> No owner, no admin, no pause, no upgrade, no delegate. Nothing moves USDC except a valid post-quantum authorization.</li>
       <li><strong>Listed in the digest.</strong> Chain id, vault address, recipient, amount and nonce are all signed, so an authorization is bound to a single release.</li>
       <li><strong>Nonces are consumed before the transfer</strong>, so a valid authorization cannot be replayed even by re-entering the same transaction.</li>
       <li><strong>Verification is on-chain.</strong> No oracle, no committee, no off-chain signer and no trusted relayer: the relayer pays gas and gets nothing.</li>
-      <li><strong>A forgery is not a revert.</strong> The vault decodes the returned boolean, and the test suite includes <code>NaiveVault.sol</code> — the same vault with the "call succeeded" bug — to prove it drains on a forgery while <code>OlineaVault</code> does not.</li>
+      <li><strong>A forgery is not a revert.</strong> The vault decodes the returned boolean. The suite includes <code>NaiveVault.sol</code> — the same vault with the "call succeeded" bug — to prove it drains on a forgery while <code>OlineaVault</code> does not.</li>
     </ul>
     <p>What it does not do:</p>
     <ul>
@@ -409,21 +370,19 @@ node pq.mjs conformance [--vault 0x..]</code></pre>
 
     <h2 id="limits">Limitations</h2>
     <div class="note warn">
-      <p><strong>Unaudited.</strong> The contracts are new code. The test suite and mainnet evidence are the assurance available today, and that is not a substitute for review. Do not put amounts you cannot lose into an unaudited vault.</p>
+      <p><strong>Unaudited.</strong> The contracts are new code. A test suite and mainnet evidence are not a substitute for review. Do not put amounts you cannot lose into an unaudited vault.</p>
     </div>
     <ul>
-      <li><strong>No recovery.</strong> Lose the post-quantum key and the funds are unrecoverable by design. That is the property, not an oversight — it is also why there is nothing for an attacker to phish.</li>
-      <li><strong>Circle's denylist still applies.</strong> A forged SLH-DSA signature cannot move funds, but the USDC token itself can still block transfers. Post-quantum authorization is not denylist resistance.</li>
-      <li><strong>Verification is not free.</strong> 382,879 gas per release, ≈ $0.0077 at Arc's 20 Gwei base fee — small, but roughly 1,300× a plain USDC transfer on the same chain.</li>
-      <li><strong>Signatures are large.</strong> 7,856 bytes posted as calldata per release. That is the price of hash-based signatures; it is not compressible.</li>
-      <li><strong>Signing is slow by design.</strong> SLH-DSA-SHA2-128s is tuned for small keys and conservative assumptions rather than speed — expect seconds, not milliseconds, per signature.</li>
+      <li><strong>No recovery.</strong> Lose the key and the funds are unrecoverable by design — the property, not an oversight, and why there is nothing to phish.</li>
+      <li><strong>Circle's denylist still applies.</strong> A forged signature cannot move funds, but the USDC token can still block transfers. This is not denylist resistance.</li>
+      <li><strong>Verification is not free.</strong> 382,879 gas per release, ≈ $0.0077 at Arc's 20 Gwei base fee — about 1,300× a plain transfer.</li>
+      <li><strong>Signatures are large.</strong> 7,856 bytes of calldata per release, not compressible. That is the price of hash-based signatures.</li>
+      <li><strong>Signing is slow by design.</strong> Seconds per signature, not milliseconds — SLH-DSA-SHA2-128s trades speed for small keys and conservative assumptions.</li>
     </ul>
 
     <h2 id="deploy">Deploying a vault</h2>
     <p>
-      Deploying is a one-shot sequence, and step 1 is free: generate the key and check its digest
-      against the live precompile <em>before</em> anything is on chain. You need a funded Arc account
-      for steps 2 onwards — gas is paid in USDC.
+      Step 1 is free: generate the key and check its digest against the live precompile <em>before</em> anything is on chain. Steps 2 onwards need a funded Arc account — gas is paid in USDC.
     </p>
 <pre><code>export ARC_RPC=https://rpc.drpc.mainnet.arc.io
 export ARC_PRIVATE_KEY=0x..                    <span class="cmt"># a few USDC for gas</span>
@@ -448,8 +407,7 @@ node ../scripts/pq.mjs authorize --vault $VAULT --to $RECIPIENT --amount 250000 
 cast call $VAULT "balance()(uint256)" --rpc-url $ARC_RPC</code></pre>
     <div class="note">
       <p>
-        The verifying key is immutable. Deploy a new vault to change keys, and treat the deployed
-        key as the whole security boundary from the moment the first USDC lands.
+        The verifying key is immutable — to change keys, deploy a new vault. Treat the deployed key as the whole security boundary from the first USDC that lands.
       </p>
     </div>
   </article>

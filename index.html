@@ -120,7 +120,7 @@
   code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
   main { padding: 0 var(--pad-x); }
   .section {
-    max-width: 920px; margin: 0 auto; padding: clamp(48px, 9vh, 96px) 0;
+    max-width: 920px; margin: 0 auto; padding: clamp(40px, 7vh, 76px) 0;
     border-top: 1px solid #14171d;
   }
   .section h2 { font-size: clamp(22px, 2.6vw, 32px); font-weight: 600; letter-spacing: -0.015em; margin: 0 0 14px; }
@@ -283,26 +283,25 @@
     <p class="eyebrow">Post-quantum authorization · Arc mainnet</p>
     <h2>USDC that answers to a hash-based key, and nothing else</h2>
     <p class="lede">
-      Olinea holds USDC on Arc and releases it only when an <strong>SLH-DSA-SHA2-128s</strong>
-      signature — FIPS 205, hash-based, not elliptic-curve — verifies on-chain through Arc's
-      post-quantum precompile. No owner, no admin key, no pause, no upgrade path.
+      Olinea holds USDC on Arc and releases it only for an <strong>SLH-DSA</strong> signature that Arc's
+      own precompile verifies on-chain. No owner, no admin, no pause, no upgrade.
     </p>
     <div class="grid two">
       <div class="card">
-        <h3>Quantum-resistant by construction</h3>
-        <p>The releasing key is 32 bytes of hash-based public material. A quantum computer that breaks ECDSA still cannot forge a release.</p>
+        <h3>Hash-based, not elliptic-curve</h3>
+        <p>32 bytes of public key. Breaking ECDSA does not forge a release.</p>
       </div>
       <div class="card">
-        <h3>Verified on-chain</h3>
-        <p>The signature is checked inside the transaction by Arc's precompile. No oracle, no committee, no off-chain signer to trust.</p>
+        <h3>Checked on-chain</h3>
+        <p>Arc's precompile verifies inside the transaction. No oracle, no signer to trust.</p>
       </div>
       <div class="card">
         <h3>No owner, no admin</h3>
-        <p>Nothing can pause the vault, upgrade it or redirect funds. Deposits are open to anyone and grant no rights over the balance.</p>
+        <p>Nothing can pause, upgrade or redirect it. Depositing grants no rights.</p>
       </div>
       <div class="card">
-        <h3>Replay-proof by construction</h3>
-        <p>Every authorization signs the chain, vault, recipient, amount and nonce together, so it is valid for exactly one release.</p>
+        <h3>One signature, one release</h3>
+        <p>Each authorization binds chain, vault, recipient, amount and nonce together.</p>
       </div>
     </div>
   </section>
@@ -310,23 +309,21 @@
   <section class="section" id="how">
     <h2>How it works</h2>
     <ol class="steps">
-      <li><b>Deploy and deposit.</b> A vault is deployed with a 32-byte hash-based verifying key and holds USDC through Arc's ERC-20 interface. Depositing grants no spending rights.</li>
-      <li><b>Authorize off-chain.</b> The key signs one 32-byte digest that binds the chain, vault, recipient, amount and nonce. The signing key never touches the chain and needs no Arc account.</li>
-      <li><b>Anyone relays the release.</b> The vault asks the precompile, decodes the returned boolean, and only then transfers the USDC. The relayer pays the gas and gains nothing.</li>
+      <li><b>Deposit.</b> A vault is deployed with a 32-byte hash-based key and holds USDC. Anyone can deposit; nobody gains control.</li>
+      <li><b>Sign.</b> Your key signs one 32-byte digest binding chain, vault, recipient, amount and nonce. No Arc account needed.</li>
+      <li><b>Relay.</b> Anyone pays the gas. The vault decodes the boolean the precompile returns, and only then moves the USDC.</li>
     </ol>
-    <p class="lede" style="margin-top:26px">
-      You do not have to take any of that on faith. <a href="/app/" class="text">The vault console</a>
-      generates the key from a 24-word backup in your browser, signs with it, and has Arc mainnet verify the
-      result before a single unit of gas is spent.
+    <p class="lede" style="margin-top:24px">
+      Don't take our word for it. <a href="/app/" class="text">The console</a> builds the key from 24 words
+      in your browser and has Arc mainnet verify a signature — free, no account, no gas.
     </p>
   </section>
 
   <section class="section" id="security">
-    <h2>Security model</h2>
+    <h2>Verified against Arc mainnet</h2>
     <p class="muted">
-      Verified against Arc mainnet rather than a mock: each result below is a real call to the
-      precompile at <code>0x1800…0004</code> with a real keypair. Malformed input reverts, but a
-      forged signature is a value, not an exception.
+      Real calls to the precompile at <code>0x1800…0004</code> with a real keypair. A forged signature
+      is a value, not an exception.
     </p>
 
     <table class="data">
@@ -345,22 +342,21 @@
         <p class="mono">(bytes verifyingKey /*32 B*/, bytes message, bytes signature /*7856 B*/) &rarr; bool</p>
       </div>
       <div class="card">
-        <h3>Cost</h3>
-        <p>382,879 gas &asymp; <b>$0.0077</b> per verification at Arc's pinned 20 Gwei base fee.</p>
+        <h3>382,879 gas</h3>
+        <p>&asymp; <b>$0.0077</b> per release, at Arc's pinned 20 Gwei base fee.</p>
       </div>
       <div class="card">
-        <h3>Signing</h3>
-        <p>Keypair generation and signing run in pure JavaScript — no native crypto, no hardware wallet, no extension.</p>
+        <h3>Pure JavaScript</h3>
+        <p>Keygen and signing need no native crypto, extension or hardware wallet.</p>
       </div>
     </div>
-  </section>
 
-    <h3 class="sub">Read the return value, not the call status</h3>
-    <p class="muted">
-      This is the one integration rule that matters. A cryptographically invalid signature returns
-      <code>false</code> without reverting, so a contract that checks only whether the call succeeded
-      accepts <em>every forgery</em>:
-    </p>
+    <div class="card" style="margin-top:14px">
+      <h3 style="margin-top:0">Read the return value, not the call status</h3>
+      <p class="muted">
+        An invalid signature returns <code>false</code> without reverting. A contract that checks only
+        whether the call succeeded accepts <em>every forgery</em>.
+      </p>
 <pre><span class="bad">// WRONG — true for every forgery</span>
 (bool ok, ) = PRECOMPILE.staticcall(data);
 require(ok, "verify failed");
@@ -368,16 +364,17 @@ require(ok, "verify failed");
 <span class="good">// CORRECT — the signature is a value, not an exception</span>
 (bool ok, bytes memory ret) = PRECOMPILE.staticcall(data);
 require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
+    </div>
   </section>
 
   <section class="section">
     <h2>Limitations</h2>
     <ul class="plain">
-      <li><strong>Unaudited.</strong> The contracts are new code. The test suite and the mainnet evidence above are what assurance exists today, and they are not a substitute for review. Do not put amounts you cannot lose into an unaudited vault.</li>
-      <li><strong>No recovery.</strong> Lose the post-quantum key and the funds are unrecoverable by design — there is no admin escape hatch. That is the property, not an oversight, and it is also why there is nothing for an attacker to phish.</li>
-      <li><strong>Circle's denylist still applies.</strong> A forged SLH-DSA signature cannot move funds, but the USDC token itself can still block transfers. Post-quantum authorization is not denylist resistance.</li>
-      <li><strong>Verification is not free.</strong> 382,879 gas per release — roughly 1,300× a plain USDC transfer on the same chain, though only about $0.008.</li>
-      <li><strong>Signatures are large.</strong> 7,856 bytes of calldata per release, and signing takes seconds rather than milliseconds. That is the price of hash-based signatures.</li>
+      <li><strong>Unaudited.</strong> New code. A test suite is evidence, not a review. Don't deposit what you can't lose.</li>
+      <li><strong>No recovery.</strong> Lose the key and the funds are gone by design — there is no escape hatch.</li>
+      <li><strong>Circle's denylist still applies.</strong> USDC can block transfers. This is not denylist resistance.</li>
+      <li><strong>Verification costs 382,879 gas</strong> — about 1,300&times; a plain transfer, and still $0.008.</li>
+      <li><strong>Signatures are 7,856 bytes.</strong> Signing takes seconds, not milliseconds.</li>
     </ul>
   </section>
 
@@ -387,56 +384,56 @@ require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
     <details class="faq">
       <summary>Is Olinea audited?</summary>
       <div class="answer">
-        <p>No. The contracts are unaudited new code. What exists instead is a 17-test Foundry suite, a fixture that proves the naive implementation <em>fails</em>, and a conformance run against the real mainnet precompile. That is meaningful evidence and it is still not a review — treat the vault accordingly.</p>
+        <p>No. A Foundry suite and a conformance run against the live precompile exist instead of a review — treat the vault accordingly.</p>
       </div>
     </details>
 
     <details class="faq">
       <summary>What happens if I lose the signing key?</summary>
       <div class="answer">
-        <p>The funds are unrecoverable. There is no owner, no recovery address, no pause and no upgrade path — the key fixed at deployment is the only thing that can move USDC out. Back it up the way you would back up a hardware wallet seed, and expect no help if it is gone.</p>
+        <p>The funds are unrecoverable. No owner, no recovery address, no pause, no upgrade path — the key fixed at deployment is the only way out.</p>
       </div>
     </details>
 
     <details class="faq">
       <summary>Does this protect me from quantum computers today?</summary>
       <div class="answer">
-        <p>Not today: no quantum computer can break ECDSA yet. The problem Olinea addresses now is that long-lived keys and recorded transactions are already being collected to be broken later. A 32-byte hash-based key cannot be forged even by a fully compromised hot wallet, so it works as a second authorization factor on a treasury well before it is strictly necessary.</p>
+        <p>Not today: nothing yet breaks ECDSA. The problem is that long-lived keys and recorded transactions are already being collected to be broken later.</p>
       </div>
     </details>
 
     <details class="faq">
       <summary>Why SLH-DSA rather than a lattice scheme?</summary>
       <div class="answer">
-        <p>SLH-DSA (FIPS 205, the standardized SPHINCS+) rests only on hash functions, so it inherits the most conservative assumptions available. The trade is size and speed: a 32-byte public key, a 7,856-byte signature, and seconds to sign. Arc exposes exactly this scheme as a precompile, which makes it the one that can be verified on-chain today.</p>
+        <p>It rests only on hash functions — the most conservative assumption available. The cost is size: a 32-byte key, a 7,856-byte signature, seconds to sign. Arc exposes exactly this scheme on-chain.</p>
       </div>
     </details>
 
     <details class="faq">
       <summary>What does a release cost?</summary>
       <div class="answer">
-        <p>382,879 gas per release. Arc's base fee is pinned at 20 Gwei and gas is paid in USDC, so a release costs about <strong>$0.0077</strong> — roughly 1,300× a plain USDC transfer, and still fractions of a cent.</p>
+        <p>382,879 gas. At Arc's pinned 20 Gwei and gas paid in USDC, about <strong>$0.0077</strong> — roughly 1,300&times; a plain transfer, and still fractions of a cent.</p>
       </div>
     </details>
 
     <details class="faq">
       <summary>Can Olinea freeze or seize my USDC?</summary>
       <div class="answer">
-        <p>Olinea cannot: there is no admin, no pause and no upgrade path, and no code path that moves funds except a valid authorization. Circle can still act on the token itself — USDC carries a denylist, and post-quantum authorization does not change that.</p>
+        <p>No: there is no admin and no code path that moves funds without a valid authorization. Circle can still act on the token itself.</p>
       </div>
     </details>
 
     <details class="faq">
       <summary>Is the precompile interface official, or reverse-engineered?</summary>
       <div class="answer">
-        <p>Both, and that is the point. The interface is documented in Circle's public <code>arc-node</code> source, and every claim on this page was then verified by calling the live precompile on Arc mainnet: a real signature returns <code>true</code>, and a tampered signature, a wrong key and a mismatched message all return <code>false</code>.</p>
+        <p>Documented in Circle's public <code>arc-node</code> source, then verified against the live precompile: a real signature returns <code>true</code>; a tampered signature, a wrong key and a wrong message all return <code>false</code>.</p>
       </div>
     </details>
 
     <details class="faq">
       <summary>Can I use this in my own contract?</summary>
       <div class="answer">
-        <p>Yes. The vault is MIT-licensed and the pieces are separable: the vault, the interfaces, and an <code>authorize</code> command that prints a signature plus a ready-to-run submission. The one rule to carry across is to decode the boolean the precompile returns — an invalid signature succeeds as a call and returns <code>false</code>. The <a class="text" href="/docs/">docs</a> cover the digest, the exact ABI and the failure modes.</p>
+        <p>Yes. MIT-licensed, and the pieces separate cleanly. The one rule to carry across: decode the boolean the precompile returns. The <a class="text" href="/docs/">docs</a> cover the digest, the ABI and the failure modes.</p>
       </div>
     </details>
   </section>

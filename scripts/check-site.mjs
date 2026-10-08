@@ -180,5 +180,19 @@ ok(docs.includes('Not yet deployed'), 'docs are honest about deployment status')
 ok(docs.includes('Unaudited') && docs.includes('None'), 'docs are honest about the audit status');
 ok(docs.includes('href="/app/"'), 'docs point at the app');
 
+console.log('--- copy ---');
+/* Short, scannable lines. This is the one property that quietly rots: a clause gets added, then
+   another, and a page that read well starts to look like a wall of words. 280 characters is about
+   three lines at the widths these pages use. */
+const visible = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style>[\s\S]*?<\/style>/g, '');
+const walls = [];
+for (const [name, html] of [['landing', visible(home)], ['docs', visible(docs)], ['app', visible(app)]]) {
+  for (const m of html.matchAll(/<(p|li|figcaption)\b[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const text = m[2].replace(/<[^>]+>/g, '').replace(/&[a-z]+;|&#\d+;/g, 'x').replace(/\s+/g, ' ').trim();
+    if (text.length > 280) walls.push(`${name} ${text.length}c "${text.slice(0, 48)}…"`);
+  }
+}
+ok(walls.length === 0, `no paragraph reads like a wall of words (over 280c: ${walls.join(' | ') || 'none'})`);
+
 console.log(fails.length ? `\n${fails.length} CHECK(S) FAILED` : '\nALL CHECKS PASSED');
 process.exit(fails.length ? 1 : 0);
