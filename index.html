@@ -124,9 +124,11 @@
     border-top: 1px solid #14171d;
   }
   .section h2 { font-size: clamp(22px, 2.6vw, 32px); font-weight: 600; letter-spacing: -0.015em; margin: 0 0 14px; }
-  .section p.lede { font-size: clamp(16px, 1.6vw, 19px); color: #c3cbd8; max-width: 64ch; margin: 0 0 22px; }
+  .section p.lede { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.62; color: #c3cbd8; max-width: 64ch; margin: 0 0 22px; }
   .muted { color: var(--dim); font-size: 14.5px; max-width: 64ch; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 20px; }
+  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 640px) { .grid.two { grid-template-columns: 1fr; } }
   .card { background: #0d0f14; border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
   .card h3 { margin: 0 0 8px; font-size: 15px; letter-spacing: .01em; }
   .card p { margin: 0; color: var(--dim); font-size: 14.5px; }
@@ -150,6 +152,55 @@
   a.text { color: #6ee7b7; text-decoration: none; }
   a.text:hover { text-decoration: underline; }
 
+  /* ------------------------------------------------------------ product UI */
+
+  .eyebrow {
+    font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim);
+    margin: 0 0 14px; font-weight: 500;
+  }
+  .section h3.sub { font-size: 16.5px; font-weight: 600; margin: 30px 0 8px; letter-spacing: -.005em; }
+  ul.plain { color: var(--dim); font-size: 14.5px; line-height: 1.7; padding-left: 20px; margin: 14px 0 0; max-width: 68ch; }
+  ul.plain li { margin: 9px 0; }
+  ul.plain strong { color: #e8edf5; }
+
+  details.faq { border-bottom: 1px solid var(--line); }
+  details.faq:first-of-type { border-top: 1px solid var(--line); margin-top: 12px; }
+  details.faq > summary {
+    cursor: pointer; list-style: none; padding: 16px 0; font-size: 16px; font-weight: 500;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 18px;
+  }
+  details.faq > summary::-webkit-details-marker { display: none; }
+  details.faq > summary::after {
+    content: '+'; flex: none; color: var(--dim); font-size: 21px; font-weight: 300;
+    line-height: 1; transition: transform .25s ease;
+  }
+  details.faq[open] > summary::after { transform: rotate(45deg); color: #6ee7b7; }
+  details.faq > summary:hover { color: #6ee7b7; }
+  details.faq .answer {
+    padding: 0 0 20px; color: var(--dim); font-size: 14.8px; line-height: 1.72; max-width: 68ch;
+  }
+  details.faq .answer p { margin: 0 0 10px; }
+  details.faq .answer p:last-child { margin-bottom: 0; }
+
+  footer.site { display: block; }
+  .foot-top { display: flex; flex-wrap: wrap; gap: 40px 72px; justify-content: space-between; }
+  .foot-brand { max-width: 280px; }
+  .foot-brand p { margin: 14px 0 0; color: var(--dim); font-size: 14px; }
+  .foot-cols { display: flex; flex-wrap: wrap; gap: 36px 64px; }
+  .foot-cols h4 {
+    margin: 0 0 12px; font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase;
+    color: #6b7688; font-weight: 500;
+  }
+  .foot-cols ul { list-style: none; margin: 0; padding: 0; }
+  .foot-cols li { margin: 0 0 9px; }
+  .foot-cols a { color: var(--dim); text-decoration: none; font-size: 14px; }
+  .foot-cols a:hover { color: #fff; }
+  .foot-bottom {
+    margin-top: 40px; padding-top: 20px; border-top: 1px solid #14171d;
+    display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: space-between;
+    color: #6b7688; font-size: 13px;
+  }
+
   /* ---------------------------------------------------------- responsive */
 
   @media (max-width: 900px), (max-aspect-ratio: 1/1) {
@@ -167,8 +218,8 @@
     .cta-row { right: -8vw; }
     .count { font-size: 120px; }
   }
-  @media (max-width: 420px) {
-    .nav-links li:nth-child(2) { display: none; }
+  @media (max-width: 700px) {
+    .nav-links li.nav-sm-hide { display: none; }
   }
 </style>
 <script type="importmap">
@@ -190,8 +241,9 @@
     <header class="nav">
       <a href="#hero" class="logo"><i class="logo-mark"></i><b>Olinea</b><span>Vault</span></a>
       <ul class="nav-links">
-        <li><a href="#how">How it works</a></li>
-        <li><a href="#evidence">Evidence</a></li>
+        <li class="nav-sm-hide"><a href="#how">How it works</a></li>
+        <li class="nav-sm-hide"><a href="#security">Security</a></li>
+        <li><a href="/docs/">Docs</a></li>
         <li><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
       </ul>
     </header>
@@ -216,7 +268,7 @@
     <p class="tagline">USDC a quantum computer<br><strong>can't move.</strong></p>
 
     <div class="cta-row">
-      <a href="https://github.com/thesithunyein/olinea" class="cta">Read the code</a>
+      <a href="/docs/" class="cta">Read the docs</a>
       <span class="cta-line"></span>
       <span class="count" aria-hidden="true">7856</span>
     </div>
@@ -226,11 +278,49 @@
 </section>
 
 <main>
-  <section class="section" id="evidence" style="border-top:0">
-    <h2>Verified on mainnet, not on a whiteboard</h2>
+  <section class="section" id="what" style="border-top:0">
+    <p class="eyebrow">Post-quantum authorization · Arc mainnet</p>
+    <h2>USDC that answers to a hash-based key, and nothing else</h2>
+    <p class="lede">
+      Olinea holds USDC on Arc and releases it only when an <strong>SLH-DSA-SHA2-128s</strong>
+      signature — FIPS 205, hash-based, not elliptic-curve — verifies on-chain through Arc's
+      post-quantum precompile. No owner, no admin key, no pause, no upgrade path.
+    </p>
+    <div class="grid two">
+      <div class="card">
+        <h3>Quantum-resistant by construction</h3>
+        <p>The releasing key is 32 bytes of hash-based public material. A quantum computer that breaks ECDSA still cannot forge a release.</p>
+      </div>
+      <div class="card">
+        <h3>Verified on-chain</h3>
+        <p>The signature is checked inside the transaction by Arc's precompile. No oracle, no committee, no off-chain signer to trust.</p>
+      </div>
+      <div class="card">
+        <h3>No owner, no admin</h3>
+        <p>Nothing can pause the vault, upgrade it or redirect funds. Deposits are open to anyone and grant no rights over the balance.</p>
+      </div>
+      <div class="card">
+        <h3>Replay-proof by construction</h3>
+        <p>Every authorization signs the chain, vault, recipient, amount and nonce together, so it is valid for exactly one release.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>Deploy and deposit.</b> A vault is deployed with a 32-byte hash-based verifying key and holds USDC through Arc's ERC-20 interface. Depositing grants no spending rights.</li>
+      <li><b>Authorize off-chain.</b> The key signs one 32-byte digest that binds the chain, vault, recipient, amount and nonce. The signing key never touches the chain and needs no Arc account.</li>
+      <li><b>Anyone relays the release.</b> The vault asks the precompile, decodes the returned boolean, and only then transfers the USDC. The relayer pays the gas and gains nothing.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="security">
+    <h2>Security model</h2>
     <p class="muted">
-      Every result below is a real call to Arc mainnet's PQ precompile with a real SLH-DSA keypair
-      generated in JavaScript. No wallet, no testnet, no mock.
+      Verified against Arc mainnet rather than a mock: each result below is a real call to the
+      precompile at <code>0x1800…0004</code> with a real keypair. Malformed input reverts, but a
+      forged signature is a value, not an exception.
     </p>
 
     <table class="data">
@@ -254,17 +344,16 @@
       </div>
       <div class="card">
         <h3>Signing</h3>
-        <p>Keypair generated and signed in the browser — pure JS, no native crypto, no extension.</p>
+        <p>Keypair generation and signing run in pure JavaScript — no native crypto, no hardware wallet, no extension.</p>
       </div>
     </div>
   </section>
 
-  <section class="section">
-    <h2>The line that decides everything</h2>
+    <h3 class="sub">Read the return value, not the call status</h3>
     <p class="muted">
-      A malformed call reverts, but a <em>cryptographically invalid</em> signature returns
-      <code>false</code> without reverting. A contract that checks only &ldquo;did the call succeed&rdquo;
-      accepts <em>every forged signature on earth</em>:
+      This is the one integration rule that matters. A cryptographically invalid signature returns
+      <code>false</code> without reverting, so a contract that checks only whether the call succeeded
+      accepts <em>every forgery</em>:
     </p>
 <pre><span class="bad">// WRONG — true for every forgery</span>
 (bool ok, ) = PRECOMPILE.staticcall(data);
@@ -275,29 +364,109 @@ require(ok, "verify failed");
 require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
   </section>
 
-  <section class="section" id="how">
-    <h2>How Olinea works</h2>
-    <ol class="steps">
-      <li><b>Deposit</b> USDC into the vault and register a 32-byte hash-based verifying key. No Arc account is needed to hold the key.</li>
-      <li><b>Authorize</b> a release in your browser: recipient, amount, nonce — signed with SLH-DSA. The chain, vault, recipient, amount and nonce are bound into the signed message, so signatures can't be replayed.</li>
-      <li><b>Verify and send</b>: anyone can relay the authorization. The vault asks the precompile, decodes the boolean, and only then transfers the USDC.</li>
-    </ol>
+  <section class="section">
+    <h2>Limitations</h2>
+    <ul class="plain">
+      <li><strong>Unaudited.</strong> The contracts are new code. The test suite and the mainnet evidence above are what assurance exists today, and they are not a substitute for review. Do not put amounts you cannot lose into an unaudited vault.</li>
+      <li><strong>No recovery.</strong> Lose the post-quantum key and the funds are unrecoverable by design — there is no admin escape hatch. That is the property, not an oversight, and it is also why there is nothing for an attacker to phish.</li>
+      <li><strong>Circle's denylist still applies.</strong> A forged SLH-DSA signature cannot move funds, but the USDC token itself can still block transfers. Post-quantum authorization is not denylist resistance.</li>
+      <li><strong>Verification is not free.</strong> 382,879 gas per release — roughly 1,300× a plain USDC transfer on the same chain, though only about $0.008.</li>
+      <li><strong>Signatures are large.</strong> 7,856 bytes of calldata per release, and signing takes seconds rather than milliseconds. That is the price of hash-based signatures.</li>
+    </ul>
   </section>
 
-  <section class="section">
-    <h2>Why it matters before quantum computers arrive</h2>
-    <p class="lede">
-      Long-lived keys are already being harvested to be broken later. Meanwhile a 32-byte hash-based
-      key, kept offline, cannot be forged even by a fully compromised hot wallet — so Olinea is useful
-      today as a second authorization factor on a treasury, and necessary tomorrow for the same reason
-      post-quantum standards exist at all.
-    </p>
+  <section class="section" id="faq">
+    <h2>FAQ</h2>
+
+    <details class="faq">
+      <summary>Is Olinea audited?</summary>
+      <div class="answer">
+        <p>No. The contracts are unaudited new code. What exists instead is a 17-test Foundry suite, a fixture that proves the naive implementation <em>fails</em>, and a conformance run against the real mainnet precompile. That is meaningful evidence and it is still not a review — treat the vault accordingly.</p>
+      </div>
+    </details>
+
+    <details class="faq">
+      <summary>What happens if I lose the signing key?</summary>
+      <div class="answer">
+        <p>The funds are unrecoverable. There is no owner, no recovery address, no pause and no upgrade path — the key fixed at deployment is the only thing that can move USDC out. Back it up the way you would back up a hardware wallet seed, and expect no help if it is gone.</p>
+      </div>
+    </details>
+
+    <details class="faq">
+      <summary>Does this protect me from quantum computers today?</summary>
+      <div class="answer">
+        <p>Not today: no quantum computer can break ECDSA yet. The problem Olinea addresses now is that long-lived keys and recorded transactions are already being collected to be broken later. A 32-byte hash-based key cannot be forged even by a fully compromised hot wallet, so it works as a second authorization factor on a treasury well before it is strictly necessary.</p>
+      </div>
+    </details>
+
+    <details class="faq">
+      <summary>Why SLH-DSA rather than a lattice scheme?</summary>
+      <div class="answer">
+        <p>SLH-DSA (FIPS 205, the standardized SPHINCS+) rests only on hash functions, so it inherits the most conservative assumptions available. The trade is size and speed: a 32-byte public key, a 7,856-byte signature, and seconds to sign. Arc exposes exactly this scheme as a precompile, which makes it the one that can be verified on-chain today.</p>
+      </div>
+    </details>
+
+    <details class="faq">
+      <summary>What does a release cost?</summary>
+      <div class="answer">
+        <p>382,879 gas per release. Arc's base fee is pinned at 20 Gwei and gas is paid in USDC, so a release costs about <strong>$0.0077</strong> — roughly 1,300× a plain USDC transfer, and still fractions of a cent.</p>
+      </div>
+    </details>
+
+    <details class="faq">
+      <summary>Can Olinea freeze or seize my USDC?</summary>
+      <div class="answer">
+        <p>Olinea cannot: there is no admin, no pause and no upgrade path, and no code path that moves funds except a valid authorization. Circle can still act on the token itself — USDC carries a denylist, and post-quantum authorization does not change that.</p>
+      </div>
+    </details>
+
+    <details class="faq">
+      <summary>Is the precompile interface official, or reverse-engineered?</summary>
+      <div class="answer">
+        <p>Both, and that is the point. The interface is documented in Circle's public <code>arc-node</code> source, and every claim on this page was then verified by calling the live precompile on Arc mainnet: a real signature returns <code>true</code>, and a tampered signature, a wrong key and a mismatched message all return <code>false</code>.</p>
+      </div>
+    </details>
+
+    <details class="faq">
+      <summary>Can I use this in my own contract?</summary>
+      <div class="answer">
+        <p>Yes. The vault is MIT-licensed and the pieces are separable: the vault, the interfaces, and an <code>authorize</code> command that prints a signature plus a ready-to-run submission. The one rule to carry across is to decode the boolean the precompile returns — an invalid signature succeeds as a call and returns <code>false</code>. The <a class="text" href="/docs/">docs</a> cover the digest, the exact ABI and the failure modes.</p>
+      </div>
+    </details>
   </section>
 </main>
 
 <footer class="site">
-  <div>Built by Sithu Nyein · Arc mainnet · 2026</div>
-  <div class="mono"><a class="text" href="https://github.com/thesithunyein/olinea">source</a></div>
+  <div class="foot-top">
+    <div class="foot-brand">
+      <a href="/" class="logo"><i class="logo-mark"></i><b>Olinea</b><span>Vault</span></a>
+      <p>USDC a quantum computer can't move.</p>
+    </div>
+    <nav class="foot-cols">
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#security">Security</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="/docs/">Docs</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Developers</h4>
+        <ul>
+          <li><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
+          <li><a href="https://github.com/thesithunyein/olinea/blob/main/contracts/src/OlineaVault.sol">OlineaVault.sol</a></li>
+          <li><a href="/docs/#precompile">PQ precompile</a></li>
+          <li><a href="/docs/#cli">CLI</a></li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+  <div class="foot-bottom">
+    <span>MIT © 2026 Olinea</span>
+    <span>Unaudited · Arc mainnet (chain 5042)</span>
+  </div>
 </footer>
 
 <script type="module">

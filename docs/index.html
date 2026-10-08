@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs — Olinea</title>
+<meta name="description" content="Olinea documentation: the OlineaVault contract, the authorization digest, Arc's PQ precompile reference, the CLI, and the honest limits of an unaudited post-quantum USDC vault.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='none' stroke='white' stroke-width='14'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --fg:#fff; --line:#1e2430; --dim:#8b96a8; --body:#a9b3c2; --pad-x: clamp(20px, 6.95vw, 120px); }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+  html, body {
+    margin: 0; background: #000; color: var(--fg); font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    /* clip, not hidden: overflow-x:hidden would make body a scroll container and
+       silently disable the sticky top bar and table of contents */
+    overflow-x: clip;
+  }
+  code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  /* -------------------------------------------------------------- top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center;
+    justify-content: space-between; gap: 20px; padding: 16px var(--pad-x);
+    border-bottom: 1px solid #14171d; background: rgba(0, 0, 0, .84); backdrop-filter: blur(14px);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-size: 15px; letter-spacing: -.01em; }
+  .logo-mark { display: block; width: 30px; height: 30px; border: 7px solid #fff; border-radius: 50%; }
+  .logo b { font-weight: 700; }
+  .logo span { font-weight: 400; color: var(--dim); }
+  .logo em { font-style: normal; font-weight: 400; color: var(--dim); }
+  .topnav { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 32px); list-style: none; margin: 0; padding: 0; font-size: 14.5px; }
+  .topnav a { color: #fff; text-decoration: none; font-weight: 500; opacity: .82; }
+  .topnav a:hover, .topnav a[aria-current="page"] { opacity: 1; }
+  .topnav a[aria-current="page"] { color: #6ee7b7; }
+
+  /* ------------------------------------------------------------------ doc */
+  .doc {
+    display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: clamp(24px, 5vw, 72px);
+    max-width: 1120px; margin: 0 auto; align-items: start;
+    padding: clamp(32px, 6vh, 60px) var(--pad-x) clamp(56px, 10vh, 110px);
+  }
+  .toc { position: sticky; top: 88px; font-size: 13.5px; }
+  .toc h2 { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); font-weight: 500; margin: 0 0 12px; }
+  .toc ol { list-style: none; margin: 0; padding: 0; counter-reset: t; }
+  .toc li { margin: 0 0 9px; }
+  .toc a { color: var(--body); text-decoration: none; }
+  .toc a:hover { color: #fff; }
+
+  article { min-width: 0; }
+  article h1 { font-size: clamp(30px, 4vw, 44px); font-weight: 700; letter-spacing: -.025em; margin: 0 0 14px; }
+  article h2 {
+    font-size: clamp(21px, 2.4vw, 27px); font-weight: 600; letter-spacing: -.02em;
+    margin: clamp(40px, 7vh, 68px) 0 14px; padding-top: 26px; border-top: 1px solid #14171d;
+  }
+  article h3 { font-size: 15.5px; font-weight: 600; margin: 26px 0 8px; letter-spacing: .01em; }
+  article p { color: var(--body); font-size: 15.5px; line-height: 1.72; margin: 0 0 16px; max-width: 72ch; }
+  article > p.lede { font-size: clamp(16.5px, 1.7vw, 19px); color: #c3cbd8; line-height: 1.65; }
+  article ul, article ol.plain { color: var(--body); font-size: 15.5px; line-height: 1.72; padding-left: 22px; margin: 0 0 16px; max-width: 72ch; }
+  article li { margin: 8px 0; }
+  a.text { color: #6ee7b7; text-decoration: none; }
+  a.text:hover { text-decoration: underline; }
+  strong { color: #fff; }
+  code { font-size: .9em; color: #e6ecf5; background: #12151c; border: 1px solid var(--line); border-radius: 5px; padding: 1.5px 5px; }
+  pre {
+    background: #0b0d12; border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.65; margin: 14px 0 20px;
+  }
+  pre code { background: none; border: 0; padding: 0; color: #dbe3ee; font-size: inherit; }
+  .cmt { color: #5d6a7e; }
+  .bad { color: #fca5a5; }
+  .good { color: #6ee7b7; }
+
+  table.data { width: 100%; border-collapse: collapse; margin: 16px 0 22px; font-size: 14.5px; }
+  table.data th, table.data td { text-align: left; padding: 10px 13px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.data th { color: var(--dim); font-weight: 500; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+  table.data td { color: var(--body); }
+  table.data td:first-child { color: #fff; white-space: nowrap; }
+  td.ok { color: #6ee7b7; font-weight: 600; }
+  td.no { color: #fca5a5; font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+
+  .note {
+    border: 1px solid var(--line); border-left: 3px solid #6ee7b7; border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0 22px; background: #0b0e13;
+  }
+  .note.warn { border-left-color: #fca5a5; }
+  .note p { margin: 0; font-size: 14.5px; }
+  .note p + p { margin-top: 8px; }
+
+  footer.site {
+    padding: clamp(30px, 5vh, 52px) var(--pad-x); border-top: 1px solid #14171d;
+    color: var(--dim); font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 14px 32px;
+    justify-content: space-between; align-items: center;
+  }
+  footer.site a { color: var(--body); text-decoration: none; }
+  footer.site a:hover { color: #fff; }
+
+  @media (max-width: 880px) {
+    .doc { grid-template-columns: 1fr; }
+    .toc { position: static; border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px 6px; }
+    .toc li:last-child { margin-bottom: 10px; }
+  }
+  @media (max-width: 520px) {
+    .logo span { display: none; }
+    .topnav { font-size: 13.5px; gap: 14px; }
+    .topnav li.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/" class="logo"><i class="logo-mark"></i><b>Olinea</b><span>Vault</span><em>&nbsp;· Docs</em></a>
+  <ul class="topnav">
+    <li class="hide-sm"><a href="/#how">How it works</a></li>
+    <li class="hide-sm"><a href="/#faq">FAQ</a></li>
+    <li><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
+  </ul>
+</header>
+
+<div class="doc">
+  <nav class="toc" aria-label="On this page">
+    <h2>On this page</h2>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#status">Status</a></li>
+      <li><a href="#quickstart">Quickstart</a></li>
+      <li><a href="#vault">OlineaVault reference</a></li>
+      <li><a href="#digest">Authorization digest</a></li>
+      <li><a href="#precompile">PQ precompile reference</a></li>
+      <li><a href="#cli">CLI reference</a></li>
+      <li><a href="#security">Security model</a></li>
+      <li><a href="#limits">Limitations</a></li>
+      <li><a href="#deploy">Deploying a vault</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <h1>Olinea documentation</h1>
+    <p class="lede">
+      Olinea is a USDC vault on Arc whose releases are authorized by
+      <strong>SLH-DSA-SHA2-128s</strong> (FIPS 205) signatures verified on-chain by Arc's
+      post-quantum precompile. There is no owner, no admin key, no pause and no upgrade path.
+    </p>
+
+    <h2 id="overview">Overview</h2>
+    <p>
+      The vault holds USDC through the ERC-20 interface at
+      <code>0x3600000000000000000000000000000000000000</code> and releases it only when a
+      32-byte hash-based verifying key fixed at deployment authorizes the transfer. The verifying
+      key is not an elliptic-curve key, so a quantum computer that breaks ECDSA cannot forge a
+      release.
+    </p>
+    <p>Two details are load-bearing, and both are easy to get wrong:</p>
+    <ol class="plain">
+      <li>
+        <strong>The precompile returns <code>false</code> for a forged signature without
+        reverting.</strong> A contract that checks only whether the call succeeded accepts
+        <em>every</em> forgery. See <a class="text" href="#security">Security model</a>.
+      </li>
+      <li>
+        <strong>The signed message binds everything.</strong> The key signs exactly
+        <code>keccak256(abi.encode(chainId, vault, to, amount, nonce))</code>, so an authorization
+        cannot be replayed on another chain, in another vault, for another recipient or amount, or
+        twice in the same vault. See <a class="text" href="#digest">Authorization digest</a>.
+      </li>
+    </ol>
+
+    <h2 id="status">Status</h2>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Component</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>PQ precompile ABI</td><td>Mapped from Circle's public <code>arc-node</code> source and verified against Arc mainnet — real signature <code>true</code>; tampered signature, wrong key and mismatched message all <code>false</code></td></tr>
+          <tr><td>OlineaVault.sol</td><td>17 Foundry tests green; its exact authorization digest verified against the live mainnet precompile (3/3)</td></tr>
+          <tr><td>Arc mainnet deployment</td><td>Not yet deployed — <a class="text" href="#deploy">runbook</a></td></tr>
+          <tr><td>Independent audit</td><td class="no">None</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="quickstart">Quickstart</h2>
+    <p>
+      Everything that touches the real precompile costs nothing and needs no wallet: verification is
+      a read call, so you can check the vault's authorization path against Arc mainnet before you
+      deploy anything.
+    </p>
+<pre><code><span class="cmt"># the vault and its test suite</span>
+git clone https://github.com/thesithunyein/olinea
+cd olinea/contracts &amp;&amp; forge test            <span class="cmt"># 17 tests</span>
+
+<span class="cmt"># post-quantum tooling</span>
+cd ../scripts &amp;&amp; npm install
+node pq.mjs keygen                            <span class="cmt"># SLH-DSA keypair -&gt; scripts/keys/pq-key.json</span>
+node pq.mjs conformance                       <span class="cmt"># real mainnet precompile, no wallet</span></code></pre>
+    <div class="note">
+      <p>
+        <strong>Keep the key.</strong> <code>keygen</code> writes the secret key to
+        <code>scripts/keys/pq-key.json</code>, which is gitignored. Lose it and any funds in a vault
+        built on it are unrecoverable — there is no admin escape hatch.
+      </p>
+    </div>
+
+    <h2 id="vault">OlineaVault reference</h2>
+    <p>
+      <a class="text" href="https://github.com/thesithunyein/olinea/blob/main/contracts/src/OlineaVault.sol">contracts/src/OlineaVault.sol</a>
+    </p>
+
+    <h3>Constructor</h3>
+<pre><code>constructor(IUSDC usdc_, bytes memory verifyingKey_, address verifier_)
+
+<span class="cmt">// usdc_          Arc USDC ERC-20 (6 decimals)</span>
+<span class="cmt">// verifyingKey_  32-byte SLH-DSA-SHA2-128s verifying key; any other length reverts</span>
+<span class="cmt">// verifier_      address(0) -&gt; the canonical Arc precompile 0x1800..0004</span></code></pre>
+    <p>
+      <code>verifier_</code> is an override that exists only so the test suite can inject a fake
+      verifier. Production deployments pass <code>address(0)</code>.
+    </p>
+
+    <h3>Read</h3>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Function</th><th>Returns</th></tr></thead>
+        <tbody>
+          <tr><td><code>usdc()</code></td><td>The USDC ERC-20 address the vault holds</td></tr>
+          <tr><td><code>pqVerifier()</code></td><td>The address used for verification — the canonical precompile unless overridden</td></tr>
+          <tr><td><code>verifyingKey()</code></td><td>The 32-byte key that authorizes releases</td></tr>
+          <tr><td><code>balance()</code></td><td>USDC held, in the 6-decimal ERC-20 unit</td></tr>
+          <tr><td><code>nonceUsed(uint256)</code></td><td>Whether a nonce has been consumed</td></tr>
+          <tr><td><code>authorizationDigest(address to, uint256 amount, uint256 nonce)</code></td><td>The exact 32 bytes a release must be signed over</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Write</h3>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Function</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>deposit(uint256 amount)</code></td><td>Pulls USDC from the caller. Open to anyone; a deposit grants no rights over the balance</td></tr>
+          <tr><td><code>release(address to, uint256 amount, uint256 nonce, bytes signature)</code></td><td>Transfers USDC when the signature is a valid authorization. Anyone may relay; the relayer gains nothing</td></tr>
+        </tbody>
+      </table>
+    </div>
+<pre><code><span class="cmt">// canonical signatures, for cast, viem or ethers</span>
+deposit(uint256)
+release(address,uint256,uint256,bytes)</code></pre>
+
+    <h3>Events and errors</h3>
+<pre><code>event Deposited(address indexed from, uint256 amount);
+event Released(address indexed to, uint256 amount, uint256 nonce, bytes32 digest);
+
+error InvalidVerifyingKeyLength(uint256 length);
+error InvalidRecipient();
+error ZeroAmount();
+error InsufficientBalance(uint256 requested, uint256 available);
+error NonceAlreadyUsed(uint256 nonce);
+error PrecompileCallFailed();
+error InvalidPostQuantumSignature();
+error TransferFailed();</code></pre>
+    <p>
+      <code>InvalidPostQuantumSignature</code> is the one you will see when an authorization is
+      wrong. <code>PrecompileCallFailed</code> means the call itself reverted — malformed input, not
+      a bad signature.
+    </p>
+
+    <h2 id="digest">Authorization digest</h2>
+    <p>The signing key never touches the chain. It signs one 32-byte digest per release:</p>
+<pre><code>digest = keccak256(abi.encode(block.chainid, address(vault), to, amount, nonce))</code></pre>
+    <p>
+      Because all five values are inside the digest, a signature is valid for exactly one release:
+      moving it to another chain changes <code>chainid</code>, moving it to another vault changes
+      the vault address, and replaying it in the same vault fails on the consumed nonce. Nonces are
+      per-vault and need not be sequential — they only have to be unique.
+    </p>
+    <p>
+      The digest is passed to the precompile as the message with no additional hashing by the
+      caller: the vault passes <code>abi.encodePacked(digest)</code>, 32 bytes.
+    </p>
+
+    <h2 id="precompile">PQ precompile reference</h2>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Property</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Address</td><td><code>0x1800000000000000000000000000000000000004</code> (genesis-fixed)</td></tr>
+          <tr><td>Selector</td><td><code>0xbf4db8ba</code> — <code>verifySlhDsaSha2128s(bytes,bytes,bytes)</code></td></tr>
+          <tr><td>Arguments</td><td><code>(bytes verifyingKey /*32 B*/, bytes message /*any length*/, bytes signature /*7856 B*/)</code></td></tr>
+          <tr><td>Returns</td><td><code>bool</code> — <code>false</code> for an invalid signature</td></tr>
+          <tr><td>Gas</td><td>382,879 per verification</td></tr>
+          <tr><td>Cost</td><td>≈ <strong>$0.0077</strong> at Arc's pinned 20 Gwei base fee</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>When it reverts</h3>
+    <p>
+      Only malformed input reverts: <code>Input too short</code>, <code>Invalid selector</code>,
+      <code>Invalid verifying key length</code>, <code>Invalid signature length</code>. A
+      cryptographically invalid signature is a <em>value</em>, not an exception, and that asymmetry
+      is the entire footgun.
+    </p>
+
+    <h3>Calling it correctly</h3>
+<pre><code><span class="bad">// WRONG — true for every forgery</span>
+(bool ok, ) = PQ.staticcall(data);
+require(ok, "verify failed");
+
+<span class="good">// CORRECT — decode the boolean the precompile returned</span>
+(bool ok, bytes memory ret) = PQ.staticcall(data);
+require(ok &amp;&amp; ret.length == 32 &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</code></pre>
+    <p>
+      The precompile lives in Arc's execution layer rather than in upstream EVM, so calling it in a
+      local test suite requires Arc Foundry (<code>arc-anvil --network arc</code>), whose prebuilt
+      binaries currently cover Linux and macOS (Apple Silicon) only. Olinea's suite therefore injects
+      the verifier and proves the real precompile against mainnet instead.
+    </p>
+    <div class="note">
+      <p>
+        <strong>Units on Arc.</strong> USDC is exposed twice on one balance: natively with 18
+        decimals for gas, and through the ERC-20 interface at
+        <code>0x3600000000000000000000000000000000000000</code> with 6 decimals for transfers.
+        Mixing them is a 10<sup>12</sup> error. Olinea only ever uses the 6-decimal view; gas is
+        <code>2 × 10⁻⁸</code> USDC per gas unit.
+      </p>
+    </div>
+
+    <h2 id="cli">CLI reference</h2>
+<pre><code>node pq.mjs keygen
+node pq.mjs authorize --vault 0x.. --to 0x.. --amount 1000000 --nonce 1 [--check]
+node pq.mjs conformance [--vault 0x..]</code></pre>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>keygen</code></td><td>Generates an SLH-DSA-SHA2-128s keypair and writes it to <code>scripts/keys/pq-key.json</code></td></tr>
+          <tr><td><code>authorize</code></td><td>Prints the digest and the signature for one release, plus a ready-to-run <code>cast send</code> line. <code>--check</code> verifies the signature against the live mainnet precompile</td></tr>
+          <tr><td><code>conformance</code></td><td>Runs three cases — valid digest, tampered signature, different digest — against the real precompile. Exits non-zero on any failure, so it works as a pre-deploy gate</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Set <code>ARC_RPC</code> to point at a different Arc endpoint; the default is
+      <code>https://rpc.drpc.mainnet.arc.io</code>, since Arc's own RPC hosts are not reachable from
+      every jurisdiction.
+    </p>
+
+    <h2 id="security">Security model</h2>
+    <p>What the contract guarantees:</p>
+    <ul>
+      <li><strong>One key, nothing else.</strong> No owner, no admin, no pause, no upgrade, no delegate. There is no code path that moves USDC except a valid post-quantum authorization.</li>
+      <li><strong>Listed in the digest.</strong> Chain id, vault address, recipient, amount and nonce are all signed, so an authorization is bound to a single release.</li>
+      <li><strong>Nonces are consumed before the transfer</strong>, so a valid authorization cannot be replayed even by re-entering the same transaction.</li>
+      <li><strong>Verification is on-chain.</strong> No oracle, no committee, no off-chain signer and no trusted relayer: the relayer pays gas and gets nothing.</li>
+      <li><strong>A forgery is not a revert.</strong> The vault decodes the returned boolean, and the test suite includes <code>NaiveVault.sol</code> — the same vault with the "call succeeded" bug — to prove it drains on a forgery while <code>OlineaVault</code> does not.</li>
+    </ul>
+    <p>What it does not do:</p>
+    <ul>
+      <li>It does not make the vault's USDC denylist-resistant — see below.</li>
+      <li>It does not protect a compromised signing device. The key is the authorization; sign only what you mean to sign.</li>
+      <li>It does not recover funds.</li>
+    </ul>
+
+    <h2 id="limits">Limitations</h2>
+    <div class="note warn">
+      <p><strong>Unaudited.</strong> The contracts are new code. The test suite and mainnet evidence are the assurance available today, and that is not a substitute for review. Do not put amounts you cannot lose into an unaudited vault.</p>
+    </div>
+    <ul>
+      <li><strong>No recovery.</strong> Lose the post-quantum key and the funds are unrecoverable by design. That is the property, not an oversight — it is also why there is nothing for an attacker to phish.</li>
+      <li><strong>Circle's denylist still applies.</strong> A forged SLH-DSA signature cannot move funds, but the USDC token itself can still block transfers. Post-quantum authorization is not denylist resistance.</li>
+      <li><strong>Verification is not free.</strong> 382,879 gas per release, ≈ $0.0077 at Arc's 20 Gwei base fee — small, but roughly 1,300× a plain USDC transfer on the same chain.</li>
+      <li><strong>Signatures are large.</strong> 7,856 bytes posted as calldata per release. That is the price of hash-based signatures; it is not compressible.</li>
+      <li><strong>Signing is slow by design.</strong> SLH-DSA-SHA2-128s is tuned for small keys and conservative assumptions rather than speed — expect seconds, not milliseconds, per signature.</li>
+    </ul>
+
+    <h2 id="deploy">Deploying a vault</h2>
+    <p>
+      Deploying is a one-shot sequence, and step 1 is free: generate the key and check its digest
+      against the live precompile <em>before</em> anything is on chain. You need a funded Arc account
+      for steps 2 onwards — gas is paid in USDC.
+    </p>
+<pre><code>export ARC_RPC=https://rpc.drpc.mainnet.arc.io
+export ARC_PRIVATE_KEY=0x..                    <span class="cmt"># a few USDC for gas</span>
+USDC=0x3600000000000000000000000000000000000000
+
+<span class="cmt"># 1. key + conformance (free, no wallet)</span>
+cd scripts &amp;&amp; node pq.mjs keygen &amp;&amp; node pq.mjs conformance
+
+<span class="cmt"># 2. deploy (verifier = address(0) -&gt; the real precompile)</span>
+cd ../contracts &amp;&amp; forge create src/OlineaVault.sol:OlineaVault \
+  --rpc-url $ARC_RPC --private-key $ARC_PRIVATE_KEY --broadcast \
+  --constructor-args $USDC 0x&lt;your-32-byte-vk&gt; 0x0000000000000000000000000000000000000000
+
+<span class="cmt"># 3. fund it</span>
+cast send $USDC "approve(address,uint256)" $VAULT 2000000 --rpc-url $ARC_RPC --private-key $ARC_PRIVATE_KEY
+cast send $VAULT "deposit(uint256)" 1000000 --rpc-url $ARC_RPC --private-key $ARC_PRIVATE_KEY
+
+<span class="cmt"># 4. authorize a release (prints the signature and a cast send line)</span>
+node ../scripts/pq.mjs authorize --vault $VAULT --to $RECIPIENT --amount 250000 --nonce 1 --check
+
+<span class="cmt"># 5. verify the vault's balance afterwards</span>
+cast call $VAULT "balance()(uint256)" --rpc-url $ARC_RPC</code></pre>
+    <div class="note">
+      <p>
+        The verifying key is immutable. Deploy a new vault to change keys, and treat the deployed
+        key as the whole security boundary from the moment the first USDC lands.
+      </p>
+    </div>
+  </article>
+</div>
+
+<footer class="site">
+  <div>MIT © 2026 Olinea · Unaudited · Arc mainnet (chain 5042)</div>
+  <div>
+    <a href="/">Home</a> ·
+    <a href="/#faq">FAQ</a> ·
+    <a href="https://github.com/thesithunyein/olinea">GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>
