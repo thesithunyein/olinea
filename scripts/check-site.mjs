@@ -148,6 +148,28 @@ ok(/sendable: failed\.length === 0 && vaultKey !== null && accepted !== false/.t
   'sending is offered only where the chain itself confirmed the signature');
 ok(count(app, 'PQ_SIG_BYTES = 7856') === 1, 'the signature length the file checks use is the measured one');
 
+console.log('--- console dashboard ---');
+/* An author rule carrying a class outranks the user agent's [hidden] rule, so a hidden flex row
+   painted as an empty greyed-out button on the first screen. Nothing hidden may ever be drawn. */
+ok(/\[hidden\]\s*\{\s*display:\s*none\s*!important/.test(app),
+  'nothing an author display rule can paint survives the hidden attribute');
+const tiles = [...appMarkup.matchAll(/<button class="stat" type="button" data-goto="([a-z-]+)" id="(stat-[a-z]+)">/g)]
+  .map(([, to, id]) => ({ to, id }));
+ok(tiles.length === 5, `the console opens on five facts (found ${tiles.length})`);
+ok(tiles.every((t) => appIds.includes(t.to)), 'every tile opens a panel that exists');
+/* The chain tile's second line is the block number, which net() owns under the name it withdraws
+   the moment nothing answers, so that one tile names it differently. */
+const SECOND_LINE = { 'stat-chain': 'net-block' };
+ok(tiles.every((t) => appIds.includes(t.id) && appIds.includes(`${t.id}-v`)
+  && appIds.includes(SECOND_LINE[t.id] || `${t.id}-s`)), 'every tile has a value and a line under it');
+const statsAt = appMarkup.indexOf('class="stats"');
+ok(statsAt > 0 && statsAt < appMarkup.indexOf('id="panel-key"'), 'the dashboard sits above the tabs, not inside one of them');
+ok(count(app, 'function renderStats()') === 1 && count(app, 'renderStats();') >= 5,
+  'the tiles are repainted from state rather than written once');
+ok(count(app, 'id="net-block"') === 1, 'the chain tile owns the block number');
+ok(app.includes('measureBar') && /top: var\(--barh/.test(app),
+  'the tab strip pins itself under the app bar, measured rather than guessed');
+
 const factory = readFileSync('contracts/src/OlineaFactory.sol', 'utf8');
 ok(factory.includes('function createVault(bytes calldata verifyingKey)'), 'the factory really has createVault(bytes)');
 for (const sig of ['vaultsOf', 'vaultCount', 'vaultAt']) {

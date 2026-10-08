@@ -15,10 +15,13 @@
   :root {
     --fg:#fff; --line:#1e2430; --line2:#141a23; --dim:#8b96a8; --body:#a9b3c2;
     --acc:#6ee7b7; --bad:#fca5a5; --warn:#fcd34d; --panel:#080a0e; --sunken:#0d1016;
-    --pad: clamp(16px, 4vw, 40px);
+    --barh: 49px; --pad: clamp(16px, 4vw, 40px);
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  /* An author rule carrying a class outranks the user agent's [hidden] rule, so a hidden flex row
+     still painted as an empty greyed-out button. Nothing marked hidden may ever be drawn. */
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(var(--barh, 49px) + 62px); }
   html, body {
     margin: 0; background: #000; color: var(--fg); font-family: 'Poppins', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -51,14 +54,36 @@
   .statusdot.off i { background: var(--bad); }
 
   /* ------------------------------------------------------------------- shell */
-  .shell { max-width: 940px; margin: 0 auto; padding: clamp(22px, 4vh, 40px) var(--pad) 80px; }
-  .eyebrow { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--acc); margin: 0 0 10px; font-weight: 500; }
-  h1 { font-size: clamp(24px, 3.4vw, 34px); font-weight: 700; letter-spacing: -.026em; margin: 0 0 10px; line-height: 1.15; }
-  .sub { color: var(--body); font-size: 15px; line-height: 1.6; margin: 0; max-width: 62ch; }
+  .shell { max-width: 940px; margin: 0 auto; padding: clamp(20px, 3.4vh, 32px) var(--pad) 72px; }
+  .eyebrow { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--acc); margin: 0 0 7px; font-weight: 500; }
+  h1 { font-size: clamp(21px, 2.6vw, 26px); font-weight: 700; letter-spacing: -.024em; margin: 0; line-height: 1.2; }
+  .sub { color: var(--body); font-size: 14px; line-height: 1.6; margin: 6px 0 0; max-width: 62ch; }
   .sub .hi { color: #fff; font-weight: 500; }
 
+  /* -------------------------------------------------------------- dashboard */
+  /* The console's front page: five facts, each one a way into the tab that owns it. Read at a
+     glance, so the tabs below are for working rather than for finding out where you are. */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(152px, 1fr)); gap: 10px; margin: 22px 0 0; }
+  .stat {
+    appearance: none; font: inherit; text-align: left; cursor: pointer; color: inherit;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat:hover { border-color: #2f3947; background: #0b0e13; }
+  .stat-lbl { font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: var(--dim); font-weight: 500; }
+  .stat-val { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: #fff; letter-spacing: -.01em; }
+  .stat-val i { width: 7px; height: 7px; border-radius: 50%; background: #3a4454; flex: none; }
+  .stat.on .stat-val i { background: var(--acc); }
+  .stat.warn .stat-val i { background: var(--warn); }
+  .stat.no .stat-val i { background: var(--bad); }
+  .stat-sub { font-size: 11.5px; color: var(--dim); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+
   /* -------------------------------------------------------------------- tabs */
-  .tabs { display: flex; gap: 4px; margin: 26px 0 0; border-bottom: 1px solid var(--line2); overflow-x: auto; scrollbar-width: none; }
+  /* Pinned under the app bar: the section you are in should not scroll away. */
+  .tabs {
+    position: sticky; top: var(--barh, 49px); z-index: 15; background: #000; display: flex; gap: 4px;
+    margin: 24px 0 0; border-bottom: 1px solid var(--line2); overflow-x: auto; scrollbar-width: none;
+  }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
     appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--dim);
@@ -72,7 +97,6 @@
     outline: 2px solid #4b8f74; outline-offset: 2px;
   }
   [role="tabpanel"] { padding-top: 24px; }
-  [role="tabpanel"][hidden] { display: none; }
 
   /* ------------------------------------------------------------------- cards */
   .card { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: clamp(18px, 3vw, 24px); margin: 0 0 16px; }
@@ -198,8 +222,11 @@
 
   @media (max-width: 760px) {
     .appnav li.opt { display: none; }
-    /* The block number is the first thing to go: the chain is what matters in a header. */
-    .statusdot .block { display: none; }
+    /* Five tiles fit a desktop in one row and fold to two columns down here, where the odd one
+       left over takes the whole width rather than leaving a hole beside it. */
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .stat { padding: 11px 12px; }
     .statusdot { padding: 5px 10px; }
     .kv { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
     .kv dd { margin-bottom: 10px; }
@@ -218,16 +245,45 @@
     <li><a href="/app/" aria-current="page">Console</a></li>
     <li class="opt"><a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">GitHub</a></li>
   </ul>
-  <span class="statusdot" id="net"><i></i><span id="net-text">connecting…</span><span id="net-block"></span></span>
+  <span class="statusdot" id="net"><i></i><span id="net-text">connecting…</span></span>
 </header>
 
 <main class="shell">
 
   <p class="eyebrow" id="eyebrow">Post-quantum authorization · Arc mainnet</p>
-  <h1 id="headline">Your key. Your vault. Nothing in between.</h1>
+  <h1 id="headline">Console</h1>
   <p class="sub" id="subline">
-    24 words make an <span class="hi">SLH-DSA</span> key in this tab. Free to create, free for Arc mainnet to verify.
+    A 24-word backup makes an <span class="hi">SLH-DSA</span> key in this tab. Nothing leaves this device.
   </p>
+
+  <!-- The five facts worth knowing before money moves. Each tile opens the tab that owns the work. -->
+  <section class="stats" aria-label="Console at a glance">
+    <button class="stat" type="button" data-goto="panel-key" id="stat-key">
+      <span class="stat-lbl">Key</span>
+      <span class="stat-val"><i></i><span id="stat-key-v">No key</span></span>
+      <span class="stat-sub" id="stat-key-s">create one first</span>
+    </button>
+    <button class="stat" type="button" data-goto="panel-key" id="stat-proof">
+      <span class="stat-lbl">Proof</span>
+      <span class="stat-val"><i></i><span id="stat-proof-v">Not proven</span></span>
+      <span class="stat-sub" id="stat-proof-s">free, on Arc mainnet</span>
+    </button>
+    <button class="stat" type="button" data-goto="panel-vault" id="stat-vault">
+      <span class="stat-lbl">Vault</span>
+      <span class="stat-val"><i></i><span id="stat-vault-v">None</span></span>
+      <span class="stat-sub" id="stat-vault-s">not deployed yet</span>
+    </button>
+    <button class="stat" type="button" data-goto="panel-vault" id="stat-gas">
+      <span class="stat-lbl">Gas account</span>
+      <span class="stat-val"><i></i><span id="stat-gas-v">None</span></span>
+      <span class="stat-sub" id="stat-gas-s">pays gas only</span>
+    </button>
+    <button class="stat" type="button" data-goto="panel-activity" id="stat-chain">
+      <span class="stat-lbl">Chain</span>
+      <span class="stat-val"><i></i><span id="stat-chain-v">connecting…</span></span>
+      <span class="stat-sub" id="net-block">—</span>
+    </button>
+  </section>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" id="tab-key" role="tab" aria-selected="true" aria-controls="panel-key" data-panel="panel-key" tabindex="0">Key <span class="tick" id="tick-key" hidden></span></button>
@@ -571,7 +627,7 @@ const VAULT_EVENTS = [
 const state = {
   mnemonic: '', index: 0, vk: '', fingerprint: '', sig: '', calldata: '', digest: '',
   account: null, mode: '', vault: '', vaultFrom: null, vaultMine: false, gasOk: false, busy: false, proof: null,
-  authVerified: null, checked: null,
+  authVerified: null, checked: null, gasBal: '', vaultBal: '',
 };
 
 /* ------------------------------------------------------------------ viem */
@@ -744,6 +800,41 @@ const gotoKey = () => show('panel-key');
 $('b-goto-key1').onclick = gotoKey;
 $('b-goto-key2').onclick = gotoKey;
 
+/* ---------------------------------------------------------- at a glance */
+/* Four facts this tab can know about itself; the chain tile belongs to net(), which is the only
+ * thing that can answer it. Every tile is a way into the tab that owns the work, so "where am I"
+ * is answered by looking rather than by reading. */
+function setStat(name, kind, value, sub) {
+  $('stat-' + name).className = 'stat' + (kind ? ' ' + kind : '');
+  $('stat-' + name + '-v').textContent = value;
+  $('stat-' + name + '-s').textContent = sub;
+}
+function renderStats() {
+  const hasKey = !!state.vk;
+  setStat('key', hasKey ? 'on' : '', hasKey ? 'Unlocked' : 'No key',
+    hasKey ? state.fingerprint : 'create one first');
+
+  const p = state.proof;
+  setStat('proof', p ? (p.ok ? 'on' : 'no') : '', p ? (p.ok ? 'Verified' : 'Rejected') : 'Not proven',
+    p ? `${p.when} ms on Arc mainnet` : 'free, no account');
+
+  /* A remembered vault with no key loaded is neither yours nor provably anyone else's, so the tile
+   * shows the address it remembers and says plainly that it cannot say more than that. */
+  const live = !!CONFIG.factory;
+  const told = !!state.vk;
+  const v = state.vault;
+  const mine = told && state.vaultMine;
+  setStat('vault', live ? (!v ? '' : mine ? 'on' : told ? 'no' : '') : 'warn',
+    !live || !v ? 'None' : mine ? 'Yours' : told ? 'Other key' : hex(v, 5),
+    !live ? 'not deployed yet' : !v ? 'create one on the Vault tab'
+      : mine || told ? state.vaultBal || hex(v, 5) : 'no key loaded');
+
+  setStat('gas', state.account ? 'on' : '',
+    state.account ? (state.mode === 'demo' ? 'Built-in' : 'Wallet') : 'None',
+    state.account ? state.gasBal || hex(state.account.address, 5) : 'pays gas only');
+}
+for (const tile of document.querySelectorAll('.stat')) tile.onclick = () => show(tile.dataset.goto);
+
 /* --------------------------------------------------- session (public data) */
 /* The secret is never stored. Only the verifying key and fingerprint are, so a reload can show you
  * who you are and offer to unlock, rather than silently forgetting you existed. */
@@ -786,9 +877,9 @@ function renderKey() {
   $('vault-live').hidden = !hasKey || !CONFIG.factory;
   $('auth-body').hidden = !hasKey;
   $('subline').innerHTML = hasKey
-    ? 'Key unlocked in this tab only. Prove it, then authorize a payment.'
-    : '24 words make an <span class="hi">SLH-DSA</span> key in this tab. Free to create, free for Arc mainnet to verify.';
-  $('eyebrow').textContent = hasKey ? 'Key unlocked · in this tab only' : 'Post-quantum authorization · Arc mainnet';
+    ? 'Your key is unlocked in this tab. Prove it, then authorize a payment.'
+    : 'A 24-word backup makes an <span class="hi">SLH-DSA</span> key in this tab. Nothing leaves this device.';
+  renderStats();
 }
 
 /* --------------------------------------------------------- 1. create key */
@@ -936,6 +1027,7 @@ function renderProof() {
     <span id="proof-msg" hidden>${message}</span>`;
   markActivity();
   renderSelfcheck();
+  renderStats();
 }
 $('b-prove').onclick = async () => {
   if (state.busy) return;
@@ -983,6 +1075,8 @@ function paintAccount() {
     $('a-note').textContent = '';
     $('p4').innerHTML = '';
     $('b-drop-account').hidden = true;
+    state.gasBal = '';
+    renderStats();
     state.gasOk = false;
     renderVerify();
     return;
@@ -999,6 +1093,8 @@ function paintAccount() {
       ]);
       $('a-bal').textContent = `${V.formatUnits(gas, 18)} USDC`;
       $('a-usdc').textContent = `${V.formatUnits(usdc, 6)} USDC`;
+      state.gasBal = `${V.formatUnits(gas, 18)} USDC gas`;
+      renderStats();
       state.gasOk = gas > 0n;
       $('b-create').disabled = !canCreate();
       painter();
@@ -1053,6 +1149,8 @@ async function paintVault() {
     $('dep-wrap').hidden = true;
     state.vaultMine = false;
     $('a-foreign').hidden = true;
+    state.vaultBal = '';
+    renderStats();
     return;
   }
   const addr = state.vault;
@@ -1066,6 +1164,8 @@ async function paintVault() {
       $('a-vkey').textContent = '—';
       state.vaultMine = false;
       $('a-foreign').hidden = true;
+      state.vaultBal = '';
+      renderStats();
     }
     return;
   }
@@ -1085,9 +1185,11 @@ async function paintVault() {
   try {
     const bal = await call(() => reads.readContract({ address: addr, abi: VAULT_ABI, functionName: 'balance' }));
     $('a-vusdc').innerHTML = `${V.formatUnits(bal, 6)}<span>USDC</span>`;
-  } catch { $('a-vusdc').innerHTML = '—<span>USDC</span>'; }
+    state.vaultBal = `${V.formatUnits(bal, 6)} USDC`;
+  } catch { state.vaultBal = ''; $('a-vusdc').innerHTML = '—<span>USDC</span>'; }
   paintHistory();
   paintNonce();
+  renderStats();
 }
 async function painter() {
   if (!CONFIG.factory || !state.account) return;
@@ -1585,14 +1687,17 @@ async function net() {
     if (chainId !== CONFIG.chainId) throw new Error(`rpc is chain ${chainId}`);
     $('net').className = 'statusdot on';
     $('net-text').textContent = 'Arc mainnet';
-    $('net-block').textContent = `· block ${Number(block).toLocaleString()}`;
-    $('net-block').className = 'block';
+    $('stat-chain').className = 'stat on';
+    $('stat-chain-v').textContent = 'Arc mainnet';
+    $('net-block').textContent = `block ${Number(block).toLocaleString()}`;
     /* Which endpoint answered is the first thing anyone asks when a number looks wrong. */
     $('net').title = `Arc mainnet · chain ${chainId} · ${CONFIG.rpc.replace(/^https?:\/\//, '')}`;
     return true;
   } catch {
     $('net').className = 'statusdot off';
     $('net-text').textContent = 'no RPC';
+    $('stat-chain').className = 'stat warn';
+    $('stat-chain-v').textContent = 'no RPC';
     /* A block number that was true a minute ago is a lie next to the words "no RPC". */
     $('net-block').textContent = '';
     $('net').title = 'Nothing is answering on the Arc RPC right now';
@@ -1616,10 +1721,16 @@ async function boot() {
   renderKey();
   paintNonce();
   await net();
+  renderStats();
   renderSelfcheck();
   markActivity();
   if (state.vault) { await paintVault(); }
 }
+/* The tab strip pins itself under the app bar, so the bar's height is measured rather than
+ * assumed — the bar wraps at narrow widths, and a guessed offset would leave a gap or an overlap. */
+const measureBar = () => document.documentElement.style.setProperty('--barh', document.querySelector('.appbar').offsetHeight + 'px');
+measureBar();
+addEventListener('resize', measureBar);
 await boot();
 setInterval(() => { net(); renderSelfcheck(); }, 30_000);
 </script>

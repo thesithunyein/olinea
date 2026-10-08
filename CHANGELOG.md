@@ -14,6 +14,20 @@ a live address.
 - Project files: this changelog, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, an
   architecture diagram, and a CI workflow that runs the Foundry suite and the structural checks.
 
+### Changed
+
+- **The console opens on a dashboard.** Five tiles — Key, Proof, Vault, Gas account and Chain — say
+  where you are without a paragraph, and each one opens the tab that owns the work. The page title
+  shrank to an application's size, and the section tabs pin themselves under the app bar rather than
+  scrolling away. The proof and vault tiles are repainted from state, so they cannot drift from what
+  the panels below show.
+
+### Fixed
+
+- **A hidden flex row painted anyway.** `.row { display: flex }` outranks the browser's own `[hidden]`
+  rule, so the disabled "Create my key" button was on the first screen before any words existed.
+  Nothing marked hidden can be drawn now, whatever an author rule says.
+
 ## [0.2.0] — 2026-10-08
 
 The release that made this usable by someone who is not its author.
