@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vault console — Olinea</title>
+<meta name="description" content="Open a post-quantum USDC vault on Arc from your browser: a 24-word backup derives an SLH-DSA key, the vault only moves USDC when that key authorizes it, and every signature can be checked against Arc's precompile before you spend gas.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='none' stroke='white' stroke-width='14'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fg:#fff; --line:#1e2430; --dim:#8b96a8; --body:#a9b3c2; --acc:#6ee7b7;
+    --bad:#fca5a5; --warn:#fcd34d; --pad-x: clamp(18px, 5vw, 60px);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+  html, body {
+    margin: 0; background: #000; color: var(--fg); font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: clip;
+  }
+  code, .mono, textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  a { color: var(--acc); }
+
+  /* ---------------------------------------------------------------- top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 18px;
+    justify-content: space-between; padding: 14px var(--pad-x);
+    border-bottom: 1px solid #14171d; background: rgba(0,0,0,.86); backdrop-filter: blur(14px);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-size: 15px; }
+  .logo-mark { display: block; width: 28px; height: 28px; border: 6.5px solid #fff; border-radius: 50%; }
+  .logo b { font-weight: 700; }
+  .logo span { font-weight: 400; color: var(--dim); }
+  .topnav { display: flex; align-items: center; gap: clamp(12px, 2vw, 26px); list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .topnav a { color: #fff; text-decoration: none; font-weight: 500; opacity: .8; }
+  .topnav a:hover, .topnav a[aria-current="page"] { opacity: 1; }
+  .topnav a[aria-current="page"] { color: var(--acc); }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--dim);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; white-space: nowrap;
+  }
+  .pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); display: block; }
+  .pill.on { color: #b8f5dc; border-color: #1d3b2e; background: #0a1712; }
+  .pill.on i { background: var(--acc); }
+  .pill.off { color: #f6c9c9; border-color: #3b1d1d; background: #170a0a; }
+  .pill.off i { background: var(--bad); }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: clamp(30px, 6vh, 56px) var(--pad-x) 90px; }
+
+  /* ----------------------------------------------------------------- header */
+  h1 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 700; letter-spacing: -.028em; margin: 0 0 14px; }
+  .lede { color: #c3cbd8; font-size: clamp(15.5px, 1.6vw, 18px); line-height: 1.66; margin: 0 0 22px; max-width: 68ch; }
+  .lede b { color: #fff; font-weight: 600; }
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 0 0 34px; }
+  .strip div { background: #06070a; padding: 12px 14px; }
+  .strip dt { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0 0 5px; }
+  .strip dd { margin: 0; font-size: 13.5px; color: #e6ecf5; }
+
+  /* ------------------------------------------------------------------ cards */
+  .card { border: 1px solid var(--line); border-radius: 14px; background: #080a0e; padding: clamp(18px, 3vw, 26px); margin: 0 0 18px; }
+  .card.locked { border-style: dashed; }
+  .card.locked .body { opacity: .32; pointer-events: none; }
+  .chead { display: flex; align-items: center; gap: 13px; margin-bottom: 4px; }
+  .num {
+    flex: none; width: 27px; height: 27px; border-radius: 50%; border: 1.5px solid #2b3444;
+    display: grid; place-items: center; font-size: 12.5px; color: var(--dim); font-weight: 600;
+  }
+  .card[data-state="done"] .num { border-color: #1d3b2e; background: #0a1712; color: var(--acc); }
+  .card[data-state="active"] .num { border-color: #6b7686; color: #fff; }
+  .chead h2 { font-size: clamp(17px, 1.9vw, 20px); font-weight: 600; letter-spacing: -.015em; margin: 0; flex: 1; }
+  .card > p, .body > p { color: var(--body); font-size: 14px; line-height: 1.68; margin: 8px 0 0; }
+  .hint { color: var(--dim); font-size: 12.5px; line-height: 1.6; margin: 12px 0 0; }
+  h3 { font-size: 12px; letter-spacing: .13em; text-transform: uppercase; color: var(--dim); font-weight: 500; margin: 26px 0 10px; }
+
+  /* --------------------------------------------------------------- controls */
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .btn {
+    appearance: none; border: 1px solid #fff; background: #fff; color: #06070a; font: inherit;
+    font-size: 13.5px; font-weight: 600; padding: 10px 17px; border-radius: 9px; cursor: pointer;
+  }
+  .btn:hover:not(:disabled) { background: #dfe6f0; }
+  .btn.ghost { background: transparent; color: #fff; border-color: #303a4a; }
+  .btn.ghost:hover:not(:disabled) { border-color: #5b667a; background: #0d1016; }
+  .btn:disabled { opacity: .38; cursor: not-allowed; }
+  label { display: block; font-size: 12px; color: var(--dim); margin: 0 0 6px; letter-spacing: .02em; }
+  input[type=text], input[type=number], textarea {
+    width: 100%; background: #0d1016; border: 1px solid var(--line); border-radius: 9px;
+    color: #eef2f8; font-size: 13.5px; padding: 10px 12px; font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+  input:focus, textarea:focus { outline: none; border-color: #4b5666; }
+  textarea { min-height: 92px; resize: vertical; line-height: 1.6; }
+  .field { margin-top: 14px; }
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-top: 14px; }
+  .check { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--body); cursor: pointer; }
+  .check input { margin: 3px 0 0; accent-color: #6ee7b7; width: 15px; height: 15px; flex: none; }
+
+  /* ------------------------------------------------------------------ words */
+  .words { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 7px; margin-top: 14px; }
+  .w { background: #0d1016; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; color: #eef2f8; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .w i { font-style: normal; color: #5d6a7e; margin-right: 7px; font-size: 11px; }
+  .blur { filter: blur(5px); user-select: none; }
+
+  /* --------------------------------------------------------------- evidence */
+  .kv { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 7px 16px; font-size: 12.8px; margin: 14px 0 0; }
+  .kv dt { color: var(--dim); }
+  .kv dd { margin: 0; color: #dbe3ee; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.55; }
+  .yes { color: var(--acc); font-weight: 600; }
+  .no { color: var(--bad); font-weight: 600; }
+  .warn { color: var(--warn); }
+  .note { border-left: 2px solid #2b3444; padding: 2px 0 2px 14px; margin: 16px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.66; }
+  .note.warnbox { border-color: #6b5320; color: #e8d6a6; }
+  .histbox { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 10px; }
+  .hist { display: grid; grid-template-columns: 78px 108px minmax(0, 1fr) auto; gap: 12px; align-items: baseline;
+    padding: 10px 13px; font-size: 12.5px; border-bottom: 1px solid var(--line); background: #0a0c11; }
+  .hist:last-child { border-bottom: 0; }
+  .hist > span:first-child { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
+  .hist b { color: #fff; font-weight: 600; }
+  .hist .mono { color: var(--dim); overflow-wrap: anywhere; }
+  .hist a { font-size: 11.5px; text-decoration: none; color: var(--body); }
+  .hist a:hover { color: #fff; }
+  .note.badbox { border-color: #6b2323; color: #f6c9c9; }
+  pre.cmd { background: #0b0d12; border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow-x: auto; font-size: 11.8px; line-height: 1.6; color: #dbe3ee; margin: 12px 0 0; }
+
+  /* -------------------------------------------------------------- progress */
+  .prog { margin-top: 16px; }
+  .prog p { margin: 0 0 8px; font-size: 12.8px; color: var(--body); }
+  .prog .t { color: #fff; font-weight: 600; }
+  .bar { height: 3px; background: #14171d; border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 42%; background: var(--acc); animation: slide 1.35s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-105%); } 100% { transform: translateX(250%); } }
+  .stage { font-size: 11.5px; color: var(--dim); margin-top: 8px; }
+
+  /* ----------------------------------------------------------------- footer */
+  .foot { border-top: 1px solid #14171d; margin-top: 40px; padding-top: 22px; color: var(--dim); font-size: 12.5px; line-height: 1.75; }
+  .foot a { color: var(--body); }
+  ul.plain { color: var(--dim); font-size: 12.5px; line-height: 1.75; padding-left: 20px; margin: 12px 0 0; }
+  ul.plain li { margin: 7px 0; }
+  @media (max-width: 700px) {
+    .topnav li.opt { display: none; }
+    .kv { grid-template-columns: minmax(0, 1fr); gap: 3px 0; }
+    .kv dd { margin-bottom: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" href="/"><span class="logo-mark"></span><span><b>Olinea</b> <span>Vault</span></span></a>
+  <ul class="topnav">
+    <li class="opt"><a href="/">Product</a></li>
+    <li class="opt"><a href="/docs/">Docs</a></li>
+    <li><a href="/app/" aria-current="page">App</a></li>
+    <li><a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">GitHub</a></li>
+  </ul>
+  <span class="pill" id="net-pill"><i></i><span id="net-text">connecting…</span></span>
+</header>
+
+<main class="wrap">
+
+  <h1>A vault only you can open.</h1>
+  <p class="lede">
+    Back up 24 words. They derive an <b>SLH-DSA-SHA2-128s</b> key that never leaves this tab and never
+    crosses a network. The vault holds USDC on Arc, has no owner, no admin and no upgrade path, and will
+    move money for exactly one thing: a signature from that key. <b>No gas is required to try any of it</b> —
+    the proof step below runs against Arc mainnet for free.
+  </p>
+  <dl class="strip">
+    <div><dt>Chain</dt><dd id="s-chain">—</dd></div>
+    <div><dt>USDC in escrow</dt><dd id="s-bal">—</dd></div>
+    <div><dt>Verifier</dt><dd id="s-verifier">—</dd></div>
+    <div><dt>Factory</dt><dd id="s-factory">—</dd></div>
+  </dl>
+
+  <!-- ============================================================ 1 · BACKUP -->
+  <section class="card" id="c1" data-state="active">
+    <div class="chead"><span class="num">1</span><h2>Back up the key</h2></div>
+    <p>These words <em>are</em> the vault. There is no recovery, no reset and no support line — if they are
+      lost, the USDC is unspendable by anyone, including us. Write them on paper.</p>
+    <div class="body">
+      <div class="row">
+        <button class="btn" id="b-new">Create a new backup</button>
+        <button class="btn ghost" id="b-restore">I already have one</button>
+      </div>
+      <div id="pane-new" hidden>
+        <div class="words" id="words"></div>
+        <p class="hint">
+          <button class="btn ghost" id="b-blur" style="padding:5px 11px;font-size:12px;margin-right:9px">Hide words</button>
+          <button class="btn ghost" id="b-copy-words" style="padding:5px 11px;font-size:12px">Copy</button>
+        </p>
+        <label class="check"><input type="checkbox" id="ack"> I have written these 24 words down, in order, and I understand nobody can restore them for me.</label>
+      </div>
+      <div id="pane-restore" hidden>
+        <div class="field">
+          <label for="mn-in">Your 24 words</label>
+          <textarea id="mn-in" spellcheck="false" autocomplete="off" placeholder="word word word …"></textarea>
+        </div>
+        <p class="hint" id="mn-check">Words are checked locally. Nothing is sent anywhere.</p>
+      </div>
+      <div class="field" style="max-width:220px">
+        <label for="idx">Vault index</label>
+        <input type="number" id="idx" value="0" min="0" max="255" step="1">
+      </div>
+      <p class="hint">One backup opens as many vaults as you like — the index is mixed into the derivation, so
+        vault 0 and vault 1 are unrelated keys. Leave it at 0 unless you know why you are changing it.</p>
+      <div class="row"><button class="btn" id="b-derive" disabled>Derive my key</button></div>
+      <div id="p1"></div>
+    </div>
+  </section>
+
+  <!-- =============================================================== 2 · KEY -->
+  <section class="card locked" id="c2" data-state="">
+    <div class="chead"><span class="num">2</span><h2>Prove the key on Arc mainnet</h2></div>
+    <p>Arc ships a post-quantum precompile. Hand it your verifying key, a message and a signature, and it
+      answers with a boolean on real mainnet state. This is the exact call the vault makes before it moves a
+      cent, so proving it here costs nothing and settles the question.</p>
+    <div class="body">
+      <dl class="kv">
+        <dt>Verifying key</dt><dd id="k-vk">—</dd>
+        <dt>Key fingerprint</dt><dd id="k-fp">—</dd>
+        <dt>Derivation</dt><dd id="k-deriv">—</dd>
+        <dt>Secret key</dt><dd id="k-sk">in this tab only — never serialized, never sent</dd>
+      </dl>
+      <div class="row">
+        <button class="btn" id="b-prove">Sign a message and verify it on mainnet</button>
+      </div>
+      <div id="p2"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 3 · VAULT -->
+  <section class="card locked" id="c3" data-state="">
+    <div class="chead"><span class="num">3</span><h2>Open the vault</h2></div>
+    <p>The vault's address is fixed at creation and its key is burned into the bytecode. Nobody — not us, not
+      Circle, not a future quantum computer — can swap the key afterwards.</p>
+    <div class="body">
+      <dl class="kv">
+        <dt>Gas account</dt><dd id="a-addr">not connected</dd>
+        <dt>Gas balance</dt><dd id="a-bal">—</dd>
+        <dt>Your vault</dt><dd id="a-vault">none yet</dd>
+        <dt>Vault USDC</dt><dd id="a-vusdc">—</dd>
+      </dl>
+      <div class="row">
+        <button class="btn ghost" id="b-connect">Connect wallet</button>
+        <button class="btn ghost" id="b-demo">Use a throwaway account</button>
+        <button class="btn ghost" id="b-refresh">Refresh</button>
+      </div>
+      <div id="p3"></div>
+      <div id="p3h"></div>
+      <div class="field" style="max-width:300px">
+        <label for="dep-in">Put USDC in the vault</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="dep-in" value="10.00" spellcheck="false">
+          <button class="btn ghost" id="b-deposit" disabled>Deposit</button>
+        </div>
+      </div>
+      <p class="hint">Two transactions: an approval, then the deposit. Once it is in, the only thing that can
+        move it is a signed authorization — including for you.</p>
+      <div class="field">
+        <label for="factory-in">Factory on Arc mainnet</label>
+        <input type="text" id="factory-in" spellcheck="false" placeholder="0x… — paste an address when the factory is deployed">
+      </div>
+      <div class="field">
+        <label for="vault-in">Vault address (or paste one to use a vault you already opened)</label>
+        <input type="text" id="vault-in" spellcheck="false" placeholder="0x…">
+      </div>
+      <div id="p3b"></div>
+    </div>
+  </section>
+
+  <!-- ========================================================= 4 · AUTHORIZE -->
+  <section class="card locked" id="c4" data-state="">
+    <div class="chead"><span class="num">4</span><h2>Authorize a payment</h2></div>
+    <p>The vault signs over one 32-byte digest that binds the chain id, the vault, the recipient, the amount
+      and a nonce. Replay it anywhere else and it is worthless. Sign it here, check it against Arc's
+      precompile <em>before</em> spending gas, and the release cannot fail on the signature.</p>
+    <p class="hint">To take your own money back out, name yourself as the recipient. There is no admin
+      shortcut around this step, which is the entire point.</p>
+    <div class="body">
+      <div class="two-col">
+        <div><label for="to-in">Recipient</label><input type="text" id="to-in" spellcheck="false" placeholder="0x…"></div>
+        <div><label for="amt-in">Amount (USDC)</label><input type="text" id="amt-in" value="1.00" spellcheck="false"></div>
+      </div>
+      <div class="field" style="max-width:220px">
+        <label for="nonce-in">Nonce</label>
+        <input type="number" id="nonce-in" value="0" min="0" step="1">
+      </div>
+      <dl class="kv">
+        <dt>Digest</dt><dd id="d-digest">—</dd>
+        <dt>Contract agrees</dt><dd id="d-cross">—</dd>
+        <dt>Nonce</dt><dd id="d-nonce">—</dd>
+        <dt>Signature</dt><dd id="d-sig">—</dd>
+        <dt>Precompile</dt><dd id="d-verdict">—</dd>
+      </dl>
+      <div class="row">
+        <button class="btn" id="b-sign">Sign this authorization</button>
+        <button class="btn ghost" id="b-release" disabled>Send the release</button>
+      </div>
+      <div id="p4"></div>
+      <div id="p4b"></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <p><b style="color:#fff">What is not true yet.</b> The vault and the factory are written, tested and
+      <a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">public</a>, but neither is
+      deployed on Arc mainnet — deploying costs about two cents of gas that this project does not have.
+      Everything above that touches mainnet (the precompile proof, the balances, the digest cross-check) is
+      real. Everything that needs a vault is real code waiting on that address, and the pre-flight check is
+      why you will not waste gas when it is there.</p>
+    <ul class="plain">
+      <li>Unaudited. Written to be small enough to read in one sitting, which is not the same thing.</li>
+      <li>Arc's PQ precompile answers <code>false</code> for a bad signature instead of reverting. The vault
+        reads that boolean; a version that only checked that the call succeeded would be open.</li>
+      <li>Averaging 382,879 gas per verification — about 1,300× a plain USDC transfer — and a 7,856-byte
+        signature. Post-quantum is not free.</li>
+      <li>USDC on Arc still honours Circle's denylist. A key that survives quantum computers does not protect
+        you from a freeze.</li>
+      <li>The throwaway account is a private key in this browser's <code>localStorage</code>. Fund it with
+        pocket change and nothing else.</li>
+    </ul>
+  </div>
+</main>
+
+<script type="module">
+const CDN = 'https://esm.sh';
+const $ = (id) => document.getElementById(id);
+
+/* Config. The factory address is the one value that has to change when it is deployed; it can also be
+ * supplied as ?factory=0x… so a link can carry a deployment with it. */
+const q = new URLSearchParams(location.search);
+const CONFIG = {
+  chainId: 5042,
+  rpc: q.get('rpc') || 'https://rpc.drpc.mainnet.arc.io',
+  rpcAlt: 'https://rpc.blockdaemon.mainnet.arc.io',
+  usdc: q.get('usdc') || '0x3600000000000000000000000000000000000000',
+  precompile: '0x1800000000000000000000000000000000000004',
+  factory: q.get('factory') || localStorage.getItem('olinea:factory') || '',
+};
+
+const PQ_ABI = [{ name: 'verifySlhDsaSha2128s', type: 'function', stateMutability: 'view',
+  inputs: [{ name: 'vk', type: 'bytes' }, { name: 'message', type: 'bytes' }, { name: 'sig', type: 'bytes' }],
+  outputs: [{ name: 'isValid', type: 'bool' }] }];
+const ERC20_ABI = [
+  { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
+  { name: 'decimals', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] },
+  { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 's', type: 'address' }, { name: 'v', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+];
+const FACTORY_ABI = [
+  { name: 'createVault', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'verifyingKey', type: 'bytes' }], outputs: [{ name: 'vault', type: 'address' }] },
+  { name: 'vaultsOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }], outputs: [{ name: '', type: 'address[]' }] },
+  { name: 'vaultCount', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+];
+const VAULT_ABI = [
+  { name: 'authorizationDigest', type: 'function', stateMutability: 'view', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }, { name: 'nonce', type: 'uint256' }], outputs: [{ type: 'bytes32' }] },
+  { name: 'balance', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'nonceUsed', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+  { name: 'verifyingKey', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bytes' }] },
+  { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] },
+  { name: 'release', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }, { name: 'nonce', type: 'uint256' }, { name: 'signature', type: 'bytes' }], outputs: [] },
+];
+const VAULT_EVENTS = [
+  { type: 'event', name: 'Deposited', inputs: [{ name: 'from', type: 'address', indexed: true }, { name: 'amount', type: 'uint256', indexed: false }] },
+  { type: 'event', name: 'Released', inputs: [{ name: 'to', type: 'address', indexed: true }, { name: 'amount', type: 'uint256', indexed: false }, { name: 'nonce', type: 'uint256', indexed: false }, { name: 'digest', type: 'bytes32', indexed: false }] },
+];
+
+const state = { mnemonic: '', index: 0, vk: '', sig: '', digest: '', account: null, mode: '', vault: '', vaultFrom: null, busy: false };
+
+/* ---------------------------------------------------------------------- viem */
+let V, A;
+try {
+  /* viem's root bundle leaves the account helpers out, so they come from the submodule. */
+  [V, A] = await Promise.all([import(`${CDN}/viem@2.21.0`), import(`${CDN}/viem@2.21.0/accounts`)]);
+} catch (err) {
+  $('net-pill').className = 'pill off';
+  $('net-text').textContent = 'offline';
+  document.querySelector('.lede').innerHTML = `Could not load the chain library: ${err.message}. Check your connection and reload.`;
+  throw err;
+}
+const arcChain = {
+  id: CONFIG.chainId, name: 'Arc',
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+  rpcUrls: { default: { http: [CONFIG.rpc] } },
+};
+/* dRPC rate-limits bursts and its first call after a cold start is slow, so a second provider sits
+ * behind it — but viem's own retry re-sends *reverts* too, which turns a definitive answer into a
+ * ten-second wait. Retries are handled here instead, and only for failures that might succeed next
+ * time. A revert is an answer, not a glitch. */
+const transport = () => V.fallback([
+  V.http(CONFIG.rpc, { retryCount: 0, timeout: 15_000 }),
+  V.http(CONFIG.rpcAlt, { retryCount: 0, timeout: 15_000 }),
+], { retryCount: 0 });
+const reads = V.createPublicClient({ transport: transport() });
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const transient = (e) => /HttpRequestError|TimeoutError|RateLimit|429|fetch failed|network|ECONN|socket/i.test(
+  `${e && e.name} ${(e && (e.shortMessage || e.message)) || ''}`);
+async function call(fn, tries = 3) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try { return await fn(); } catch (err) { last = err; if (!transient(err)) throw err; await sleep(500 * (i + 1)); }
+  }
+  throw last;
+}
+
+/* -------------------------------------------------------------------- worker */
+const worker = new Worker('/app/worker.js', { type: 'module' });
+let seq = 0, onStage = null;
+const pending = new Map();
+worker.onmessage = ({ data }) => {
+  if (data.stage) { onStage && onStage(data.stage); return; }
+  const job = pending.get(data.id);
+  if (!job) return;
+  pending.delete(data.id);
+  data.ok ? job.resolve(data) : job.reject(new Error(data.error));
+};
+worker.onerror = (e) => { console.error('worker', e); };
+function ask(type, payload = {}, stage) {
+  const id = ++seq;
+  onStage = stage || null;
+  return new Promise((resolve, reject) => {
+    pending.set(id, { resolve, reject });
+    worker.postMessage({ id, type, ...payload });
+  });
+}
+
+/* Machine-specific timings: this is how the progress bars stop lying. */
+const timings = JSON.parse(localStorage.getItem('olinea:timings') || '{}');
+const record = (k, ms) => {
+  timings[k] = Math.round(timings[k] ? timings[k] * 0.6 + ms * 0.4 : ms);
+  localStorage.setItem('olinea:timings', JSON.stringify(timings));
+};
+const expected = (k, fallback) => (timings[k] ? `about ${(timings[k] / 1000).toFixed(1)} s on this device` : fallback);
+
+const STAGE_TEXT = {
+  entropy: 'generating 256 bits of entropy…', mnemonic: 'checking the backup checksum…',
+  hkdf: 'stretching the words into a key seed (PBKDF2 + HKDF)…',
+  keygen: 'generating the SLH-DSA keypair…', sign: 'signing — 7,856 bytes, one hash chain at a time…',
+};
+
+/* A progress bar that reports real elapsed time, because none of these steps can report themselves. */
+function busy(node, label, note) {
+  const t0 = performance.now();
+  node.innerHTML = `<div class="prog"><p>${label} <span class="t" id="__t">0.0 s</span></p>
+    <div class="bar"><i></i></div><p class="stage" id="__s">${note || ''}</p></div>`;
+  const tick = setInterval(() => {
+    const el = node.querySelector('#__t');
+    if (el) el.textContent = `${((performance.now() - t0) / 1000).toFixed(1)} s`;
+  }, 100);
+  return {
+    elapsed: () => performance.now() - t0,
+    stage: (name) => { const s = node.querySelector('#__s'); if (s) s.textContent = STAGE_TEXT[name] || name; },
+    done: () => { clearInterval(tick); const p = node.querySelector('.prog'); if (p) p.remove(); },
+  };
+}
+function say(node, html, cls = '') { node.innerHTML = `<p class="note ${cls}">${html}</p>`; }
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const short = (h, n = 10) => (h && h.length > n * 2 + 2 ? `${h.slice(0, n + 2)}…${h.slice(-6)}` : h || '—');
+
+/* ------------------------------------------------------------------ network */
+async function net() {
+  try {
+    const [chainId, block] = await Promise.all([call(() => reads.getChainId(), 2), call(() => reads.getBlockNumber(), 2)]);
+    if (chainId !== CONFIG.chainId) throw new Error(`rpc is chain ${chainId}, expected ${CONFIG.chainId}`);
+    $('net-pill').className = 'pill on';
+    $('net-text').textContent = `Arc mainnet · block ${Number(block).toLocaleString()}`;
+    $('s-chain').textContent = `Arc mainnet · ${CONFIG.chainId}`;
+    $('s-verifier').textContent = `${short(CONFIG.precompile, 6)} · 382,879 gas`;
+    return true;
+  } catch (err) {
+    $('net-pill').className = 'pill off';
+    $('net-text').textContent = 'no RPC';
+    $('s-chain').textContent = 'unreachable';
+    return false;
+  }
+}
+net();
+setInterval(net, 30_000);
+
+/* ============================================================ 1 · BACKUP */
+let revealed = false;
+$('b-new').onclick = async () => {
+  $('pane-restore').hidden = true;
+  $('pane-new').hidden = false;
+  const node = $('p1');
+  const bar = busy(node, 'Creating 24 words…', '256 bits of entropy from this device');
+  try {
+    const { mnemonic } = await ask('words', {}, bar.stage);
+    bar.done();
+    state.mnemonic = mnemonic;
+    revealed = true;
+    $('words').className = 'words';
+    $('words').innerHTML = mnemonic.split(' ').map((w, i) => `<span class="w"><i>${i + 1}</i>${w}</span>`).join('');
+    $('b-blur').textContent = 'Hide words';
+    $('ack').checked = false;
+    $('b-derive').disabled = true;
+    say(node, 'Written down? Tick the box, then derive. The words never leave this page — no request is made when you click.');
+  } catch (err) { bar.done(); say(node, esc(err.message), 'badbox'); }
+};
+$('b-blur').onclick = () => {
+  revealed = !revealed;
+  $('words').className = revealed ? 'words' : 'words blur';
+  $('b-blur').textContent = revealed ? 'Hide words' : 'Show words';
+};
+$('b-copy-words').onclick = async () => {
+  try { await navigator.clipboard.writeText(state.mnemonic); $('b-copy-words').textContent = 'Copied'; }
+  catch { $('b-copy-words').textContent = 'Copy failed'; }
+  setTimeout(() => { $('b-copy-words').textContent = 'Copy'; }, 1600);
+};
+$('b-restore').onclick = () => {
+  $('pane-new').hidden = true;
+  $('pane-restore').hidden = false;
+  state.mnemonic = '';
+  $('b-derive').disabled = true;
+};
+$('mn-in').oninput = (e) => {
+  const words = e.target.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  state.mnemonic = words.join(' ');
+  const ok = words.length === 24;
+  $('b-derive').disabled = !ok;
+  $('mn-check').innerHTML = ok
+    ? `<span class="yes">24 words.</span> Checksum is verified in the worker before any key is derived.`
+    : `${words.length} word${words.length === 1 ? '' : 's'} — a backup is 24.`;
+};
+$('ack').onchange = (e) => { $('b-derive').disabled = !e.target.checked; };
+
+$('b-derive').onclick = async () => {
+  if (state.busy) return;
+  const node = $('p1');
+  const index = Math.max(0, Math.min(255, Number($('idx').value) || 0));
+  state.index = index;
+  const bar = busy(node, 'Deriving your key…', 'PBKDF2 → HKDF → SLH-DSA keygen');
+  state.busy = true;
+  try {
+    const t0 = performance.now();
+    const out = await ask('derive', { mnemonic: state.mnemonic, index }, bar.stage);
+    const ms = performance.now() - t0;
+    record('derive', ms);
+    bar.done();
+    state.vk = out.verifyingKey;
+    showKey(out);
+    $('p1').innerHTML = `<p class="note">Key derived in ${(ms / 1000).toFixed(1)} s. Keep the words; this tab's copy
+      disappears when you close it.</p>`;
+    complete('c1');
+    unlock('c2');
+    unlock('c3', false);
+  } catch (err) {
+    bar.done();
+    say(node, `Could not derive: ${esc(err.message)}`, 'badbox');
+  } finally { state.busy = false; }
+};
+
+function showKey(out) {
+  const vkHex = '0x' + out.verifyingKey;
+  $('k-vk').textContent = vkHex;
+  $('k-fp').textContent = V.keccak256(vkHex).slice(0, 10) + '…';
+  $('k-deriv').textContent = `olinea/slh-dsa/v1 · vault/${state.index} · ${out.publicKeyBytes}-byte key`;
+  $('s-verifier').textContent = `${short(CONFIG.precompile, 6)} · 382,879 gas`;
+}
+
+/* ------------------------------------------------------------- unlock gating
+ * A card is unlocked when its prerequisite exists, and marked done only when its work is actually
+ * finished — proving the key is recommended, never required, so a flaky RPC can never leave you
+ * unable to open a vault. */
+function unlock(id, scroll = true) {
+  const card = $(id);
+  card.classList.remove('locked');
+  if (card.dataset.state !== 'done') card.dataset.state = 'active';
+  if (scroll) card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+function complete(id) { $(id).dataset.state = 'done'; }
+
+/* ================================================================ 2 · PROVE */
+$('b-prove').onclick = async () => {
+  if (state.busy) return;
+  state.busy = true;
+  const node = $('p2');
+  const vkHex = '0x' + state.vk;
+  /* Deliberately not shaped like an authorization: keccak("olinea/self-test/v1" ‖ vk).
+   * A self-test signature can never be mistaken for permission to move money. */
+  const digest = V.keccak256(V.concat([V.stringToHex('olinea/self-test/v1'), vkHex]));
+  const bar = busy(node, 'Signing on this device…', expected('sign', 'expect 9–16 s — this is real, not a stub'));
+  try {
+    const t0 = performance.now();
+    const out = await ask('sign', { digest }, bar.stage);
+    const ms = performance.now() - t0;
+    record('sign', ms);
+    bar.done();
+    node.innerHTML = `<div class="prog"><p>Signature ready in <span class="t">${(ms / 1000).toFixed(1)} s</span>
+      · ${out.signatureBytes} bytes. Asking Arc mainnet…</p><div class="bar"><i></i></div></div>`;
+    const t1 = performance.now();
+    const ok = await call(() => reads.readContract({
+      address: CONFIG.precompile, abi: PQ_ABI, functionName: 'verifySlhDsaSha2128s',
+      args: [vkHex, out.message, out.signature],
+    }));
+    const vmMs = performance.now() - t1;
+    node.innerHTML = `<dl class="kv">
+      <dt>Precompile said</dt><dd class="${ok ? 'yes' : 'no'}">${ok}</dd>
+      <dt>Message</dt><dd>${out.message}</dd>
+      <dt>Signature</dt><dd>${short(out.signature, 12)} (${out.signatureBytes} B)</dd>
+      <dt>Verified against</dt><dd>Arc mainnet · ${short(CONFIG.precompile, 6)} · ${vmMs.toFixed(0)} ms</dd>
+      <dt>Signature cost</dt><dd>${(ms / 1000).toFixed(1)} s of your CPU · the verifier would cost 382,879 gas on-chain</dd>
+    </dl>
+    <p class="note">${ok
+      ? 'Arc&rsquo;s own precompile returned <b>true</b> for a signature made in your browser, on mainnet, with no gas spent. The vault makes this identical call before it transfers anything.'
+      : 'Mainnet returned <b>false</b> — do not deposit into a vault built on this key.'}</p>`;
+    if (ok) complete('c2');
+    unlock('c4');
+    if (!ok) say(node, 'The precompile rejected this signature. Something is wrong; do not proceed.', 'badbox');
+  } catch (err) {
+    bar.done();
+    say(node, `Failed: ${esc(err.message)}`, 'badbox');
+  } finally { state.busy = false; }
+};
+
+/* ================================================================ 3 · VAULT */
+$('factory-in').value = CONFIG.factory;
+$('factory-in').oninput = (e) => {
+  const v = e.target.value.trim();
+  CONFIG.factory = V.isAddress(v) ? v : '';
+  localStorage.setItem('olinea:factory', CONFIG.factory);
+  paintFactory();
+};
+$('vault-in').oninput = async (e) => {
+  const v = e.target.value.trim();
+  state.vault = V.isAddress(v) ? v : '';
+  paintVault();
+  if (state.vault) { await paintVaultChain(); unlock('c4'); }
+};
+
+async function paintFactory() {
+  const node = $('p3b');
+  $('s-factory').textContent = CONFIG.factory ? short(CONFIG.factory, 6) : 'not deployed';
+  if (!CONFIG.factory) {
+    node.innerHTML = `<p class="note warnbox"><b>No factory on Arc mainnet yet.</b> Paste an address above when there
+      is one. Until then a vault can still be reached by pasting its address below.</p>
+      <p class="hint">To deploy it, from <code>olinea/contracts</code> with a funded Arc account:</p>
+      <pre class="cmd">forge create src/OlineaFactory.sol:OlineaFactory \\
+  --rpc-url arc --private-key $ARC_PK --broadcast \\
+  --constructor-args ${CONFIG.usdc} ${CONFIG.precompile}</pre>`;
+    return;
+  }
+  try {
+    const n = await call(() => reads.readContract({ address: CONFIG.factory, abi: FACTORY_ABI, functionName: 'vaultCount' }));
+    node.innerHTML = `<p class="note"><span class="yes">Factory live.</span> ${n} vault${n === 1n ? '' : 's'} created
+      through it so far.</p>`;
+  } catch (err) {
+    node.innerHTML = `<p class="note badbox">That address did not answer <code>vaultCount()</code> on Arc mainnet —
+      it is probably not the factory.</p>`;
+  }
+}
+paintFactory();
+
+/* The vault's own record. A full-range log scan is rude to a public RPC, so it starts at the block the
+ * vault was created in whenever this tab is the one that created it. */
+async function paintHistory() {
+  const node = $('p3h');
+  if (!state.vault) { node.innerHTML = ''; return; }
+  const addr = state.vault;
+  node.innerHTML = '<p class="hint">Reading the vault&rsquo;s record…</p>';
+  try {
+    const latest = await call(() => reads.getBlockNumber(), 2);
+    const from = state.vaultFrom ?? (latest > 1_000_000n ? latest - 1_000_000n : 0n);
+    const logs = await call(() => reads.getContractEvents({ address: addr, abi: VAULT_EVENTS, fromBlock: from, toBlock: latest }));
+    if (state.vault !== addr) return;
+    if (!logs.length) { node.innerHTML = '<p class="hint">Nothing has moved through this vault yet.</p>'; return; }
+    const rows = logs.slice(-8).reverse().map((l) => {
+      const a = l.args || {};
+      const kind = l.eventName === 'Released' ? 'out' : 'in';
+      return `<div class="hist"><span class="${kind === 'out' ? 'no' : 'yes'}">${kind === 'out' ? 'released' : 'deposited'}</span>
+        <b>${V.formatUnits(a.amount ?? 0n, 6)} USDC</b>
+        <span class="mono">${kind === 'out' ? 'to ' + short(a.to, 6) + ' · nonce ' + a.nonce : 'from ' + short(a.from, 6)}</span>
+        <a href="https://explorer.arc.io/block/${l.blockNumber}" target="_blank" rel="noopener">block ${l.blockNumber}</a></div>`;
+    }).join('');
+    node.innerHTML = `<h3>The vault&rsquo;s record</h3><div class="histbox">${rows}</div>
+      <p class="hint">${logs.length} event${logs.length === 1 ? '' : 's'} between blocks ${from} and ${latest}.</p>`;
+  } catch (err) { if (state.vault === addr) node.innerHTML = `<p class="hint">History is unavailable from this RPC — ${esc((err.shortMessage || err.message || '').slice(0, 60))}.</p>`; }
+}
+
+/* Identity before balances: the vault is whoever answers verifyingKey(). One call decides whether this
+ * address is an Olinea vault at all, which is both faster and a better answer than "unreadable". */
+async function readVaultKey(addr) {
+  const vk = await call(() => reads.readContract({ address: addr, abi: VAULT_ABI, functionName: 'verifyingKey' }));
+  if (!vk || vk === '0x') throw new Error('no key');
+  return vk;
+}
+async function paintVault() {
+  if (!state.vault) { $('a-vault').textContent = 'none yet'; $('a-vusdc').textContent = '—'; return; }
+  const addr = state.vault;
+  $('a-vault').textContent = addr;
+  $('a-vusdc').textContent = 'reading…';
+  let vk;
+  try { vk = await readVaultKey(addr); }
+  catch { if (state.vault === addr) { $('a-vault').textContent = addr; $('a-vusdc').textContent = 'not an Olinea vault — it did not answer verifyingKey()'; } return; }
+  const dep = $('b-deposit');
+  if (dep) dep.disabled = !(state.account && state.vault);
+  complete('c3');
+  paintHistory();
+  if (state.vault !== addr) return;
+  const ours = state.vk ? '0x' + state.vk : '';
+  $('a-vault').innerHTML = `${addr}<br><span class="hint" style="margin:0">key ${short(vk, 8)}
+    ${ours ? (vk.toLowerCase() === ours.toLowerCase() ? '<span class="yes">· matches your backup</span>'
+      : '<span class="no">· different key — this vault is not yours</span>') : ''}</span>`;
+  try {
+    const bal = await call(() => reads.readContract({ address: addr, abi: VAULT_ABI, functionName: 'balance' }));
+    if (state.vault === addr) $('a-vusdc').textContent = `${V.formatUnits(bal, 6)} USDC`;
+  } catch (err) { if (state.vault === addr) $('a-vusdc').textContent = `balance unreadable (${(err.shortMessage || err.message || '').slice(0, 40)})`; }
+}
+async function paintVaultChain() {
+  state.vault = $('vault-in').value.trim();
+  if (!V.isAddress(state.vault)) return;
+  const idx = Math.max(0, Number($('nonce-in').value) || 0);
+  $('d-nonce').textContent = 'reading…';
+  try {
+    const used = await call(() => reads.readContract({ address: state.vault, abi: VAULT_ABI, functionName: 'nonceUsed', args: [BigInt(idx)] }));
+    $('d-nonce').textContent = used ? 'already spent — pick another' : `${idx} is unused`;
+  } catch { $('d-nonce').textContent = '—'; }
+}
+window.addEventListener('load', async () => {
+  if (CONFIG.factory && state.account) {
+    try {
+      const list = await call(() => reads.readContract({ address: CONFIG.factory, abi: FACTORY_ABI, functionName: 'vaultsOf', args: [state.account.address] }));
+      if (list.length) { state.vault = list[0]; $('vault-in').value = list[0]; paintVault(); unlock('c4'); }
+    } catch {}
+  }
+});
+
+$('b-demo').onclick = () => {
+  let pk = localStorage.getItem('olinea:demo:pk');
+  if (!pk) { pk = A.generatePrivateKey(); localStorage.setItem('olinea:demo:pk', pk); }
+  state.account = A.privateKeyToAccount(pk);
+  state.mode = 'demo';
+  paintAccount();
+};
+$('b-connect').onclick = async () => {
+  if (!window.ethereum) { say($('p3'), 'No browser wallet here. Use the throwaway account instead — it is a key this page generated and keeps locally.', 'warnbox'); return; }
+  try {
+    const [addr] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    try {
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x' + CONFIG.chainId.toString(16) }] });
+    } catch {
+      await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
+        chainId: '0x' + CONFIG.chainId.toString(16), chainName: 'Arc',
+        nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+        rpcUrls: [CONFIG.rpc], blockExplorerUrls: ['https://explorer.arc.io'],
+      }] });
+    }
+    state.account = { address: addr, type: 'json-rpc' };
+    state.mode = 'injected';
+    paintAccount();
+  } catch (err) { say($('p3'), `Wallet refused: ${esc(err.message)}`, 'badbox'); }
+};
+async function paintAccount() {
+  if (!state.account) return;
+  const node = $('p3');
+  $('a-addr').textContent = state.account.address;
+  const bar = busy(node, 'Reading balances…', '');
+  try {
+    const [gas, usdc] = await Promise.all([
+      call(() => reads.getBalance({ address: state.account.address })),
+      call(() => reads.readContract({ address: CONFIG.usdc, abi: ERC20_ABI, functionName: 'balanceOf', args: [state.account.address] })),
+    ]);
+    bar.done();
+    $('a-bal').textContent = `${V.formatUnits(gas, 18)} USDC (gas)`;
+    node.innerHTML = `<div class="row">
+        <button class="btn ghost" id="b-copy-addr">Copy address</button>
+        <button class="btn" id="b-create" ${CONFIG.factory && gas > 0n ? '' : 'disabled'}>Create my vault</button>
+      </div>
+      <p class="hint">${state.mode === 'demo'
+        ? 'Throwaway key in this browser. Send a few dollars of USDC on Arc to the address above to pay for the one transaction that creates your vault; the USDC you deposit is separate and the vault only ever moves it on a signature from your key.'
+        : 'Connected wallet. It pays gas and owns the vault; it can never move the vault&rsquo;s USDC.'}
+        ${CONFIG.factory ? '' : ' Creating a vault needs the factory address above.'}
+        ${gas > 0n ? '' : ' Gas balance is zero, so it cannot send anything yet.'}</p>
+      <dl class="kv">
+        <dt>ERC-20 USDC</dt><dd>${V.formatUnits(usdc, 6)} USDC <span style="color:var(--dim)">at ${short(CONFIG.usdc, 6)}</span></dd>
+        <dt>Sending costs</dt><dd>≈ $0.0004 a transaction at 20 Gwei</dd>
+      </dl>`;
+    const copy = $('b-copy-addr');
+    if (copy) copy.onclick = async () => { try { await navigator.clipboard.writeText(state.account.address); copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy address'; }, 1500); } catch {} };
+    const created = $('b-create');
+    if (created) created.onclick = createVault;
+    const dep = $('b-deposit');
+    if (dep) { dep.disabled = !(state.vault && state.account); dep.onclick = addUsdc; }
+    refreshOwnedVaults();
+  } catch (err) { bar.done(); say(node, `Could not read balances: ${esc(err.message)}`, 'badbox'); }
+}
+async function refreshOwnedVaults() {
+  if (!CONFIG.factory || !state.account) return;
+  try {
+    const list = await call(() => reads.readContract({ address: CONFIG.factory, abi: FACTORY_ABI, functionName: 'vaultsOf', args: [state.account.address] }));
+    if (list.length && !state.vault) {
+      state.vault = list[0]; $('vault-in').value = list[0];
+      await paintVault(); unlock('c4');
+    }
+  } catch {}
+}
+$('b-refresh').onclick = () => { net(); if (state.account) paintAccount(); if (state.vault) paintVault(); paintFactory(); };
+
+async function createVault() {
+  const node = $('p3');
+  const bar = busy(node, 'Creating your vault…', 'signing locally, then one transaction');
+  try {
+    const data = V.encodeFunctionData({ abi: FACTORY_ABI, functionName: 'createVault', args: ['0x' + state.vk] });
+    const hash = await sendTx(CONFIG.factory, data, bar.stage);
+    bar.done();
+    const receipt = await call(() => reads.waitForTransactionReceipt({ hash }));
+    const list = await call(() => reads.readContract({ address: CONFIG.factory, abi: FACTORY_ABI, functionName: 'vaultsOf', args: [state.account.address] }));
+    state.vault = list[list.length - 1] || '';
+    state.vaultFrom = receipt.blockNumber;
+    $('vault-in').value = state.vault;
+    await paintVault();
+    unlock('c4');
+    say(node, `Vault created at <b>${state.vault}</b> — block ${receipt.blockNumber}.`);
+  } catch (err) { bar.done(); say(node, `Could not create the vault: ${esc(err.message)}`, 'badbox'); }
+}
+
+async function addUsdc() {
+  const node = $('p3');
+  const bar = busy(node, 'Depositing…', 'approve, then deposit');
+  try {
+    if (!V.isAddress(state.vault)) throw new Error('no vault address yet');
+    const amount = V.parseUnits($('dep-in').value.trim(), 6);
+    if (amount <= 0n) throw new Error('amount must be more than zero');
+    bar.stage('approving USDC');
+    const a = await sendTx(CONFIG.usdc, V.encodeFunctionData({ abi: ERC20_ABI, functionName: 'approve', args: [state.vault, amount] }));
+    await call(() => reads.waitForTransactionReceipt({ hash: a }));
+    bar.stage('depositing');
+    const d = await sendTx(state.vault, V.encodeFunctionData({ abi: VAULT_ABI, functionName: 'deposit', args: [amount] }));
+    await call(() => reads.waitForTransactionReceipt({ hash: d }));
+    bar.done();
+    await paintVault();
+    say(node, `Deposited ${$('dep-in').value.trim()} USDC. Approval ${short(a, 6)} · deposit ${short(d, 6)}.`);
+  } catch (err) { bar.done(); say(node, `Deposit failed: ${esc(err.message)}`, 'badbox'); }
+}
+
+/* One place that turns "I have a transaction" into "it is signed and broadcast", for either account type. */
+async function sendTx(to, data, stage) {
+  if (!state.account) throw new Error('connect an account first');
+  if (state.mode === 'injected') {
+    const wallet = V.createWalletClient({ account: state.account.address, chain: arcChain, transport: V.custom(window.ethereum) });
+    return wallet.sendTransaction({ to, data });
+  }
+  const wallet = V.createWalletClient({ account: state.account, chain: arcChain, transport: transport() });
+  const hash = await wallet.sendTransaction({ to, data });
+  return hash;
+}
+
+/* ============================================================ 4 · AUTHORIZE */
+async function buildDigest() {
+  const to = $('to-in').value.trim();
+  const amt = $('amt-in').value.trim();
+  const nonce = BigInt(Math.max(0, Number($('nonce-in').value) || 0));
+  if (!V.isAddress(to)) throw new Error('that recipient is not an address');
+  if (!V.isAddress(state.vault)) throw new Error('enter the vault address first');
+  let amount;
+  try { amount = V.parseUnits(amt, 6); } catch { throw new Error('that amount does not parse'); }
+  if (amount <= 0n) throw new Error('amount must be more than zero');
+  const digest = V.keccak256(V.encodeAbiParameters(
+    [{ type: 'uint256' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }],
+    [BigInt(CONFIG.chainId), state.vault, to, amount, nonce],
+  ));
+  return { to, amount, nonce, digest };
+}
+$('b-sign').onclick = async () => {
+  if (state.busy) return;
+  const node = $('p4');
+  $('b-release').disabled = true;
+  let built;
+  try { built = await buildDigest(); } catch (err) { say(node, esc(err.message), 'badbox'); return; }
+  state.busy = true;
+  state.digest = built.digest;
+  $('d-digest').textContent = built.digest;
+  $('d-sig').textContent = '—';
+  $('d-verdict').textContent = '—';
+  $('p4b').innerHTML = '';
+  const bar = busy(node, 'Signing the authorization…', expected('sign', 'expect 9–16 s — the tab stays responsive, try scrolling'));
+  try {
+    /* The contract can compute this digest itself. Ask it, and refuse to go further if we disagree. */
+    let agree = '—';
+    try {
+      const onchain = await call(() => reads.readContract({ address: state.vault, abi: VAULT_ABI, functionName: 'authorizationDigest', args: [built.to, built.amount, built.nonce] }));
+      agree = onchain.toLowerCase() === built.digest.toLowerCase()
+        ? '<span class="yes">yes — identical to the vault&rsquo;s own hash</span>'
+        : `<span class="no">NO — the vault says ${onchain}</span>`;
+      if (onchain.toLowerCase() !== built.digest.toLowerCase()) throw new Error('digest mismatch: stop');
+    } catch (err) { if (/mismatch/.test(err.message)) throw err; agree = 'vault not readable — using the locally computed digest'; }
+    $('d-cross').innerHTML = agree;
+
+    const t0 = performance.now();
+    const out = await ask('sign', { digest: built.digest }, bar.stage);
+    const ms = performance.now() - t0;
+    record('sign', ms);
+    state.sig = out.signature;
+    $('d-sig').textContent = `${short(out.signature, 14)} (${out.signatureBytes} B, ${(ms / 1000).toFixed(1)} s)`;
+
+    bar.stage('verify');
+    const t1 = performance.now();
+    let ok = null, vmErr = null;
+    try {
+      ok = await call(() => reads.readContract({
+        address: CONFIG.precompile, abi: PQ_ABI, functionName: 'verifySlhDsaSha2128s',
+        args: ['0x' + state.vk, built.digest, out.signature],
+      }));
+    } catch (err) { vmErr = err; }
+    const vmMs = performance.now() - t1;
+    bar.done();
+    if (vmErr) $('d-verdict').innerHTML = `<span class="warn">could not reach the verifier</span> — ${esc((vmErr.shortMessage || vmErr.message || '').slice(0, 80))}`;
+    else $('d-verdict').innerHTML = ok
+      ? `<span class="yes">true</span> — Arc mainnet accepted it in ${vmMs.toFixed(0)} ms`
+      : '<span class="no">false</span> — do not send this';
+    const calldata = V.encodeFunctionData({ abi: VAULT_ABI, functionName: 'release', args: [built.to, built.amount, built.nonce, out.signature] });
+    $('p4b').innerHTML = `<p class="hint">The release call, ready to send. ${calldata.length / 2 - 1} bytes of
+      calldata, most of it the signature.</p><pre class="cmd">${esc(calldata.slice(0, 202))}…</pre>
+      <pre class="cmd">cast send ${state.vault} "release(address,uint256,uint256,bytes)" \\
+  ${built.to} ${built.amount} ${built.nonce} ${esc(short(out.signature, 16))} \\
+  --rpc-url arc --private-key $ARC_PK</pre>`;
+    if (ok === false) {
+      say(node, 'Arc returned <b>false</b> for this signature. Do not send it.', 'badbox');
+    } else if (ok === true && state.account) {
+      $('b-release').disabled = false;
+      say(node, 'Verified on Arc mainnet before spending anything. Sending now only costs gas (≈ $0.0004).');
+    } else if (ok === true) {
+      say(node, 'Signature verified on Arc mainnet. Connect a gas account to send the release — or hand the calldata above to anyone with gas; the signature is portable and only works once.');
+    } else {
+      $('b-release').disabled = false;
+      say(node, 'The verifier could not be read, so this signature is unchecked. Sending it may only burn gas — the vault will check it itself and revert if it is wrong.', 'warnbox');
+    }
+  } catch (err) { bar.done(); say(node, `Failed: ${esc(err.message)}`, 'badbox'); }
+  finally { state.busy = false; }
+};
+$('nonce-in').onchange = () => { if (state.vault) paintVaultChain(); };
+
+$('b-release').onclick = async () => {
+  if (state.busy || !state.sig) return;
+  state.busy = true;
+  const node = $('p4');
+  const bar = busy(node, 'Sending the release…', 'one transaction, 7,856 bytes of calldata');
+  try {
+    const built = await buildDigest();
+    const data = V.encodeFunctionData({ abi: VAULT_ABI, functionName: 'release', args: [built.to, built.amount, built.nonce, state.sig] });
+    const hash = await sendTx(state.vault, data);
+    bar.done();
+    const receipt = await call(() => reads.waitForTransactionReceipt({ hash }));
+    say(node, `Released. Transaction <b>${hash}</b> in block ${receipt.blockNumber}. <a href="https://explorer.arc.io/tx/${hash}" target="_blank" rel="noopener">View it</a>.`);
+    $('b-release').disabled = true;
+    state.sig = '';
+    await paintVault();
+    await paintVaultChain();
+  } catch (err) { bar.done(); say(node, `The release did not go through: ${esc(err.message)}`, 'badbox'); }
+  finally { state.busy = false; }
+};
+</script>
+</body>
+</html>

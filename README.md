@@ -10,9 +10,19 @@ Live site: **https://olinea.sithunyein.com**
 - [x] ABI of Arc's PQ precompile mapped and verified against mainnet (see below)
 - [x] `OlineaVault.sol` + conformance suite — **17 Foundry tests green**, and the vault's exact
       authorization digest verified against the **real mainnet precompile** (`node scripts/pq.mjs conformance`, 3/3)
-- [ ] Vault deployed to Arc mainnet
-- [ ] Web app: browser keygen, deposit, authorize, verify
+- [x] `OlineaFactory.sol` — one transaction per vault, no owner, nothing to administer — **10 Foundry tests green**
+- [x] **Vault console** at `/app/` — 24-word backup, in-browser key derivation, mainnet precompile
+      proof, factory deploy, deposit, authorize, release, and the vault's own event history.
+      Verified against live Arc mainnet (reads + the precompile proof) and end to end on a local chain
+- [ ] Factory and vault deployed to Arc mainnet — needs about two cents of gas
 - [ ] Public evidence: the verifying transaction
+
+### What the console proves without a wallet
+
+Opening `https://olinea.sithunyein.com/app/` and pressing one button signs a message on your own CPU
+and has **Arc mainnet's precompile return `true` for it** — 7,856 bytes, ~9 s to sign, ~260 ms to
+verify, 0 gas. Every authorization can be checked the same way *before* anything is broadcast, which
+is why a release cannot fail on the signature.
 
 
 ## The primitive (verified, undocumented anywhere else)

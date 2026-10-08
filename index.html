@@ -243,8 +243,9 @@
       <ul class="nav-links">
         <li class="nav-sm-hide"><a href="#how">How it works</a></li>
         <li class="nav-sm-hide"><a href="#security">Security</a></li>
+        <li><a href="/app/">App</a></li>
         <li><a href="/docs/">Docs</a></li>
-        <li><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
+        <li class="nav-sm-hide"><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
       </ul>
     </header>
 
@@ -268,7 +269,7 @@
     <p class="tagline">USDC a quantum computer<br><strong>can't move.</strong></p>
 
     <div class="cta-row">
-      <a href="/docs/" class="cta">Read the docs</a>
+      <a href="/app/" class="cta">Open the app</a>
       <span class="cta-line"></span>
       <span class="count" aria-hidden="true">7856</span>
     </div>
@@ -313,6 +314,11 @@
       <li><b>Authorize off-chain.</b> The key signs one 32-byte digest that binds the chain, vault, recipient, amount and nonce. The signing key never touches the chain and needs no Arc account.</li>
       <li><b>Anyone relays the release.</b> The vault asks the precompile, decodes the returned boolean, and only then transfers the USDC. The relayer pays the gas and gains nothing.</li>
     </ol>
+    <p class="lede" style="margin-top:26px">
+      You do not have to take any of that on faith. <a href="/app/" class="text">The vault console</a>
+      generates the key from a 24-word backup in your browser, signs with it, and has Arc mainnet verify the
+      result before a single unit of gas is spent.
+    </p>
   </section>
 
   <section class="section" id="security">
@@ -449,6 +455,7 @@ require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
           <li><a href="#how">How it works</a></li>
           <li><a href="#security">Security</a></li>
           <li><a href="#faq">FAQ</a></li>
+          <li><a href="/app/">App</a></li>
           <li><a href="/docs/">Docs</a></li>
         </ul>
       </div>

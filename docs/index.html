@@ -120,6 +120,7 @@
   <ul class="topnav">
     <li class="hide-sm"><a href="/#how">How it works</a></li>
     <li class="hide-sm"><a href="/#faq">FAQ</a></li>
+    <li><a href="/app/">App</a></li>
     <li><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
   </ul>
 </header>
@@ -179,6 +180,8 @@
         <tbody>
           <tr><td>PQ precompile ABI</td><td>Mapped from Circle's public <code>arc-node</code> source and verified against Arc mainnet — real signature <code>true</code>; tampered signature, wrong key and mismatched message all <code>false</code></td></tr>
           <tr><td>OlineaVault.sol</td><td>17 Foundry tests green; its exact authorization digest verified against the live mainnet precompile (3/3)</td></tr>
+          <tr><td>OlineaFactory.sol</td><td>10 Foundry tests green; one transaction per vault, no owner and nothing to administer</td></tr>
+          <tr><td>Vault console</td><td>Runs against Arc mainnet — key derivation, the precompile proof and every read are live; the create, deposit and release path is verified end to end on a local chain</td></tr>
           <tr><td>Arc mainnet deployment</td><td>Not yet deployed — <a class="text" href="#deploy">runbook</a></td></tr>
           <tr><td>Independent audit</td><td class="no">None</td></tr>
         </tbody>
@@ -191,6 +194,26 @@
       a read call, so you can check the vault's authorization path against Arc mainnet before you
       deploy anything.
     </p>
+    <h3>From the browser</h3>
+    <p>
+      <a class="text" href="/app/">The vault console</a> is the same path without a terminal: it
+      generates a 24-word backup, derives the SLH-DSA key from it in this browser, proves the key
+      against Arc mainnet's precompile for free, creates a vault through the factory, funds it, and
+      checks each authorization on-chain <em>before</em> sending the release. Nothing is uploaded and
+      there is no account to make — which matters, because Arc's own console and faucet are
+      unreachable from some jurisdictions.
+    </p>
+    <div class="note">
+      <p>
+        <strong>The console has one rule the CLI does not.</strong> Its 24 words are fed through
+        PBKDF2 and then HKDF with the salt <code>olinea/slh-dsa/v1</code> and the info
+        <code>vault/&lt;index&gt;</code> to produce the 48-byte seed that
+        <code>slh_dsa_sha2_128s.keygen</code> takes. noble describes that deterministic keygen as a
+        library hook, not a FIPS 205 derivation, so the noble version is pinned and the salt is
+        versioned: <strong>a backup made under a later salt will not open a vault made under this
+        one</strong>. Changing an index gives a different, unrelated vault from the same backup.
+      </p>
+    </div>
 <pre><code><span class="cmt"># the vault and its test suite</span>
 git clone https://github.com/thesithunyein/olinea
 cd olinea/contracts &amp;&amp; forge test            <span class="cmt"># 17 tests</span>
