@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Contracts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Formatting
+        run: forge fmt --check
+
+      - name: Build
+        run: forge build --sizes
+
+      - name: Tests
+        run: forge test -vv
+
+  site:
+    name: Site and console
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Checks that every claim on the site still matches the contracts: documented signatures exist,
+      # anchors resolve, the console's digest has exactly the five fields the vault hashes, and the
+      # honest limits are still present. Reads files only — no network, no dependencies.
+      - name: Structural checks
+        run: node scripts/check-site.mjs
+
+      - name: No repository internals inside the published directory
+        run: |
+          for f in LOCAL contracts scripts .github .editorconfig .env; do
+            if grep -q "^$f" .vercelignore; then
+              echo "OK   $f is excluded from the deploy"
+            else
+              echo "FAIL $f would be published as a public static asset"
+              exit 1
+            fi
+          done

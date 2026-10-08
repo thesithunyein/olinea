@@ -1,0 +1,59 @@
+name: Bug report
+description: Something is broken, or a claim in the docs does not match reality.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report security issues here.** Anything that could move funds out of a vault without a
+        valid signature belongs in [SECURITY.md](https://github.com/thesithunyein/olinea/blob/main/SECURITY.md)
+        — email instead, please.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - Vault console (the /app/ page)
+        - OlineaVault.sol
+        - OlineaFactory.sol
+        - The documentation or the site, which claims something untrue
+        - The CLI in scripts/
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: |
+        Commands, a transaction hash, or the exact steps in the console. If it is a wrong claim in the
+        docs, quote the sentence and give the reading that contradicts it.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Browser and OS for the console, or the versions from `forge --version`.
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: Paste the error, the console output, or the transaction receipt. Output, not a summary of it.
+      render: shell

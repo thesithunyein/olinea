@@ -1,9 +1,12 @@
 # Files uploaded to Vercel are served publicly as static assets.
 # Only the site itself may be uploaded — nothing from the repository that is not a web page.
+# Everything else here belongs to the project, not to the website.
 .env*
 .git
 .gitignore
 .gitmodules
+.editorconfig
+.github/
 LOCAL/
 contracts/
 scripts/

@@ -76,6 +76,10 @@
   .bad { color: #fca5a5; }
   .good { color: #6ee7b7; }
 
+  figure.diagram { margin: 24px 0 4px; }
+  figure.diagram img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: #07080b; }
+  figure.diagram figcaption { color: var(--dim); font-size: 12.5px; line-height: 1.7; margin-top: 10px; }
+
   table.data { width: 100%; border-collapse: collapse; margin: 16px 0 22px; font-size: 14.5px; }
   table.data th, table.data td { text-align: left; padding: 10px 13px; border-bottom: 1px solid var(--line); vertical-align: top; }
   table.data th { color: var(--dim); font-weight: 500; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
@@ -172,6 +176,19 @@
         twice in the same vault. See <a class="text" href="#digest">Authorization digest</a>.
       </li>
     </ol>
+
+    <figure class="diagram">
+      <img src="/docs/architecture.svg" width="1200" height="700"
+           alt="The browser derives an SLH-DSA key from 24 words in a Web Worker and signs a 32-byte digest that binds the chain id, the vault, the recipient, the amount and a nonce. The signature is relayed to an OlineaVault on Arc, which asks the post-quantum precompile for a boolean and only then transfers USDC.">
+      <figcaption>
+        Everything left of the dashed line runs on the user's machine, in a browser, with no account
+        and no server. The digest in the middle is the whole authorization: change any one of its five
+        fields and the signature is worthless somewhere else. The vault makes one extra call that a
+        careless implementation would skip — it asks the precompile and requires the answer to be
+        <code>true</code>, because a forged signature comes back as a <em>successful</em> call.
+        <a class="text" href="/docs/architecture.svg">Open the diagram full size</a>.
+      </figcaption>
+    </figure>
 
     <h2 id="status">Status</h2>
     <div class="table-wrap">

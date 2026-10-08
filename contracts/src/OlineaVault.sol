@@ -96,7 +96,9 @@ contract OlineaVault {
 
         bytes32 digest = authorizationDigest(to, amount, nonce);
         (bool ok, bytes memory ret) = _verifier.staticcall(
-            abi.encodeWithSelector(IPQ.verifySlhDsaSha2128s.selector, _verifyingKey, abi.encodePacked(digest), signature)
+            abi.encodeWithSelector(
+                IPQ.verifySlhDsaSha2128s.selector, _verifyingKey, abi.encodePacked(digest), signature
+            )
         );
         if (!ok) revert PrecompileCallFailed();
         if (ret.length != 32 || !abi.decode(ret, (bool))) revert InvalidPostQuantumSignature();

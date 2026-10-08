@@ -186,7 +186,9 @@ contract OlineaVaultTest is Test {
 
     function test_releaseRejectsAmountAboveBalance() public {
         _acceptRelease(BOB, 11 * ONE_USDC, 1);
-        vm.expectRevert(abi.encodeWithSelector(OlineaVault.InsufficientBalance.selector, 11 * ONE_USDC, 10 * ONE_USDC));
+        vm.expectRevert(
+            abi.encodeWithSelector(OlineaVault.InsufficientBalance.selector, 11 * ONE_USDC, 10 * ONE_USDC)
+        );
         vault.release(BOB, 11 * ONE_USDC, 1, hex"deadbeef");
     }
 
@@ -219,13 +221,21 @@ contract OlineaVaultTest is Test {
 
 /// @dev Stateless stand-ins etched at the canonical precompile address for the production-path test.
 contract TruePQ {
-    function verifySlhDsaSha2128s(bytes calldata, bytes calldata, bytes calldata) external pure returns (bool) {
+    function verifySlhDsaSha2128s(bytes calldata, bytes calldata, bytes calldata)
+        external
+        pure
+        returns (bool)
+    {
         return true;
     }
 }
 
 contract FalsePQ {
-    function verifySlhDsaSha2128s(bytes calldata, bytes calldata, bytes calldata) external pure returns (bool) {
+    function verifySlhDsaSha2128s(bytes calldata, bytes calldata, bytes calldata)
+        external
+        pure
+        returns (bool)
+    {
         return false;
     }
 }

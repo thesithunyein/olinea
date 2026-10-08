@@ -32,7 +32,9 @@ contract NaiveVault {
     function release(address to, uint256 amount, uint256, bytes calldata signature) external {
         bytes32 digest = keccak256(abi.encode(block.chainid, address(this), to, amount, uint256(0)));
         (bool ok,) = _verifier.staticcall(
-            abi.encodeWithSelector(IPQ.verifySlhDsaSha2128s.selector, _verifyingKey, abi.encodePacked(digest), signature)
+            abi.encodeWithSelector(
+                IPQ.verifySlhDsaSha2128s.selector, _verifyingKey, abi.encodePacked(digest), signature
+            )
         );
         require(ok, "verify failed");
         _usdc.transfer(to, amount);

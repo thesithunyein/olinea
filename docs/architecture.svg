@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700"
+     role="img" aria-labelledby="archTitle archDesc">
+  <title id="archTitle">Olinea architecture</title>
+  <desc id="archDesc">A 24-word backup is stretched into an SLH-DSA key inside a Web Worker, which signs one
+    32-byte digest binding the chain, vault, recipient, amount and nonce. The signature is relayed to an
+    OlineaVault on Arc, which asks Arc's post-quantum precompile for a boolean and only then moves USDC.</desc>
+
+  <style>
+    .bg { fill: #07080b; }
+    .zone { fill: none; stroke: #2b3444; stroke-width: 1.25; }
+    .zone-solid { fill: none; stroke: #1e2430; stroke-width: 1.25; }
+    .zl { fill: #cbd5e1; font: 600 11.5px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .16em; }
+    .zs { fill: #6b7686; font: 400 10.5px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .02em; }
+    .box { fill: #0d1016; stroke: #1e2430; stroke-width: 1.25; }
+    .bt { fill: #eef2f8; font: 600 12.5px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; }
+    .bs { fill: #8b96a8; font: 400 10.5px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; }
+    .bm { fill: #cbd5e1; font: 400 10.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .bd { fill: #0b1a14; stroke: #2f6b52; stroke-width: 1.25; }
+    .bdt { fill: #6ee7b7; font: 600 10px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; letter-spacing: .16em; }
+    .flow { stroke: #4b5666; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+    .flow-back { stroke: #4b5666; stroke-width: 1.25; fill: none; stroke-dasharray: 4 3; marker-end: url(#arrowDim); }
+    .fl { fill: #9aa5b5; font: 400 10.5px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; }
+    .flw { fill: #fcd34d; font: 500 10.5px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; }
+    .h1 { fill: #fff; font: 700 19px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; letter-spacing: -.01em; }
+    .h2 { fill: #6b7686; font: 400 12.5px ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .k { fill: #6ee7b7; }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4b5666"/>
+    </marker>
+    <marker id="arrowDim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7686"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1200" height="700"/>
+
+  <text class="h1" x="40" y="42">Olinea</text>
+  <text class="h2" x="112" y="42">post-quantum authorization for USDC on Arc</text>
+  <text class="h2" x="1160" y="42" text-anchor="end">chainId 5042 · no owner · no server</text>
+
+  <!-- trust boundaries -->
+  <rect class="zone" x="40" y="88" width="340" height="564" rx="12"/>
+  <rect class="zone-solid" x="676" y="88" width="484" height="564" rx="12"/>
+  <text class="zl" x="60" y="116">YOUR BROWSER</text>
+  <text class="zs" x="216" y="116">no account · no server · no gas</text>
+  <text class="zl" x="696" y="116">ARC MAINNET</text>
+  <text class="zs" x="836" y="116">consensus-enforced</text>
+
+  <!-- ============================ browser column ============================ -->
+  <rect class="box" x="60" y="140" width="300" height="70" rx="8"/>
+  <text class="bt" x="76" y="166">24 words — BIP-39</text>
+  <text class="bs" x="76" y="186">the backup. There is no recovery, by design.</text>
+
+  <rect class="box" x="60" y="234" width="300" height="86" rx="8"/>
+  <text class="bt" x="76" y="260">PBKDF2, then HKDF</text>
+  <text class="bm" x="76" y="280">salt olinea/slh-dsa/v1</text>
+  <text class="bm" x="76" y="296">info vault/&lt;i&gt;  &#8594;  48-byte seed</text>
+
+  <rect class="box" x="60" y="344" width="300" height="86" rx="8"/>
+  <text class="bt" x="76" y="370">SLH-DSA-SHA2-128s keygen</text>
+  <text class="bs" x="76" y="390">in a Web Worker · 1&#8211;2 s</text>
+  <text class="bs" x="76" y="406">the secret key never leaves this tab</text>
+
+  <rect class="box" x="60" y="454" width="300" height="86" rx="8"/>
+  <text class="bt" x="76" y="480">sign(digest)</text>
+  <text class="bm" x="76" y="500">7,856-byte signature · 6&#8211;16 s</text>
+  <text class="bs" x="76" y="516">one signature authorizes one release</text>
+
+  <path class="flow" d="M 210 210 L 210 234"/>
+  <path class="flow" d="M 210 320 L 210 344"/>
+  <path class="flow" d="M 210 430 L 210 454"/>
+
+  <text class="zs" x="60" y="576">Nothing above crosses a network except the signature.</text>
+  <text class="zs" x="60" y="596">No Circle account, no QR hand-off, no extension.</text>
+  <text class="zs" x="60" y="616">A browser is the whole prerequisite.</text>
+
+  <!-- ============================== the binding ============================ -->
+  <rect class="bd" x="420" y="300" width="216" height="200" rx="10"/>
+  <text class="bdt" x="438" y="326">THE BINDING</text>
+  <text class="bm" x="438" y="352">keccak256(</text>
+  <text class="bm" x="438" y="368">  abi.encode(</text>
+  <text class="bm" x="438" y="384">    chainId,</text>
+  <text class="bm" x="438" y="400">    vault,</text>
+  <text class="bm" x="438" y="416">    to,</text>
+  <text class="bm" x="438" y="432">    amount,</text>
+  <text class="bm" x="438" y="448">    nonce))</text>
+  <text class="bs" x="438" y="474">Change any field and the</text>
+  <text class="bs" x="438" y="490">signature is worthless somewhere</text>
+  <text class="bs" x="438" y="502">else — another chain, another</text>
+  <text class="bs" x="438" y="514">vault, another recipient.</text>
+
+  <path class="flow" d="M 360 497 L 414 470"/>
+  <text class="fl" x="386" y="464">signs</text>
+  <path class="flow" d="M 636 400 L 690 392"/>
+  <text class="fl" x="642" y="386">release()</text>
+
+  <!-- ============================ on-chain column ========================== -->
+  <rect class="box" x="696" y="140" width="444" height="72" rx="8"/>
+  <text class="bt" x="714" y="166">OlineaFactory</text>
+  <text class="bm" x="714" y="188">createVault(bytes verifyingKey)</text>
+  <text class="bs" x="960" y="188">no owner · holds no funds</text>
+
+  <rect class="box" x="696" y="300" width="444" height="150" rx="8"/>
+  <text class="bt" x="714" y="326">OlineaVault</text>
+  <text class="bs" x="714" y="350">the verifying key is a constructor argument, never reassigned</text>
+  <text class="bm" x="714" y="374">deposit(uint256)</text>
+  <text class="bs" x="900" y="374">anyone may fund it; that grants no rights</text>
+  <text class="bm" x="714" y="398">release(to, amount, nonce, signature)</text>
+  <text class="bm" x="714" y="424">nonceUsed[nonce]</text>
+  <text class="bs" x="900" y="424">set before the transfer: no replay</text>
+
+  <rect class="box" x="696" y="490" width="210" height="76" rx="8"/>
+  <text class="bt" x="714" y="516">USDC ERC-20</text>
+  <text class="bm" x="714" y="536">0x3600&#8230;0000</text>
+  <text class="bs" x="714" y="554">6 decimals · issuer denylist applies</text>
+
+  <rect class="box" x="926" y="490" width="214" height="76" rx="8"/>
+  <text class="bt" x="944" y="516">PQ precompile</text>
+  <text class="bm" x="944" y="536">0x1800&#8230;0004</text>
+  <text class="bs" x="944" y="554">382,879 gas per verification</text>
+
+  <path class="flow" d="M 918 212 L 918 300"/>
+  <text class="fl" x="928" y="260">creates</text>
+  <path class="flow" d="M 800 450 L 800 490"/>
+  <text class="fl" x="812" y="476">deposit / transfer</text>
+  <path class="flow" d="M 1040 450 L 1040 490"/>
+  <text class="fl" x="1050" y="476">staticcall</text>
+  <path class="flow-back" d="M 1104 490 L 1104 450"/>
+  <text class="flw" x="1112" y="476">bool</text>
+
+  <text class="zs" x="696" y="600">A forged signature returns false as a successful call. The vault decodes the</text>
+  <text class="zs" x="696" y="620">boolean and requires true — checking only that the call did not revert accepts</text>
+  <text class="zs" x="696" y="640">every forgery. The console runs this same call for free, before you spend gas.</text>
+
+  <!-- ================================ legend =============================== -->
+  <rect x="40" y="668" width="18" height="12" rx="3" fill="none" stroke="#2b3444" stroke-width="1.25" stroke-dasharray="4 3"/>
+  <text class="fl" x="66" y="679">runs on the user&#8217;s machine</text>
+  <rect x="238" y="668" width="18" height="12" rx="3" fill="none" stroke="#1e2430" stroke-width="1.25"/>
+  <text class="fl" x="264" y="679">enforced by consensus</text>
+  <text class="fl" x="424" y="679">key size 32 B · signature 7,856 B · 6&#8211;16 s and 382,879 gas are measurements, not estimates</text>
+</svg>
