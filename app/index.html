@@ -14,7 +14,10 @@
 <style>
   :root {
     --bg:#fff; --panel:#fff; --sunken:#f8faf9; --line:#e3e9e5; --line2:#eef2f0;
-    --ink:#0b3b2e; --fg:#13251e; --body:#4a5a53; --dim:#71837b;
+    --ink:#0b3b2e; --fg:#13251e; --body:#4a5a53;
+    /* --dim carries real text - every secondary label and every table state word - so it clears
+       4.5:1 on white and on --sunken (4.85:1). #71837b measured 4.01:1, which fails AA. */
+    --dim:#63766d;
     --acc:#0b3b2e; --acc2:#08543d; --link:#0b6b4f;
     --good:#15803d; --bad:#b42318; --warn:#b45309;
     --pad: clamp(18px, 4vw, 32px); --wide: 1100px;
@@ -66,7 +69,7 @@
   .tab[aria-selected="true"] { color: var(--ink); font-weight: 600; }
   .tab .tick { width: 6px; height: 6px; border-radius: 50%; background: #17b26a; flex: none; }
   .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible,
-  .stat:focus-visible, .copy:focus-visible {
+  .stat:focus-visible, .copy:focus-visible, .info:focus-visible {
     outline: 2px solid var(--link); outline-offset: 2px;
   }
   [role="tabpanel"] { padding: 22px 0 0; }
@@ -85,7 +88,19 @@
   /* ------------------------------------------------------------- dashboard */
   /* Five facts, each one a way into the tab that owns it. Read at a glance, so the tabs are for
      working rather than for finding out where you are. */
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(184px, 1fr)); gap: 14px; }
+  /* Five tiles, and never four-then-one. Auto-fit stranded the fifth on a row of its own between
+     861px and 1180px, where four tiles fit but a fifth does not. */
+  .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 1180px) { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 860px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* At two columns the fifth tile is alone on the last row, so it takes the whole row. */
+    .stats .stat:last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 420px) {
+    .stats { grid-template-columns: minmax(0, 1fr); }
+    .stats .stat:last-child { grid-column: auto; }
+  }
   .stat {
     appearance: none; font: inherit; text-align: left; cursor: pointer; color: inherit;
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
@@ -96,7 +111,8 @@
   /* Icons are drawn here, not fetched and not glyphs, so they cost one paint and no request. */
   svg.ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .stat-lbl svg.ico { color: var(--link); }
-  .stat-val { font-size: clamp(19px, 1.8vw, 23px); font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; }
+  /* Tabular figures: the chain height ticks every few seconds and must not drag its tile wider. */
+  .stat-val { font-size: clamp(19px, 1.8vw, 23px); font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
   .stat-sub { font-size: 12.5px; color: var(--dim); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .stat.on .stat-sub { color: var(--good); }
   .stat.warn .stat-sub { color: var(--warn); }
@@ -146,7 +162,7 @@
     color: var(--fg); padding: 11px 12px; min-height: 44px;
   }
   textarea { min-height: 92px; resize: vertical; line-height: 1.6; }
-  input::placeholder, textarea::placeholder { color: #9aa8a2; }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
   input:focus, textarea:focus { outline: none; border-color: var(--link); box-shadow: 0 0 0 3px rgba(11,107,79,.14); }
   .field { margin-top: 14px; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
@@ -181,7 +197,12 @@
   .copy { appearance: none; background: none; border: 0; color: var(--link); cursor: pointer; font: inherit; font-size: 11.5px;
     padding: 2px 6px; border-radius: 5px; flex: none; }
   .copy:hover { background: var(--sunken); text-decoration: underline; }
-  @media (pointer: coarse) { .copy { padding: 8px 10px; } }
+  @media (pointer: coarse) {
+    .copy { padding: 8px 10px; }
+    /* A finger needs about 44px of target; a mouse does not. */
+    .tab { min-height: 44px; }
+    .info { min-height: 40px; }
+  }
   .verdict { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--sunken); }
   .verdict.ok { border-color: #abefc6; background: #f6fef9; }
   .verdict.no { border-color: #fecdca; background: #fffbfa; }
@@ -191,7 +212,12 @@
   .verdict strong { display: block; font-size: 14.5px; font-weight: 600; color: var(--ink); }
   .verdict small { color: var(--body); font-size: 12.5px; }
   .empty { text-align: center; padding: 34px 20px; }
-  .empty .glyph { width: 44px; height: 44px; margin: 0 auto 14px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; color: var(--dim); font-size: 18px; background: var(--sunken); }
+  /* An empty state nested inside a card already has the card's padding around it. */
+  .card .empty { padding: 16px 0 4px; }
+  /* An empty state gets the same drawn-icon language as the tiles, one size up. It used to be a
+     bullet character in a circle, which reads as a broken image. */
+  .empty .glyph { width: 48px; height: 48px; margin: 0 auto 14px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--link); background: var(--sunken); }
+  .empty .glyph svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .empty h2 { margin-bottom: 8px; }
   .empty p { max-width: 46ch; margin: 0 auto; }
 
@@ -230,7 +256,7 @@
   .histrow .kind.bad { color: var(--bad); }
   .histrow .kind.warnc { color: var(--warn); }
   /* A row whose label spans the rest of the line only needs two columns to start with. */
-  #selfcheck .histrow, #p7 .histrow { grid-template-columns: 106px minmax(0, 1fr); }
+  #selfcheck .histrow, #p7 .histrow, #selfcheck .histhead, #p7 .histhead { grid-template-columns: 106px minmax(0, 1fr); }
 
   /* --------------------------------------------------------------- progress */
   .prog { margin-top: 16px; }
@@ -316,7 +342,7 @@
   <!-- ============================================================== OVERVIEW -->
   <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
 
-    <h2 class="sec">Account Overview</h2>
+    <h2 class="sec">Account overview</h2>
     <!-- Five facts, each one a way into the tab that owns the work. -->
     <div class="stats" aria-label="Account at a glance">
       <button class="stat" type="button" data-goto="panel-key" id="stat-key">
@@ -331,7 +357,7 @@
       </button>
       <button class="stat" type="button" data-goto="panel-vault" id="stat-vault">
         <span class="stat-lbl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.4" y="10.4" width="15.2" height="9.6" rx="2.4"/><path d="M8.2 10.4V7.9a3.8 3.8 0 0 1 7.6 0v2.5"/><path d="M12 14.4v2"/></svg>Vault</span>
-        <span class="stat-val" id="stat-vault-v">—</span>
+        <span class="stat-val" id="stat-vault-v">None</span>
         <span class="stat-sub" id="stat-vault-s">not deployed yet</span>
       </button>
       <button class="stat" type="button" data-goto="panel-vault" id="stat-gas">
@@ -367,7 +393,7 @@
 
     <div id="key-start" class="card">
       <h2>Create your key</h2>
-      <p>24 words, made on this device. The only copy — no reset, no support. Lose them and the money is unspendable by anyone.</p>
+      <p>The backup is the only copy — no reset, no support. Lose the 24 words and the money is unspendable by anyone.</p>
       <div class="row">
         <button class="btn" id="b-new">Create a new key</button>
         <button class="btn ghost" id="b-restore">Restore from a backup</button>
@@ -453,7 +479,7 @@
   <!-- ================================================================== VAULT -->
   <section id="panel-vault" role="tabpanel" aria-labelledby="tab-vault" hidden>
     <div id="lock-vault" class="card empty" hidden>
-      <div class="glyph">&#9679;</div>
+      <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.6" cy="15.4" r="3.6"/><path d="M11.3 13.7 19 6"/><path d="m16.4 8.6 2.6 2.6"/></svg></div>
       <h2>Create a key first</h2>
       <p>A vault is built around a key. Make one first — a minute, free.</p>
       <div class="row" style="justify-content:center"><button class="btn" id="b-goto-key1">Go to Key</button></div>
@@ -533,7 +559,7 @@
   <!-- ============================================================== AUTHORIZE -->
   <section id="panel-authorize" role="tabpanel" aria-labelledby="tab-authorize" hidden>
     <div id="lock-auth" class="card empty" hidden>
-      <div class="glyph">&#9679;</div>
+      <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.6 19.4l1.3-3.9L15 6.4a1.9 1.9 0 0 1 2.7 0l.9.9a1.9 1.9 0 0 1 0 2.7L9.5 19.1z"/><path d="M14.2 7.2l3.6 3.6"/></svg></div>
       <h2>Create a key first</h2>
       <p>Authorizations are signed by your key. Make one first.</p>
       <div class="row" style="justify-content:center"><button class="btn" id="b-goto-key2">Go to Key</button></div>
@@ -627,11 +653,12 @@
 
   <!-- =============================================================== ACTIVITY -->
   <section id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" hidden>
+    <!-- No card heading: the page is already titled Activity, and the line under the title already
+         says the record is read from Arc. A third copy of both said nothing new. -->
     <div class="card">
-      <h2>Activity</h2>
-      <p>Read from Arc mainnet, not a local log. If it is not here, it did not happen.</p>
-      <div id="activity" style="margin-top:18px"><p class="muted">Nothing yet. Prove your key on the Key tab.</p></div>
-    </div></section>
+      <div id="activity"></div>
+    </div>
+  </section>
 
   <footer class="foot">
     <button class="info" id="b-info" type="button" aria-expanded="false" aria-controls="limits">
@@ -821,9 +848,11 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
  * a window, and the window is printed rather than left to be guessed. At the measured block time
  * this is a bit under half a day. */
 const HISTORY_WINDOW = 20_000n;
-/* The record is the one table here with columns worth naming, so it carries a header like the
-   reference's does. The other lists are label-and-detail rows and read better without one. */
+/* A record table names its columns on a tinted band, the way the reference does. The two-column
+   lists - the self-check and the authorization checks - are a state word beside a sentence and
+   read better without one; the four-column records are not. */
 const HIST_HEAD = '<div class="histhead"><span>Event</span><span>Amount</span><span>Detail</span><span>Block</span></div>';
+const ACT_HEAD = '<div class="histhead"><span>State</span><span>Record</span><span>Detail</span><span>Source</span></div>';
 /* Which block a vault was born in is a fact about the vault, not about this tab, so it is kept
  * beside the address it belongs to and disregarded the moment the two disagree. */
 function storedBlock(addr) {
@@ -925,7 +954,7 @@ function renderStats() {
   const v = state.vault;
   const mine = hasKey && state.vaultMine;
   setStat('vault', live ? (!v ? '' : mine ? 'on' : hasKey ? 'no' : '') : 'warn',
-    v && state.vaultBal ? state.vaultBal : '—',
+    v && state.vaultBal ? state.vaultBal : 'None',
     !live ? 'not deployed yet'
       : !v ? 'none yet — create one on the Vault tab'
         : mine ? `yours · ${hex(v, 5)}`
@@ -1813,11 +1842,19 @@ $('b-bundle-send').onclick = async () => {
 function markActivity() {
   const node = $('activity');
   if (!state.proof) {
-    node.innerHTML = '<p class="muted">Nothing yet. Prove your key on the Key tab.</p>';
+    /* The same empty state as the other two panels that can have nothing in them: one drawn icon,
+       one line saying what would put something here, and the button that does it. */
+    node.innerHTML = `<div class="empty">
+      <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.7V12l3 1.9"/></svg></div>
+      <h2>Nothing yet</h2>
+      <p>Prove your key on the Key tab and the result is recorded here. Vault activity appears once a vault exists.</p>
+      <div class="row" style="justify-content:center"><button class="btn ghost" id="b-goto-key3">Go to Key</button></div>
+    </div>`;
+    $('b-goto-key3').onclick = () => show('panel-key');
     return;
   }
   const p = state.proof;
-  node.innerHTML = `<div class="hist"><div class="histrow">
+  node.innerHTML = `<div class="hist">${ACT_HEAD}<div class="histrow">
     <span class="kind ${p.ok ? 'good' : 'bad'}">${p.ok ? 'verified' : 'rejected'}</span>
     <b>${p.ok ? 'key proof' : 'failed proof'}</b>
     <span class="mono">Arc mainnet · ${p.when} ms · ${(p.ms / 1000).toFixed(1)} s to sign</span>

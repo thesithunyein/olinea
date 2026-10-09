@@ -242,6 +242,37 @@ ok(appMarkup.includes('id="b-explorer"') && appMarkup.includes('id="step-link" h
   && app.includes("$('b-explorer').href = `https://explorer.arc.io/tx/${state.released.hash}`"),
   'the status card offers the explorer, pointed at the transaction that was actually sent');
 
+/* ---------------- the console as a piece of design, not just as a set of features ----------------
+   Each of the following was measured in a browser before it was changed: a colour ratio, a tile
+   that wrapped four-then-one, a focus ring that was missing, an empty state drawn as a bullet. */
+ok(/--dim:#63766d;/.test(app) && !/--dim:#71837b/.test(app),
+  '--dim is dark enough to read: #71837b measured 4.01:1 on white, under the 4.5:1 floor');
+ok(/input::placeholder, textarea::placeholder \{ color: var\(--dim\); \}/.test(app),
+  'and the placeholder that used to be the faintest text in the app uses that same colour');
+ok(/\.stats\s*\{[^}]*grid-template-columns: repeat\(5,/.test(app) && !app.includes('auto-fit, minmax(184px'),
+  'the five tiles have explicit column counts, so none of them strands on a row of its own');
+ok(/@media \(max-width: 1180px\) \{ \.stats \{ grid-template-columns: repeat\(3,/.test(app)
+  && /\.stats \.stat:last-child \{ grid-column: 1 \/ -1; \}/.test(app),
+  'and the fifth tile takes the whole row whenever it would otherwise be alone');
+ok(/\.stat-val \{[^}]*font-variant-numeric: tabular-nums/.test(app),
+  'the chain height cannot drag its tile wider as it ticks');
+ok(app.includes('.copy:focus-visible, .info:focus-visible'),
+  'the info button carries the same focus ring as every other control');
+ok(app.includes('@media (pointer: coarse)') && /\.tab \{ min-height: 44px; \}/.test(app),
+  'on a touch screen the tabs and the info button are finger-sized');
+ok(count(app, '&#9679;') === 0 && count(app, 'class="glyph"><svg') === 3
+  && /\.empty \.glyph svg \{/.test(app),
+  'every empty state draws its icon, instead of printing a bullet in a circle');
+ok(/const ACT_HEAD = '<div class="histhead"><span>State<\/span>/.test(app)
+  && app.includes('${ACT_HEAD}<div class="histrow">'),
+  'the activity record names its columns too, the way the vault record does');
+ok(app.includes("state.vaultBal : 'None'") && !appMarkup.includes('id="stat-vault-v">—<'),
+  'an empty vault tile says None, the same word the key and gas tiles use');
+ok(appMarkup.includes('id="b-goto-key3"') && app.includes("$('b-goto-key3').onclick = () => show('panel-key')"),
+  'the empty activity panel offers the one action that fills it');
+ok(count(app, '<h2>Activity</h2>') === 0 && !app.includes('Nothing yet. Prove your key on the Key tab.'),
+  'the activity panel no longer titles itself twice or says the same thing twice');
+
 const factory = readFileSync('contracts/src/OlineaFactory.sol', 'utf8');
 ok(factory.includes('function createVault(bytes calldata verifyingKey)'), 'the factory really has createVault(bytes)');
 for (const sig of ['vaultsOf', 'vaultCount', 'vaultAt']) {
