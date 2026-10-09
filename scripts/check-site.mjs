@@ -214,8 +214,8 @@ ok(count(app, 'function renderNext()') === 1 && count(app, 'renderNext()') >= 2 
 ok(count(app, 'const HEADINGS =') === 1
   && ['panel-overview', 'panel-key', 'panel-vault', 'panel-authorize', 'panel-activity'].every((id) => app.includes(`'${id}': [`)),
   'every section says what it is at the top of the page');
-ok(app.includes('name="color-scheme" content="light"') && /--bg:#fff/.test(app),
-  'the console is a light surface, the way a product is');
+ok(app.includes('name="color-scheme" content="dark"') && /--bg:#000/.test(app),
+  'the console is dark, the same surface as the landing, and says so to the browser');
 /* The reference shows a flow as three steps, so the Authorize panel does too - and a step counts
    as done only when the signature, the precompile or the receipt itself said so. */
 ok(appMarkup.indexOf('id="auth-steps"') > appMarkup.indexOf('id="auth-body"')
@@ -230,8 +230,12 @@ ok(/<div class="steps" id="step-bar" role="progressbar"/.test(appMarkup),
   'and the progress bar reports it on the element that claims to be one');
 ok(/\.btn\.ghost\s*\{[^}]*border-color:\s*var\(--acc\)/.test(app),
   'the secondary button is an outline, the way the reference draws it');
+/* Fading the whole element is how a disabled button becomes a grey blob on a dark surface: the
+   white fill and its own dark label fade together and land at 3.18:1. Muted, never translucent. */
+ok(/\.btn:disabled \{[^}]*color: var\(--dim\)/.test(app) && !/\.btn:disabled \{ opacity/.test(app),
+  'a disabled button is a muted state, not the whole element faded into an unreadable blob');
 ok(/\.kv dt \{ color: var\(--link\)/.test(app) && /\.kv dd \{[^}]*color: var\(--fg\)/.test(app),
-  'a details table labels its rows in green over ink values, the way the reference prints them');
+  'a details table labels its rows in mint over near-white values, the way the landing prints them');
 /* The limits were printed under every screen; they are one click away now, and the button has to
    say which way it is - and the limits themselves must not have been quietly dropped. */
 ok(appMarkup.includes('id="b-info"') && appMarkup.includes('id="limits" hidden')
@@ -259,8 +263,45 @@ ok(appMarkup.includes('id="b-explorer"') && appMarkup.includes('id="step-link" h
 /* ---------------- the console as a piece of design, not just as a set of features ----------------
    Each of the following was measured in a browser before it was changed: a colour ratio, a tile
    that wrapped four-then-one, a focus ring that was missing, an empty state drawn as a bullet. */
-ok(/--dim:#63766d;/.test(app) && !/--dim:#71837b/.test(app),
-  '--dim is dark enough to read: #71837b measured 4.01:1 on white, under the 4.5:1 floor');
+/* --- contrast, computed from the tokens rather than eyeballed ---
+   The console and the docs sit on the landing's black now. Picking a palette by eye is exactly how
+   #71837b shipped at 4.01:1 on white, so every token that carries text is measured against every
+   surface it can land on, and the worst pair is named in the result. */
+const chan = (v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+const lum = (h) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b);
+};
+const contrast = (a, b) => {
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+/* #000 has to expand to #000000, or the one token carrying the page ground is silently skipped. */
+const tk = (src, name) => {
+  const m = src.match(new RegExp(name + ':(#(?:[0-9a-f]{3}|[0-9a-f]{6}))(?![0-9a-f])'));
+  if (!m) return undefined;
+  return m[1].length === 4 ? '#' + m[1][1] + m[1][1] + m[1][2] + m[1][2] + m[1][3] + m[1][3] : m[1];
+};
+for (const [label, src] of [['console', app], ['docs', docs]]) {
+  const pairs = [];
+  for (const t of ['--ink', '--fg', '--body', '--dim']) {
+    for (const s of ['--bg', '--panel', '--sunken']) {
+      if (tk(src, t) && tk(src, s)) pairs.push([t, s, contrast(tk(src, t), tk(src, s))]);
+    }
+  }
+  for (const t of ['--link', '--good', '--bad', '--warn']) {
+    if (tk(src, t) && tk(src, '--bg')) pairs.push([t, '--bg', contrast(tk(src, t), tk(src, '--bg'))]);
+  }
+  const under = pairs.filter((p) => p[2] < 4.5);
+  const worst = pairs.reduce((m, p) => (p[2] < m[2] ? p : m), pairs[0] || ['none', 'none', 0]);
+  ok(pairs.length === 16 && under.length === 0,
+    `every ${label} text token clears 4.5:1 on every surface it can land on `
+    + `(worst ${worst[0]} on ${worst[1]} at ${worst[2].toFixed(2)}:1 of ${pairs.length} pairs measured)`);
+}
+/* A filled button is the one place two tokens meet: a dark label on the light fill, never white on
+   white. --acc carries the fill, so if it ever goes dark this fails instead of shipping. */
+ok(contrast('#08090c', tk(app, '--acc')) >= 4.5,
+  'the filled button paints a dark label on its light fill, not white on white');
 ok(/input::placeholder, textarea::placeholder \{ color: var\(--dim\); \}/.test(app),
   'and the placeholder that used to be the faintest text in the app uses that same colour');
 ok(/\.stats\s*\{[^}]*grid-template-columns: repeat\(5,/.test(app) && !app.includes('auto-fit, minmax(184px'),
@@ -335,8 +376,8 @@ ok(walls.length === 0, `no paragraph reads like a wall of words (over 280c: ${wa
 
 console.log('--- the mark ---');
 /* One piece of artwork, four places it has to appear: the console bar, the landing bar, the docs
-   bar, the browser tab and the README. It is a light mark on a dark page and an ink mark on a
-   light one, cut from the same file rather than redrawn, so the shapes cannot drift apart. */
+   bar, the browser tab and the README. All three pages are dark now, so all four bars take the
+   white cut - one file cut twice, never two drawings, so the shapes cannot drift apart. */
 const readme = readFileSync('README.md', 'utf8');
 const png = (f) => {
   const b = readFileSync(f);
@@ -348,9 +389,10 @@ for (const f of ['assets/favicon.png', 'assets/logo-mark.png', 'assets/logo-mark
 }
 const source = readFileSync('assets/logo.jpg');
 ok(source[0] === 0xff && source[1] === 0xd8, 'and assets/logo.jpg, the artwork they were cut from, is kept');
-ok(app.includes('src="/assets/logo-mark-ink-96.png"') && docs.includes('src="/assets/logo-mark-ink-96.png"')
-  && count(home, 'src="/assets/logo-mark-white-96.png"') === 2,
-  'the console, the docs and both landing bars carry the mark, in ink on light and white on dark');
+ok(app.includes('src="/assets/logo-mark-white-96.png"') && docs.includes('src="/assets/logo-mark-white-96.png"')
+  && count(home, 'src="/assets/logo-mark-white-96.png"') === 2
+  && !app.includes('logo-mark-ink-96.png') && !docs.includes('logo-mark-ink-96.png'),
+  'all four bars carry the mark, in the white cut a dark page needs');
 ok([home, docs, app].every((p) => p.includes('href="/assets/favicon.png"')
   && p.includes('href="/assets/favicon.png" sizes="180x180"')),
   'the browser tab shows that artwork on all three pages');

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vault console — Olinea</title>
 <meta name="description" content="Olinea vault console: back up 24 words, derive an SLH-DSA key in your browser, prove it against Arc mainnet's post-quantum precompile for free, and issue authorizations that cannot fail on the signature.">
-<meta name="color-scheme" content="light">
-<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
 <link rel="icon" href="/assets/favicon.png" sizes="180x180">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,15 +14,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#fff; --panel:#fff; --sunken:#f8faf9; --line:#e3e9e5; --line2:#eef2f0;
-    --ink:#0b3b2e; --fg:#13251e; --body:#4a5a53;
-    /* --dim carries real text - every secondary label and every table state word - so it clears
-       4.5:1 on white and on --sunken (4.85:1). #71837b measured 4.01:1, which fails AA. */
-    --dim:#63766d;
-    --acc:#0b3b2e; --acc2:#08543d; --link:#0b6b4f;
-    --good:#15803d; --bad:#b42318; --warn:#b45309;
+    /* The landing's surface, so the console reads as the same product: black behind dark panels,
+       white headings, and the mint the landing gives every link and verdict. */
+    --bg:#000; --panel:#0d0f14; --sunken:#12161c; --line:#1e2430; --line2:#1a1f28;
+    --ink:#fff; --fg:#e8edf5; --body:#c3cbd8;
+    /* --dim carries real text - every secondary label and every table state word - so it is
+       measured, not picked: 7.02:1 on --bg, 6.44:1 on --panel and 6.07:1 on --sunken. The check
+       suite recomputes all three from these tokens, so a palette edit that dims a label fails. */
+    --dim:#8b96a8;
+    --acc:#fff; --acc2:#dfe6ef; --link:#6ee7b7;
+    --good:#6ee7b7; --bad:#fca5a5; --warn:#fbbf24;
     --pad: clamp(18px, 4vw, 32px); --wide: 1100px;
-    --shadow: 0 1px 2px rgba(16,24,40,.04);
+    --shadow: 0 1px 2px rgba(0,0,0,.5);
   }
   * { box-sizing: border-box; }
   /* An author rule carrying a class outranks the user agent's [hidden] rule, so a hidden flex row
@@ -39,7 +42,7 @@
 
   /* ------------------------------------------------------------------ app bar */
   .appbar {
-    position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94);
+    position: sticky; top: 0; z-index: 20; background: rgba(8,10,14,.8);
     backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
   }
   .appbar-in {
@@ -52,12 +55,12 @@
   .brand b { font-weight: 700; letter-spacing: -.01em; }
   .brand span { color: var(--dim); font-weight: 400; }
   .bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-  .statusdot { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--body); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; white-space: nowrap; background: #fff; }
+  .statusdot { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--body); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; white-space: nowrap; background: var(--panel); }
   .statusdot i { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
-  .statusdot.on { color: #067647; border-color: #abefc6; background: #ecfdf3; }
-  .statusdot.on i { background: #17b26a; }
-  .statusdot.off { color: var(--bad); border-color: #fecdca; background: #fef3f2; }
-  .statusdot.off i { background: #f04438; }
+  .statusdot.on { color: var(--good); border-color: rgba(110,231,183,.34); background: rgba(110,231,183,.09); }
+  .statusdot.on i { background: #34d399; }
+  .statusdot.off { color: var(--bad); border-color: rgba(252,165,165,.34); background: rgba(252,165,165,.09); }
+  .statusdot.off i { background: #f87171; }
 
   /* -------------------------------------------------------------------- tabs */
   /* The section you are in lives in the bar, so it never scrolls away. */
@@ -69,7 +72,7 @@
   }
   .tab:hover { color: var(--ink); background: var(--sunken); }
   .tab[aria-selected="true"] { color: var(--ink); font-weight: 600; }
-  .tab .tick { width: 6px; height: 6px; border-radius: 50%; background: #17b26a; flex: none; }
+  .tab .tick { width: 6px; height: 6px; border-radius: 50%; background: #34d399; flex: none; }
   .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible,
   .stat:focus-visible, .copy:focus-visible, .info:focus-visible {
     outline: 2px solid var(--link); outline-offset: 2px;
@@ -108,7 +111,7 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
     display: flex; flex-direction: column; gap: 7px; box-shadow: var(--shadow);
   }
-  .stat:hover { border-color: #c9d6d0; }
+  .stat:hover { border-color: #2b3542; }
   .stat-lbl { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink); font-weight: 500; }
   /* Icons are drawn here, not fetched and not glyphs, so they cost one paint and no request. */
   svg.ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -145,27 +148,31 @@
 
   /* --------------------------------------------------------------- controls */
   .btn {
-    appearance: none; border: 1px solid var(--acc); background: var(--acc); color: #fff; font-weight: 600;
+    appearance: none; border: 1px solid var(--acc); background: var(--acc); color: #08090c; font-weight: 600;
     font-size: 13.5px; padding: 11px 18px; border-radius: 8px; cursor: pointer; min-height: 44px;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
   }
   .btn:hover:not(:disabled) { background: var(--acc2); border-color: var(--acc2); }
   /* The secondary button is an outline in the reference: white fill, a green rule, a green label. */
-  .btn.ghost { background: #fff; color: var(--ink); border-color: var(--acc); font-weight: 500; }
-  .btn.ghost:hover:not(:disabled) { background: var(--sunken); color: var(--acc2); border-color: var(--acc2); }
-  .btn.danger { background: #fff; color: var(--bad); border-color: #fecdca; font-weight: 500; }
-  .btn.danger:hover:not(:disabled) { background: #fef3f2; border-color: var(--bad); }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--acc); font-weight: 500; }
+  .btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,.06); color: var(--link); border-color: var(--link); }
+  .btn.danger { background: transparent; color: var(--bad); border-color: rgba(252,165,165,.4); font-weight: 500; }
+  .btn.danger:hover:not(:disabled) { background: rgba(252,165,165,.09); border-color: var(--bad); }
   .btn.sm { font-size: 12.5px; padding: 7px 12px; min-height: 34px; }
-  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  /* A disabled button used to be the whole element faded to 45%, which on a dark surface turns a
+     white fill into a grey blob and its own label into 3.18:1 against it. It is an explicit muted
+     state instead: no fill, a hairline rule, and --dim for the label, which clears 4.5:1 the same
+     way every other secondary label does. */
+  .btn:disabled { background: var(--sunken); border-color: var(--line); color: var(--dim); opacity: 1; cursor: not-allowed; }
   .btn.wide { width: 100%; }
   label { display: block; font-size: 12.5px; color: var(--ink); font-weight: 500; margin: 0 0 6px; }
   input[type=text], input[type=number], textarea {
-    width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    width: 100%; background: var(--sunken); border: 1px solid var(--line); border-radius: 8px;
     color: var(--fg); padding: 11px 12px; min-height: 44px;
   }
   textarea { min-height: 92px; resize: vertical; line-height: 1.6; }
   input::placeholder, textarea::placeholder { color: var(--dim); }
-  input:focus, textarea:focus { outline: none; border-color: var(--link); box-shadow: 0 0 0 3px rgba(11,107,79,.14); }
+  input:focus, textarea:focus { outline: none; border-color: var(--link); box-shadow: 0 0 0 3px rgba(110,231,183,.16); }
   .field { margin-top: 14px; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
   .check { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--body); cursor: pointer; }
@@ -176,9 +183,9 @@
 
   /* ------------------------------------------------------------------ chips */
   .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--line); color: var(--body); background: var(--sunken); }
-  .chip.ok { color: #067647; border-color: #abefc6; background: #ecfdf3; }
-  .chip.no { color: var(--bad); border-color: #fecdca; background: #fef3f2; }
-  .chip.warn { color: var(--warn); border-color: #fedf89; background: #fffaeb; }
+  .chip.ok { color: var(--good); border-color: rgba(110,231,183,.34); background: rgba(110,231,183,.09); }
+  .chip.no { color: var(--bad); border-color: rgba(252,165,165,.34); background: rgba(252,165,165,.09); }
+  .chip.warn { color: var(--warn); border-color: rgba(251,191,36,.34); background: rgba(251,191,36,.09); }
 
   /* -------------------------------------------------------------- progress */
   /* A flow reads better as three steps than as three cards: a green fill on a light track, with
@@ -206,11 +213,11 @@
     .info { min-height: 40px; }
   }
   .verdict { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--sunken); }
-  .verdict.ok { border-color: #abefc6; background: #f6fef9; }
-  .verdict.no { border-color: #fecdca; background: #fffbfa; }
-  .verdict .glyph { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; font-weight: 700; background: #eaecf0; color: var(--body); }
-  .verdict.ok .glyph { background: #d1fadf; color: #067647; }
-  .verdict.no .glyph { background: #fee4e2; color: var(--bad); }
+  .verdict.ok { border-color: rgba(110,231,183,.34); background: rgba(110,231,183,.06); }
+  .verdict.no { border-color: rgba(252,165,165,.34); background: rgba(252,165,165,.06); }
+  .verdict .glyph { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; font-weight: 700; background: rgba(255,255,255,.07); color: var(--body); }
+  .verdict.ok .glyph { background: rgba(110,231,183,.16); color: var(--good); }
+  .verdict.no .glyph { background: rgba(252,165,165,.16); color: var(--bad); }
   .verdict strong { display: block; font-size: 14.5px; font-weight: 600; color: var(--ink); }
   .verdict small { color: var(--body); font-size: 12.5px; }
   .empty { text-align: center; padding: 34px 20px; }
@@ -234,10 +241,10 @@
   .blur { filter: blur(5px); user-select: none; }
 
   /* ------------------------------------------------------------------ tables */
-  .hist { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+  .hist { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
   .histrow {
     display: grid; grid-template-columns: 96px 128px minmax(0, 1fr) 104px; gap: 14px; align-items: baseline;
-    padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--line2); background: #fff;
+    padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--line2); background: var(--panel);
   }
   .histrow:last-child { border-bottom: 0; }
   /* The reference tables name their columns on a tinted band above a rule. */
@@ -264,14 +271,14 @@
   .prog { margin-top: 16px; }
   .prog p { margin: 0 0 9px; font-size: 13px; color: var(--body); }
   .prog .t { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-  .bar { height: 6px; background: #eaeef0; border-radius: 999px; overflow: hidden; }
+  .bar { height: 6px; background: rgba(255,255,255,.10); border-radius: 999px; overflow: hidden; }
   .bar i { display: block; height: 100%; width: 42%; background: var(--link); border-radius: 999px; animation: slide 1.35s ease-in-out infinite; }
   @keyframes slide { 0% { transform: translateX(-105%); } 100% { transform: translateX(250%); } }
 
   /* ------------------------------------------------------------------ notes */
   .note { border-left: 3px solid var(--line); padding: 3px 0 3px 14px; margin: 16px 0 0; color: var(--body); font-size: 12.5px; line-height: 1.66; max-width: 68ch; }
-  .note.warn { border-color: #fec84b; color: #93370d; }
-  .note.bad { border-color: #fda29b; color: var(--bad); }
+  .note.warn { border-color: var(--warn); color: var(--warn); }
+  .note.bad { border-color: var(--bad); color: var(--bad); }
   pre.cmd { background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 11.8px; line-height: 1.6; color: var(--fg); margin: 12px 0 0; }
   details.adv { border-top: 1px solid var(--line2); margin-top: 20px; padding-top: 14px; }
   details.adv summary { display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; font-size: 12.5px; color: var(--body); }
@@ -284,8 +291,8 @@
 
   /* ----------------------------------------------------------------- toasts */
   .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 50; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: max-content; max-width: calc(100vw - 32px); }
-  .toast { background: #fff; border: 1px solid var(--line); color: var(--ink); font-size: 13px; padding: 10px 16px; border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,40,.12); animation: rise .18s ease-out; }
-  .toast.bad { border-color: #fda29b; color: var(--bad); }
+  .toast { background: #14181f; border: 1px solid var(--line); color: var(--ink); font-size: 13px; padding: 10px 16px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.55); animation: rise .18s ease-out; }
+  .toast.bad { border-color: var(--bad); color: var(--bad); }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
   footer.foot { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 18px; color: var(--body); font-size: 12.5px; line-height: 1.75; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
@@ -318,7 +325,7 @@
 
 <header class="appbar">
   <div class="appbar-in">
-    <a class="brand" href="/"><img class="brand-mark" src="/assets/logo-mark-ink-96.png" alt="" width="24" height="24"><span><b>Olinea</b> <span>Vault</span></span></a>
+    <a class="brand" href="/"><img class="brand-mark" src="/assets/logo-mark-white-96.png" alt="" width="24" height="24"><span><b>Olinea</b> <span>Vault</span></span></a>
 
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview" data-panel="panel-overview" tabindex="0">Dashboard <span class="tick" id="tick-overview" hidden></span></button>
