@@ -141,6 +141,16 @@ ok(app.includes('not deployed'), 'the app is honest that the factory is not depl
 ok(/unaudited/i.test(app), 'the app is honest about the audit status');
 ok(app.includes('denylist'), 'the app repeats the Circle denylist limit');
 ok(app.includes('localStorage') && /gas, nothing more/.test(app), 'the built-in account is labelled honestly');
+/* Every number this console shows is read from Arc mainnet. Nothing in it may be named or labelled a
+   demo, and the activity record may only ever be logs the chain actually returned - a reviewer must
+   not be able to read real mainnet history as a mockup. */
+ok(!/demo/i.test(app), 'no part of the shipped console is named or labelled a demo');
+ok(count(app, "state.mode = 'wallet'") === 1 && count(app, "state.mode = 'builtin'") === 1,
+  'the gas account has exactly two modes - a connected wallet, or a key this page made');
+ok(count(app, "state.mode === 'builtin'") === 3,
+  'every place that describes the built-in account tests the same mode');
+ok(app.includes('getContractEvents(') && /explorer\.arc\.io\/block\//.test(app),
+  'the activity record is read from the chain, and every row cites a real block');
 ok(app.includes('7,856') || app.includes('7856'), 'the app states the real signature size');
 
 const appRefs = [...app.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);

@@ -519,7 +519,7 @@
         </dl>
         <div class="row">
           <button class="btn" id="b-connect">Connect wallet</button>
-          <button class="btn ghost" id="b-demo">Use a built-in account</button>
+          <button class="btn ghost" id="b-builtin">Use a built-in account</button>
           <button class="btn ghost" id="b-refresh">Refresh</button>
           <button class="btn ghost" id="b-drop-account" hidden>Forget this account</button>
         </div>
@@ -963,7 +963,7 @@ function renderStats() {
           : hasKey ? 'this vault answers to another key' : `remembered · ${hex(v, 5)}`);
 
   setStat('gas', state.account ? 'on' : '', state.account ? state.gasBal || 'Connected' : 'None',
-    state.account ? (state.mode === 'demo' ? 'built-in account, gas only' : 'your wallet, gas only')
+    state.account ? (state.mode === 'builtin' ? 'built-in account, gas only' : 'your wallet, gas only')
       : 'pays gas only');
 
   $('b-account').textContent = state.account ? hex(state.account.address, 4) : 'Connect wallet';
@@ -1245,9 +1245,9 @@ function paintAccount() {
     return;
   }
   $('a-addr').textContent = state.account.address;
-  $('a-mode').textContent = state.mode === 'demo' ? 'built-in' : 'wallet';
+  $('a-mode').textContent = state.mode === 'builtin' ? 'built-in' : 'wallet';
   $('a-mode').className = 'chip ok';
-  $('b-drop-account').hidden = state.mode !== 'demo';
+  $('b-drop-account').hidden = state.mode !== 'builtin';
   (async () => {
     try {
       const [gas, usdc] = await Promise.all([
@@ -1263,7 +1263,7 @@ function paintAccount() {
       painter();
       $('a-note').innerHTML = gas === 0n
         ? 'No gas. Send a couple of dollars of USDC on Arc to the address above — it pays for the one transaction that creates your vault, and can never move your vault&rsquo;s USDC.'
-        : (state.mode === 'demo'
+        : (state.mode === 'builtin'
           ? 'A key this page made, kept in this browser alone. Use it for gas, nothing more — clearing browser data loses it.'
           : 'Connected wallet. Pays gas, owns the vault — and can never move its USDC.');
       renderVerify();
@@ -1288,11 +1288,11 @@ $('b-connect').onclick = async () => {
     paintAccount();
   } catch (err) { say($('p4'), esc(humanError(err)), 'bad'); }
 };
-$('b-demo').onclick = () => {
-  let pk = localStorage.getItem('olinea:demo:pk');
-  if (!pk) { pk = A.generatePrivateKey(); localStorage.setItem('olinea:demo:pk', pk); }
+$('b-builtin').onclick = () => {
+  let pk = localStorage.getItem('olinea:builtin:pk');
+  if (!pk) { pk = A.generatePrivateKey(); localStorage.setItem('olinea:builtin:pk', pk); }
   state.account = A.privateKeyToAccount(pk);
-  state.mode = 'demo';
+  state.mode = 'builtin';
   paintAccount();
 };
 $('b-refresh').onclick = () => { net(); paintAccount(); if (state.vault) paintVault(); };
@@ -1620,7 +1620,7 @@ async function sendTx(to, data) {
 
 $('b-drop-account').onclick = () => {
   if (!confirm('Discard this browser\'s gas account? Its private key is deleted from this browser. Any USDC left at that address stays there, and nothing on this page will ever be able to spend it.')) return;
-  localStorage.removeItem('olinea:demo:pk');
+  localStorage.removeItem('olinea:builtin:pk');
   state.account = null; state.mode = '';
   paintAccount();
   toast('Gas account discarded');
