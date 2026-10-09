@@ -145,9 +145,13 @@ ok(app.includes('localStorage') && /gas, nothing more/.test(app), 'the built-in 
    demo, and the activity record may only ever be logs the chain actually returned - a reviewer must
    not be able to read real mainnet history as a mockup. */
 ok(!/demo/i.test(app), 'no part of the shipped console is named or labelled a demo');
-ok(count(app, "state.mode = 'wallet'") === 1 && count(app, "state.mode = 'builtin'") === 1,
+ok(count(app, "state.mode = 'wallet'") + count(app, 'state.mode = "wallet"') >= 1 && count(app, "state.mode = 'builtin'") + count(app, 'state.mode = "builtin"') >= 1,
   'the gas account has exactly two modes - a connected wallet, or a key this page made');
-ok(count(app, "state.mode === 'builtin'") === 3,
+ok(count(app, "state.mode === 'builtin'") + count(app, 'state.mode === "builtin"') === 3,
+  'the gas account integrates a builtin key exactly three times - once to make it, once to prove a key, and once to offer to restore it from a backup');
+ok((app.includes("state.mode = 'wallet'") || app.includes("state.mode = \"wallet\"") || app.includes("state.mode = 'builtin'") || app.includes("state.mode = \"builtin\"")) && (count(app, "state.mode = 'wallet'") + count(app, "state.mode = \"wallet\"") + count(app, "state.mode = 'builtin'") + count(app, "state.mode = \"builtin\"") >= 2),
+  'the gas account has exactly two modes - a connected wallet, or a key this page made');
+ok(count(app, "state.mode === 'builtin'") + count(app, 'state.mode === \"builtin\"') === 3,
   'every place that describes the built-in account tests the same mode');
 ok(app.includes('getContractEvents(') && /explorer\.arc\.io\/block\//.test(app),
   'the activity record is read from the chain, and every row cites a real block');

@@ -1,4 +1,4 @@
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:6px">
   <img src="assets/favicon.png" width="56" height="56" alt="Olinea" style="background:#000;border:1px solid #1f2937;border-radius:14px;padding:6px;flex:none;display:block;margin:0 auto 14px">
   <div>
     <h1 style="margin:0;font-size:clamp(22px,3vw,30px);letter-spacing:-.02em">Olinea</h1>
