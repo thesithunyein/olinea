@@ -1,43 +1,73 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-mark.png">
-  <img src="assets/logo-mark-ink.png" alt="Olinea" width="88" height="88">
-</picture>
-
-# Olinea
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+  <img src="assets/favicon.png" width="56" height="56" alt="Olinea" style="background:#000;border:1px solid #1f2937;border-radius:14px;padding:6px;flex:none;display:block;margin:0 auto 14px">
+  <div>
+    <h1 style="margin:0;font-size:clamp(22px,3vw,30px);letter-spacing:-.02em">Olinea</h1>
+    <p style="margin:4px 0 0;color:#868e96">Post-quantum USDC vault on Arc mainnet · SLH-DSA-SHA2-128s · no owner, no admin, no pause, no upgrade path</p>
+  </div>
+</div>
 
 **USDC a quantum computer can't move.**
 
 A USDC vault on Arc that releases funds only when a post-quantum signature — **SLH-DSA-SHA2-128s**
-(FIPS 205) — verifies on-chain through Arc's PQ precompile. No owner, no admin key, no pause, no
-upgrade path. The vault has no privileged role at all, including for the people who wrote it.
+(FIPS 205) — verifies on-chain through Arc's PQ precompile. The vault has no privileged role at all, 
+including for the people who wrote it.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-27%20passing-6ee7b7?style=flat-square)](#verify-it-yourself)
 [![Chain](https://img.shields.io/badge/chain-Arc%20mainnet%20%C2%B7%205042-6ee7b7?style=flat-square)](#the-primitive)
 [![Signature](https://img.shields.io/badge/signature-SLH--DSA--SHA2--128s%20%C2%B7%207%2C856%20B-6ee7b7?style=flat-square)](#the-primitive)
 [![Audit](https://img.shields.io/badge/audit-none-fca5a5?style=flat-square)](#security)
-[![Deployment](https://img.shields.io/badge/deployed-factory%20on%20Arc%20mainnet-6ee7b7?style=flat-square)](#status)
-
-| | |
-|---|---|
-| Site | https://olinea.sithunyein.com | | **Try it** | **https://olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB** — back up 24 words, prove the key against Arc mainnet, open a vault |
-| Docs | https://olinea.sithunyein.com/docs/ |
-| Contracts | [`contracts/src/OlineaVault.sol`](contracts/src/OlineaVault.sol) · [`OlineaFactory.sol`](contracts/src/OlineaFactory.sol) |
-
-## The idea
+[![Deployment](https://img.shields.io/badge/deployed-factory%20on%20Arc%20mainnet-6ee7b7?style=flat-square)](#deployment)## The problem
 
 Every USDC account on every chain today is guarded by an elliptic-curve key. A quantum computer running
-Shor's algorithm breaks that, retroactively for recorded signatures. Arc ships a post-quantum precompile
-that verifies **hash-based** signatures on-chain; Olinea is a small, boring piece of infrastructure built
-on it, so the property is demonstrable rather than a whitepaper claim.
+Shor's algorithm breaks that, retroactively for recorded signatures. By the time that is a practical 
+threat against an active key, the signatures will already be sitting in many chains' historical record.
 
-The console is the part that makes this checkable by someone who is not its author: it derives a real
-SLH-DSA key in your browser from 24 words, and has **Arc mainnet's own precompile return `true` for a
-signature it just made** — 7,856 bytes, about 9 seconds of your CPU, 260 ms to verify, **zero gas**.
+There are two honest answers to that: 
 
-![Olinea architecture](docs/architecture.svg)
+- **don't hold long-lived USDC in an ECDSA account**, or 
+- **hold it in a vault whose release a quantum computer still cannot forge**.
+
+Olinea is the second answer on Arc mainnet. The vault releases USDC only when an SLH-DSA-SHA2-128s 
+signature verifies through Arc's PQ precompile. ECDSA can be broken; hash-based signatures from this 
+class are not broken by breaking ECDSA.
+
+This is not a claim about a future, hypothetical property. It is a claim about the release path the vault 
+actually uses today: a 32-byte verifying key fixed at deployment, a digest that binds chain id, vault, 
+recipient, amount and nonce, and an on-chain check against Arc's PQ precompile before anything moves.
+
+
+## Status
+
+- [x] The factory is deployed on Arc mainnet: `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`, deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
+- [x] The live console opens against it: `olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`.
+- [ ] A vault created through the deployed factory and used end to end in the console. The console's vault path (create → deposit → authorize → release) is wired to the deployed factory, and a funded vault on the deployed factory is the remaining demo.
+- [ ] A third-party audit. There has not been one.
+
+## Deployment
+
+| Thing | Value |
+|---|---|
+| Factory | `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB` |
+| Deploy tx | `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405` |
+| Chain | Arc mainnet · 5042 |
+| Console | `olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB` |
+
+## Table of contents
+
+- [The problem](#the-problem)
+- [How a release works](#how-a-release-works)
+- [The primitive](#the-primitive)
+- [The footgun](#the-footgun)
+- [Verify it yourself](#verify-it-yourself)
+- [Project structure](#project-structure)
+- [Security](#security)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## How a release works
+
 
 ```mermaid
 sequenceDiagram
@@ -64,47 +94,6 @@ sequenceDiagram
 
 The relayer never needs the key, and the key never needs an Arc account. Anyone can pay the gas for
 someone else's release and gain nothing by it.
-
-## Status
-
-This section is the single source of truth, including the parts that are missing.
-
-- [x] ABI of Arc's PQ precompile mapped from `circlefin/arc-node` and **verified against mainnet**
-- [x] `OlineaVault.sol` — 17 Foundry tests, including a test that demonstrates the theft a careless
-      implementation allows (`NaiveVault.sol`)
-- [x] The vault's exact authorization digest verified against the **live mainnet precompile**
-      (`node scripts/pq.mjs conformance` — 3/3, no wallet, no gas)
-- [x] `OlineaFactory.sol` — one transaction per vault, no owner, nothing to administer — 10 Foundry tests
-- [x] **Vault console** at `/app/` — 24-word backup, in-browser derivation, mainnet precompile proof,
-      factory deploy, deposit, authorize, release, and the vault's own event history
-- [x] **The factory deployed to Arc mainnet** — `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`,
-      deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
-      The live console opens against it: `olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`.
-- [ ] **A vault created through the deployed factory and used end to end in the console** — the console's
-      vault path is wired to the live factory and can create/deposit/authorize/release; the one remaining
-      demo is a funded vault on the deployed factory, which needs a few dollars of USDC for gas.
-- [x] Public evidence: the verifying transaction and the deployed factory address
-- [ ] A third-party audit. There has not been one.
-
-## Verify it yourself
-
-No API key, no wallet, no Arc account, and no dependency on this project being honest: every command
-below reads public state or runs locally.
-
-```bash
-git clone --recurse-submodules https://github.com/thesithunyein/olinea
-cd olinea
-
-# 1. the contracts
-cd contracts && forge test                       # 27 tests, 0 failed
-
-# 2. a real signature, verified by Arc's real precompile on mainnet
-cd ../scripts && npm install
-node pq.mjs conformance                          # valid → true; tampered / wrong key / wrong message → false
-
-# 3. the site and console still agree with the contracts
-cd .. && node scripts/check-site.mjs             # no network, no dependencies
-```
 
 ## The primitive
 
