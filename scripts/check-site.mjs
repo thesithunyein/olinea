@@ -194,6 +194,15 @@ ok(/<div class="steps" id="step-bar" role="progressbar"/.test(appMarkup),
   'and the progress bar reports it on the element that claims to be one');
 ok(/\.btn\.ghost\s*\{[^}]*border-color:\s*var\(--acc\)/.test(app),
   'the secondary button is an outline, the way the reference draws it');
+/* The reference tables name their columns above the rows; the record is the only list here that has
+   columns to name, and it must not name them when it is empty. */
+ok(/\.histhead\s*\{[^}]*background:\s*var\(--sunken\)/.test(app)
+  && /const HIST_HEAD = '<div class="histhead">/.test(app) && app.includes('${HIST_HEAD}${logs.slice'),
+  'the record table names its columns, and only over rows it actually has');
+ok(appMarkup.includes('id="b-explorer"') && appMarkup.includes('id="step-link" hidden')
+  && app.includes("$('step-link').hidden = !sent")
+  && app.includes("$('b-explorer').href = `https://explorer.arc.io/tx/${state.released.hash}`"),
+  'the status card offers the explorer, pointed at the transaction that was actually sent');
 
 const factory = readFileSync('contracts/src/OlineaFactory.sol', 'utf8');
 ok(factory.includes('function createVault(bytes calldata verifyingKey)'), 'the factory really has createVault(bytes)');

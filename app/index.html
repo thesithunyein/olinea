@@ -204,14 +204,22 @@
   /* ------------------------------------------------------------------ tables */
   .hist { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
   .histrow {
-    display: grid; grid-template-columns: 96px 128px minmax(0, 1fr) auto; gap: 14px; align-items: baseline;
+    display: grid; grid-template-columns: 96px 128px minmax(0, 1fr) 104px; gap: 14px; align-items: baseline;
     padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--line2); background: #fff;
   }
   .histrow:last-child { border-bottom: 0; }
+  /* The reference tables name their columns on a tinted band above a rule. */
+  .histhead {
+    /* The same four tracks the rows use, and the same widths: a header and a body are two grids
+       here, so an auto track would size to the label and land the columns out of line. */
+    display: grid; grid-template-columns: 96px 128px minmax(0, 1fr) 104px; gap: 14px;
+    padding: 10px 16px; background: var(--sunken); border-bottom: 1px solid var(--line);
+    font-size: 12.5px; color: var(--dim); font-weight: 500;
+  }
   .histrow .kind { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
   .histrow b { color: var(--ink); font-weight: 600; }
   .histrow .mono { color: var(--body); overflow-wrap: anywhere; }
-  .histrow a { font-size: 12.5px; }
+  .histrow a { font-size: 12.5px; white-space: nowrap; }
   .good { color: var(--good); } .bad { color: var(--bad); } .warnc { color: var(--warn); }
   /* The word in the first column is the verdict, so it carries the colour, not the row. */
   .histrow .kind.good { color: var(--good); }
@@ -258,6 +266,8 @@
     .kv dt { border-top: 1px solid var(--line2); padding-bottom: 0; }
     .kv dd { padding-top: 4px; }
     .histrow { grid-template-columns: 88px minmax(0, 1fr); }
+    .histhead { grid-template-columns: 88px minmax(0, 1fr); }
+    .histhead span:nth-child(n + 3) { display: none; }
     .histrow a, .histrow .mono { grid-column: 2; }
   }
 </style>
@@ -521,6 +531,9 @@
         <p id="step-now">Not signed yet</p>
         <div class="steps" id="step-bar" role="progressbar" aria-label="Authorization progress" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><div class="steps-in" id="step-fill"></div></div>
         <p id="step-cap">Step 1 of 3 &mdash; sign it</p>
+        <div class="row" id="step-link" hidden>
+          <a class="btn ghost" id="b-explorer" href="https://explorer.arc.io" target="_blank" rel="noopener">View on Block Explorer</a>
+        </div>
       </div>
 
       <div class="card">
@@ -788,6 +801,9 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
  * a window, and the window is printed rather than left to be guessed. At the measured block time
  * this is a bit under half a day. */
 const HISTORY_WINDOW = 20_000n;
+/* The record is the one table here with columns worth naming, so it carries a header like the
+   reference's does. The other lists are label-and-detail rows and read better without one. */
+const HIST_HEAD = '<div class="histhead"><span>Event</span><span>Amount</span><span>Detail</span><span>Block</span></div>';
 /* Which block a vault was born in is a fact about the vault, not about this tab, so it is kept
  * beside the address it belongs to and disregarded the moment the two disagree. */
 function storedBlock(addr) {
@@ -1345,7 +1361,7 @@ async function paintHistory() {
         : `<p class="muted">Nothing in the last ${Number(HISTORY_WINDOW).toLocaleString()} blocks. Older activity is not shown.</p>`;
       return;
     }
-    node.innerHTML = `<div class="hist">${logs.slice(-8).reverse().map((l) => {
+    node.innerHTML = `<div class="hist">${HIST_HEAD}${logs.slice(-8).reverse().map((l) => {
       const a = l.args || {};
       const out = l.eventName === 'Released';
       return `<div class="histrow"><span class="kind ${out ? 'bad' : 'good'}">${out ? 'released' : 'deposited'}</span>
@@ -1422,6 +1438,9 @@ function renderSteps() {
     : 'Signed. Arc mainnet has not confirmed it';
   $('step-fill').style.width = (done / 3 * 100) + '%';
   $('step-bar').setAttribute('aria-valuenow', String(done));
+  /* The reference puts the explorer under the status card, and only once there is a transaction. */
+  $('step-link').hidden = !sent;
+  if (sent) $('b-explorer').href = `https://explorer.arc.io/tx/${state.released.hash}`;
   $('step-cap').className = sent ? 'done' : '';
   $('step-cap').textContent = sent
     ? 'Step 3 of 3 — sent'
