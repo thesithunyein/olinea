@@ -196,6 +196,20 @@ ok(/\.btn\.ghost\s*\{[^}]*border-color:\s*var\(--acc\)/.test(app),
   'the secondary button is an outline, the way the reference draws it');
 ok(/\.kv dt \{ color: var\(--link\)/.test(app) && /\.kv dd \{[^}]*color: var\(--fg\)/.test(app),
   'a details table labels its rows in green over ink values, the way the reference prints them');
+/* The limits were printed under every screen; they are one click away now, and the button has to
+   say which way it is - and the limits themselves must not have been quietly dropped. */
+ok(appMarkup.includes('id="b-info"') && appMarkup.includes('id="limits" hidden')
+  && app.includes("$('b-info').onclick") && app.includes("$('b-info').setAttribute('aria-expanded'"),
+  'the limits sit behind the info button, which reports whether they are open');
+ok(['Unaudited', 'Release only', 'denylist', 'No recovery'].every((s) => app.includes(s)),
+  'and every honest limit is still written down behind it');
+/* Counting `<svg class="ico"` would miss the chevrons, which carry a second class. */
+const icons = count(app, '<svg class="ico');
+ok(icons >= 10 && !app.includes('<use') && !/iconfont/.test(app),
+  `the console draws its own icons inline, with no sprite or icon font to fetch (found ${icons})`);
+ok(/\.chev\s*\{[^}]*transition/.test(app)
+  && /details\.adv\[open\] summary \.chev \{ transform: rotate\(180deg\)/.test(app),
+  'the advanced disclosures carry an icon, and their chevron turns when they open');
 /* The reference tables name their columns above the rows; the record is the only list here that has
    columns to name, and it must not name them when it is empty. */
 ok(/\.histhead\s*\{[^}]*background:\s*var\(--sunken\)/.test(app)

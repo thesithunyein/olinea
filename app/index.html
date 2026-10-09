@@ -92,7 +92,10 @@
     display: flex; flex-direction: column; gap: 7px; box-shadow: var(--shadow);
   }
   .stat:hover { border-color: #c9d6d0; }
-  .stat-lbl { font-size: 12.5px; color: var(--ink); font-weight: 500; }
+  .stat-lbl { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink); font-weight: 500; }
+  /* Icons are drawn here, not fetched and not glyphs, so they cost one paint and no request. */
+  svg.ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .stat-lbl svg.ico { color: var(--link); }
   .stat-val { font-size: clamp(19px, 1.8vw, 23px); font-weight: 700; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; }
   .stat-sub { font-size: 12.5px; color: var(--dim); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .stat.on .stat-sub { color: var(--good); }
@@ -243,7 +246,11 @@
   .note.bad { border-color: #fda29b; color: var(--bad); }
   pre.cmd { background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 11.8px; line-height: 1.6; color: var(--fg); margin: 12px 0 0; }
   details.adv { border-top: 1px solid var(--line2); margin-top: 20px; padding-top: 14px; }
-  details.adv summary { cursor: pointer; font-size: 12.5px; color: var(--body); }
+  details.adv summary { display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; font-size: 12.5px; color: var(--body); }
+  details.adv summary::-webkit-details-marker { display: none; }
+  details.adv summary svg.ico { color: var(--dim); }
+  details.adv summary .chev { margin-left: 2px; transition: transform .18s ease; }
+  details.adv[open] summary .chev { transform: rotate(180deg); }
   details.adv summary:hover { color: var(--ink); }
   details.adv[open] summary { color: var(--ink); margin-bottom: 4px; }
 
@@ -253,8 +260,14 @@
   .toast.bad { border-color: #fda29b; color: var(--bad); }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  footer.foot { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 22px; color: var(--body); font-size: 12.5px; line-height: 1.75; }
+  footer.foot { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 18px; color: var(--body); font-size: 12.5px; line-height: 1.75; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
   footer.foot strong { color: var(--ink); }
+  /* The limits are one click away instead of printed under every screen. */
+  .info { appearance: none; background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--body); cursor: pointer; font: inherit; font-size: 12.5px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; min-height: 34px; }
+  .info:hover { color: var(--ink); border-color: var(--acc); }
+  .info[aria-expanded="true"] { color: var(--ink); border-color: var(--acc); background: var(--sunken); }
+  #limits { flex-basis: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 16px 18px; margin-top: 2px; }
+  #limits p { margin: 0; }
 
   @media (max-width: 860px) {
     /* The bar wraps: brand and the account button on one line, the sections on their own. */
@@ -307,27 +320,27 @@
     <!-- Five facts, each one a way into the tab that owns the work. -->
     <div class="stats" aria-label="Account at a glance">
       <button class="stat" type="button" data-goto="panel-key" id="stat-key">
-        <span class="stat-lbl">Key</span>
+        <span class="stat-lbl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.6" cy="15.4" r="3.6"/><path d="M11.3 13.7 19 6"/><path d="m16.4 8.6 2.6 2.6"/></svg>Key</span>
         <span class="stat-val" id="stat-key-v">None</span>
         <span class="stat-sub" id="stat-key-s">create one first</span>
       </button>
       <button class="stat" type="button" data-goto="panel-key" id="stat-proof">
-        <span class="stat-lbl">Proof</span>
+        <span class="stat-lbl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6 5.6 6v5.9c0 4.2 2.7 7.3 6.4 8.5 3.7-1.2 6.4-4.3 6.4-8.5V6z"/><path d="m9.3 12.2 2 2 3.5-3.7"/></svg>Proof</span>
         <span class="stat-val" id="stat-proof-v">Not proven</span>
         <span class="stat-sub" id="stat-proof-s">free, no account</span>
       </button>
       <button class="stat" type="button" data-goto="panel-vault" id="stat-vault">
-        <span class="stat-lbl">Vault</span>
+        <span class="stat-lbl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.4" y="10.4" width="15.2" height="9.6" rx="2.4"/><path d="M8.2 10.4V7.9a3.8 3.8 0 0 1 7.6 0v2.5"/><path d="M12 14.4v2"/></svg>Vault</span>
         <span class="stat-val" id="stat-vault-v">—</span>
         <span class="stat-sub" id="stat-vault-s">not deployed yet</span>
       </button>
       <button class="stat" type="button" data-goto="panel-vault" id="stat-gas">
-        <span class="stat-lbl">Gas account</span>
+        <span class="stat-lbl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 19V6.4A1.4 1.4 0 0 1 7.9 5h5.2a1.4 1.4 0 0 1 1.4 1.4V19"/><path d="M5.2 19h11"/><path d="M14.5 9.4h2.2a1.3 1.3 0 0 1 1.3 1.3v4.6a1.4 1.4 0 0 0 2.8 0V9.9L18.4 7"/></svg>Gas account</span>
         <span class="stat-val" id="stat-gas-v">None</span>
         <span class="stat-sub" id="stat-gas-s">pays gas only</span>
       </button>
       <button class="stat" type="button" data-goto="panel-activity" id="stat-chain">
-        <span class="stat-lbl">Chain height</span>
+        <span class="stat-lbl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.8" y="3.8" width="7" height="7" rx="1.9"/><rect x="13.2" y="13.2" width="7" height="7" rx="1.9"/><path d="M7.3 10.8v4.1a1.9 1.9 0 0 0 1.9 1.9h4"/></svg>Chain height</span>
         <span class="stat-val" id="stat-chain-v">—</span>
         <span class="stat-sub" id="net-block">connecting…</span>
       </button>
@@ -383,7 +396,7 @@
       <div id="p1"></div>
 
       <details class="adv">
-        <summary>Advanced — vault index</summary>
+        <summary><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.4 8.4h15.2"/><path d="M4.4 15.6h15.2"/><circle cx="9.6" cy="8.4" r="2.1"/><circle cx="14.8" cy="15.6" r="2.1"/></svg>Advanced — vault index<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></svg></summary>
         <div class="field" style="max-width:220px">
           <label for="idx">Vault index</label>
           <input type="number" id="idx" value="0" min="0" max="255" step="1">
@@ -577,7 +590,7 @@
       </div>
 
       <details class="adv" id="auth-adv">
-        <summary>Advanced — where this is signed for</summary>
+        <summary><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.4 8.4h15.2"/><path d="M4.4 15.6h15.2"/><circle cx="14.8" cy="8.4" r="2.1"/><circle cx="9.6" cy="15.6" r="2.1"/></svg>Advanced — where this is signed for<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></svg></summary>
         <div class="field" style="max-width:420px">
           <label for="vault-in">Vault address</label>
           <input type="text" id="vault-in" spellcheck="false" autocomplete="off" placeholder="0x…">
@@ -621,21 +634,27 @@
     </div></section>
 
   <footer class="foot">
-    <p style="margin-top:0">
-      <strong>Status.</strong> Vaults are not deployed on Arc mainnet yet — the repository's <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> is the source of truth.
-    </p>
-    <ul class="plain">
-      <li><strong>Unaudited.</strong> New code, and a test suite is not a review.</li>
-      <li><strong>Release only.</strong> A deposit is an ordinary ERC-20 transfer.</li>
-      <li><strong>Circle's denylist still applies.</strong> No key stops a freeze.</li>
-      <li><strong>No recovery.</strong> Lose your 24 words and the money is gone, permanently.</li>
-    </ul>
-    <p>
+    <button class="info" id="b-info" type="button" aria-expanded="false" aria-controls="limits">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.3v4.6"/><path d="M12 7.9h.01"/></svg>
+      Limits &amp; status
+    </button>
+    <p class="foot-links" style="margin:0">
       <a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">Source</a> ·
       <a href="/docs/">Documentation</a> ·
       <a href="https://github.com/thesithunyein/olinea/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a> ·
       MIT © 2026 Sithu Nyein
     </p>
+    <div id="limits" hidden>
+      <p>
+        <strong>Status.</strong> Vaults are not deployed on Arc mainnet yet — the repository's <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> is the source of truth.
+      </p>
+      <ul class="plain">
+        <li><strong>Unaudited.</strong> New code, and a test suite is not a review.</li>
+        <li><strong>Release only.</strong> A deposit is an ordinary ERC-20 transfer.</li>
+        <li><strong>Circle's denylist still applies.</strong> No key stops a freeze.</li>
+        <li><strong>No recovery.</strong> Lose your 24 words and the money is gone, permanently.</li>
+      </ul>
+    </div>
   </footer>
 </main>
 
@@ -1111,6 +1130,12 @@ $('b-lock').onclick = () => {
   state.proof = null; state.authVerified = null; state.released = null; state.account = null; state.mode = '';
   renderKey(); renderProof(); renderAuth();
   toast('Locked');
+};
+
+$('b-info').onclick = () => {
+  const open = $('limits').hidden;
+  $('limits').hidden = !open;
+  $('b-info').setAttribute('aria-expanded', String(open));
 };
 
 /* --------------------------------------------------------- 2. prove key */
