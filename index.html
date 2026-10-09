@@ -62,28 +62,6 @@
   }
   .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
 
-  .arrows {
-    position: absolute; top: 18.9%; left: 76.7%; display: flex; gap: 32px;
-    transform: translate(-19px, -50%);
-  }
-  .arrow {
-    width: 38px; height: 38px; border-radius: 50%; border: 2.5px solid #fff;
-    background: transparent; color: #fff; display: grid; place-items: center; cursor: pointer;
-    transition: background .25s, color .25s; padding: 0;
-  }
-  .arrow svg { width: 18px; height: 18px; }
-  .arrow:hover { background: #fff; color: #000; }
-
-  .dots {
-    position: absolute; right: calc(var(--pad-x) - 7px); top: 49.4%; transform: translateY(-50%);
-    display: flex; flex-direction: column; gap: 33px;
-  }
-  .dot {
-    width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; background: #fff;
-    cursor: pointer; transition: background .25s; padding: 0;
-  }
-  .dot.active { background: transparent; }
-
   .tagline {
     position: absolute; left: var(--pad-x); bottom: clamp(40px, 7.5vh, 70px);
     font-size: clamp(24px, 2.65vw, 44px); line-height: 1.2; font-weight: 300;
@@ -109,11 +87,13 @@
     transform: translateY(6%); user-select: none;
   }
 
+  /* Hidden until the 3D view fails, so it can never claim to be loading something. */
   .loader {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    font-size: 12px; letter-spacing: .2em; text-transform: uppercase; opacity: .6; transition: opacity .6s;
+    font-size: 12px; letter-spacing: .18em; text-transform: uppercase; text-align: center;
+    max-width: 26ch; line-height: 1.9; opacity: 0; transition: opacity .4s;
   }
-  .loader.done { opacity: 0; }
+  .loader.show { opacity: .55; }
 
   /* ------------------------------------------------------------- content */
 
@@ -127,8 +107,8 @@
   .section p.lede { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.62; color: #c3cbd8; max-width: 64ch; margin: 0 0 22px; }
   .muted { color: var(--dim); font-size: 14.5px; max-width: 64ch; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 20px; }
-  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  @media (max-width: 640px) { .grid.two { grid-template-columns: 1fr; } }
+  /* .grid auto-fits, so three cards fill one row on a desktop instead of leaving a hole. */
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
   .card { background: #0d0f14; border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
   .card h3 { margin: 0 0 8px; font-size: 15px; letter-spacing: .01em; }
   .card p { margin: 0; color: var(--dim); font-size: 14.5px; }
@@ -204,7 +184,6 @@
   /* ---------------------------------------------------------- responsive */
 
   @media (max-width: 900px), (max-aspect-ratio: 1/1) {
-    .arrows { left: auto; right: var(--pad-x); top: 15%; transform: translateY(-50%); gap: 14px; }
     .tagline { bottom: clamp(150px, 20vh, 220px); }
     .cta-row { left: var(--pad-x); right: -3vw; top: auto; bottom: 24px; transform: none; }
     .count { font-size: clamp(120px, 22vw, 200px); }
@@ -213,8 +192,6 @@
     .nav-links { gap: 16px; }
     .nav-links a, .logo { font-size: 13px; }
     .logo-mark { width: 28px; height: 28px; border-width: 7px; }
-    .dots { gap: 20px; right: 16px; }
-    .dot { width: 10px; height: 10px; }
     .cta-row { right: -8vw; }
     .count { font-size: 120px; }
   }
@@ -222,6 +199,7 @@
     .nav-links li.nav-sm-hide { display: none; }
   }
 </style>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script type="importmap">
 {
   "imports": {
@@ -230,6 +208,10 @@
   }
 }
 </script>
+<!-- after the import map, never before it: a module preload ahead of the map makes Chrome
+     refuse the map itself ("added after module script load was triggered") and every import
+     in the page then fails to resolve -->
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" crossorigin>
 </head>
 <body>
 
@@ -249,23 +231,6 @@
       </ul>
     </header>
 
-    <div class="arrows">
-      <button class="arrow" id="prev" aria-label="Rotate left">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
-             stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-      </button>
-      <button class="arrow" id="next" aria-label="Rotate right">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
-             stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </button>
-    </div>
-
-    <nav class="dots">
-      <button class="dot"></button>
-      <button class="dot active"></button>
-      <button class="dot"></button>
-    </nav>
-
     <p class="tagline">USDC a quantum computer<br><strong>can't move.</strong></p>
 
     <div class="cta-row">
@@ -274,7 +239,7 @@
       <span class="count" aria-hidden="true">7856</span>
     </div>
 
-    <div class="loader" id="loader">Loading model</div>
+    <div class="loader" id="loader" role="status"></div>
   </div>
 </section>
 
@@ -286,7 +251,7 @@
       Olinea holds USDC on Arc and releases it only for an <strong>SLH-DSA</strong> signature that Arc's
       own precompile verifies on-chain. No owner, no admin, no pause, no upgrade.
     </p>
-    <div class="grid two">
+    <div class="grid">
       <div class="card">
         <h3>Hash-based, not elliptic-curve</h3>
         <p>32 bytes of public key. Breaking ECDSA does not forge a release.</p>
@@ -299,10 +264,6 @@
         <h3>No owner, no admin</h3>
         <p>Nothing can pause, upgrade or redirect it. Depositing grants no rights.</p>
       </div>
-      <div class="card">
-        <h3>One signature, one release</h3>
-        <p>Each authorization binds chain, vault, recipient, amount and nonce together.</p>
-      </div>
     </div>
   </section>
 
@@ -313,10 +274,6 @@
       <li><b>Sign.</b> Your key signs one 32-byte digest binding chain, vault, recipient, amount and nonce. No Arc account needed.</li>
       <li><b>Relay.</b> Anyone pays the gas. The vault decodes the boolean the precompile returns, and only then moves the USDC.</li>
     </ol>
-    <p class="lede" style="margin-top:24px">
-      Don't take our word for it. <a href="/app/" class="text">The console</a> builds the key from 24 words
-      in your browser and has Arc mainnet verify a signature — free, no account, no gas.
-    </p>
   </section>
 
   <section class="section" id="security">
@@ -336,35 +293,11 @@
       </tbody>
     </table>
 
-    <div class="grid">
-      <div class="card">
-        <h3>verifySlhDsaSha2128s</h3>
-        <p class="mono">(bytes verifyingKey /*32 B*/, bytes message, bytes signature /*7856 B*/) &rarr; bool</p>
-      </div>
-      <div class="card">
-        <h3>382,879 gas</h3>
-        <p>&asymp; <b>$0.0077</b> per release, at Arc's pinned 20 Gwei base fee.</p>
-      </div>
-      <div class="card">
-        <h3>Pure JavaScript</h3>
-        <p>Keygen and signing need no native crypto, extension or hardware wallet.</p>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h3 style="margin-top:0">Read the return value, not the call status</h3>
-      <p class="muted">
-        An invalid signature returns <code>false</code> without reverting. A contract that checks only
-        whether the call succeeded accepts <em>every forgery</em>.
-      </p>
-<pre><span class="bad">// WRONG — true for every forgery</span>
-(bool ok, ) = PRECOMPILE.staticcall(data);
-require(ok, "verify failed");
-
-<span class="good">// CORRECT — the signature is a value, not an exception</span>
-(bool ok, bytes memory ret) = PRECOMPILE.staticcall(data);
-require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
-    </div>
+    <p class="muted" style="margin-top:18px">
+      382,879 gas per release — about <b>$0.0077</b> at Arc's pinned 20 Gwei base fee, roughly
+      1,300&times; a plain transfer. The digest, the ABI and the failure modes are in the
+      <a class="text" href="/docs/#precompile">docs</a>.
+    </p>
   </section>
 
   <section class="section">
@@ -403,30 +336,9 @@ require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
     </details>
 
     <details class="faq">
-      <summary>Why SLH-DSA rather than a lattice scheme?</summary>
-      <div class="answer">
-        <p>It rests only on hash functions — the most conservative assumption available. The cost is size: a 32-byte key, a 7,856-byte signature, seconds to sign. Arc exposes exactly this scheme on-chain.</p>
-      </div>
-    </details>
-
-    <details class="faq">
       <summary>What does a release cost?</summary>
       <div class="answer">
         <p>382,879 gas. At Arc's pinned 20 Gwei and gas paid in USDC, about <strong>$0.0077</strong> — roughly 1,300&times; a plain transfer, and still fractions of a cent.</p>
-      </div>
-    </details>
-
-    <details class="faq">
-      <summary>Can Olinea freeze or seize my USDC?</summary>
-      <div class="answer">
-        <p>No: there is no admin and no code path that moves funds without a valid authorization. Circle can still act on the token itself.</p>
-      </div>
-    </details>
-
-    <details class="faq">
-      <summary>Is the precompile interface official, or reverse-engineered?</summary>
-      <div class="answer">
-        <p>Documented in Circle's public <code>arc-node</code> source, then verified against the live precompile: a real signature returns <code>true</code>; a tampered signature, a wrong key and a wrong message all return <code>false</code>.</p>
       </div>
     </details>
 
@@ -447,22 +359,19 @@ require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
     </div>
     <nav class="foot-cols">
       <div>
-        <h4>Product</h4>
+        <h4>Start</h4>
+        <ul>
+          <li><a href="/app/">App</a></li>
+          <li><a href="/docs/">Docs</a></li>
+          <li><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Read</h4>
         <ul>
           <li><a href="#how">How it works</a></li>
           <li><a href="#security">Security</a></li>
           <li><a href="#faq">FAQ</a></li>
-          <li><a href="/app/">App</a></li>
-          <li><a href="/docs/">Docs</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Developers</h4>
-        <ul>
-          <li><a href="https://github.com/thesithunyein/olinea">GitHub</a></li>
-          <li><a href="https://github.com/thesithunyein/olinea/blob/main/contracts/src/OlineaVault.sol">OlineaVault.sol</a></li>
-          <li><a href="/docs/#precompile">PQ precompile</a></li>
-          <li><a href="/docs/#cli">CLI</a></li>
         </ul>
       </div>
     </nav>
@@ -475,14 +384,17 @@ require(ok &amp;&amp; abi.decode(ret, (bool)), "invalid PQ signature");</pre>
 
 <script type="module">
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { mergeVertices, mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-
-const MODEL_URL = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260929_212926_92423081-b0e4-4f5a-b650-14af6c05c058.glb';
 
 const canvas = document.getElementById('scene');
 const loaderEl = document.getElementById('loader');
+
+/* If the 3D view cannot start, say so once, in the one place that used to claim to be loading. */
+function showNoScene() {
+  if (!loaderEl) return;
+  loaderEl.textContent = 'This view needs WebGL. Everything else on this page works without it.';
+  loaderEl.classList.add('show');
+}
 
 /* ----------------------------------------------------------------- renderer */
 
@@ -734,62 +646,30 @@ frontMat.uniforms.uTexture.value = rtFront.texture;
 /* ---------------------------------------------------------- model loading */
 
 function buildCube(geometry) {
-  geometry.computeBoundingBox();
-  const box = geometry.boundingBox;
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-  geometry.translate(-center.x, -center.y, -center.z);
+  try {
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox;
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    geometry.translate(-center.x, -center.y, -center.z);
 
-  geometry.computeBoundingBox();
-  const size = new THREE.Vector3();
-  geometry.boundingBox.getSize(size);
-  const maxDim = Math.max(size.x, size.y, size.z) || 1;
-  geometry.scale(1 / maxDim, 1 / maxDim, 1 / maxDim);
+    geometry.computeBoundingBox();
+    const size = new THREE.Vector3();
+    geometry.boundingBox.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    geometry.scale(1 / maxDim, 1 / maxDim, 1 / maxDim);
 
-  cube = new THREE.Mesh(geometry, frontMat);
-  spinner.add(cube);
-  loaderEl.classList.add('done');
+    cube = new THREE.Mesh(geometry, frontMat);
+    spinner.add(cube);
+  } catch (err) {
+    showNoScene();
+  }
 }
 
-function fallbackCube() {
-  buildCube(new RoundedBoxGeometry(1, 1, 1, 8, 0.12));
-}
-
-new GLTFLoader().load(
-  MODEL_URL,
-  (gltf) => {
-    try {
-      gltf.scene.updateMatrixWorld(true);
-      const parts = [];
-      gltf.scene.traverse((obj) => {
-        if (!obj.isMesh) return;
-        let g = obj.geometry.clone();
-        g.deleteAttribute('uv');
-        g.deleteAttribute('color');
-        g.deleteAttribute('tangent');
-        g = mergeVertices(g, 1e-4);
-        g.computeVertexNormals();
-        g.applyMatrix4(obj.matrixWorld);
-        parts.push(g);
-      });
-      if (!parts.length) return fallbackCube();
-
-      let merged = null;
-      if (parts.length > 1) {
-        try {
-          merged = mergeGeometries(parts);
-        } catch (err) {
-          merged = null;
-        }
-      }
-      buildCube(merged || parts[0]);
-    } catch (err) {
-      fallbackCube();
-    }
-  },
-  undefined,
-  fallbackCube,
-);
+/* Built here, from the geometry the addon already ships, rather than fetched. The model this used
+   to load was 1.07 MB from a third-party host, normalised down to a rounded box on arrival, and it
+   was the last thing the hero was waiting for. Now the cube exists before the first frame is drawn. */
+buildCube(new RoundedBoxGeometry(1, 1, 1, 8, 0.12));
 
 /* ------------------------------------------------------------------ layout */
 
@@ -883,25 +763,6 @@ function endDrag(e) {
 canvas.addEventListener('pointerup', endDrag);
 canvas.addEventListener('pointercancel', endDrag);
 
-document.getElementById('prev').addEventListener('click', () => {
-  velX = 0;
-  velY = 0;
-  spinRemaining -= Math.PI / 2;
-});
-document.getElementById('next').addEventListener('click', () => {
-  velX = 0;
-  velY = 0;
-  spinRemaining += Math.PI / 2;
-});
-
-const dots = Array.from(document.querySelectorAll('.dot'));
-dots.forEach((dot) => {
-  dot.addEventListener('click', () => {
-    dots.forEach((d) => d.classList.remove('active'));
-    dot.classList.add('active');
-  });
-});
-
 /* ------------------------------------------------------------ render loop */
 
 function renderFrame() {
@@ -975,16 +836,17 @@ function animate(now) {
 
 /* --------------------------------------------------------------- boot sequence */
 
+/* Nothing waits for the webfont to draw: the refraction re-lays itself out when Poppins lands, which
+   is why the font's own loading event is the listener here rather than the gate. */
 document.fonts.addEventListener('loadingdone', () => layout());
 window.addEventListener('resize', layout);
 
-Promise.race([
-  Promise.all([document.fonts.load('800 100px Poppins'), document.fonts.ready]),
-  new Promise((resolve) => setTimeout(resolve, 2500)),
-]).then(() => {
+try {
   layout();
-  requestAnimationFrame(animate);
-});
+} catch (err) {
+  showNoScene();
+}
+requestAnimationFrame(animate);
 </script>
 </body>
 </html>

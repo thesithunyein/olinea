@@ -29,10 +29,32 @@ ok(count(home, '<li class="nav-sm-hide">') === 3, 'three nav links marked mobile
 ok(count(home, '.nav-links li.nav-sm-hide { display: none; }') === 1, 'the mobile-hide rule exists in CSS');
 ok(/<li><a href="\/docs\/">Docs<\/a><\/li>/.test(home), 'Docs is in the nav');
 ok(/<li><a href="\/app\/">App<\/a><\/li>/.test(home), 'App is in the nav');
-ok(count(home, 'details class="faq"') === 8, 'eight FAQ entries');
-ok(count(home, '<summary>') === 8, 'eight FAQ summaries');
+ok(count(home, 'details class="faq"') === 5, 'five FAQ entries, each one load-bearing');
+ok(count(home, '<summary>') === 5, 'and the same five summaries');
 ok(count(home, 'Open the app') === 1, 'hero CTA points at the app');
-ok(count(home, 'href="/app/"') === 4, 'the app is linked from the nav, the hero, the how-it-works lede and the footer');
+ok(count(home, 'href="/app/"') === 3, 'the app is linked from the nav, the hero and the footer, and nowhere twice');
+/* The hero used to wait for 1.07 MB of model from a third-party host, on top of three.js, before it
+   drew anything - and again for the webfont. Nothing may gate the first frame any more. */
+ok(!home.includes('.glb') && !home.includes('GLTFLoader'),
+  'the hero fetches no model: the cube is built from the geometry the addon already ships');
+ok(home.includes('rel="modulepreload"') && home.includes('rel="preconnect" href="https://cdn.jsdelivr.net"'),
+  'and its module host is preconnected and preloaded, so the fetch starts before the script is parsed');
+ok(!home.includes('Promise.race([') && /^requestAnimationFrame\(animate\);$/m.test(home),
+  'the first frame is drawn without waiting for the webfont');
+/* The map has to be parsed before anything triggers a module load, and a module preload ahead of
+   it makes Chrome throw the map away: every import in the page then fails to resolve. */
+ok(home.indexOf('rel="modulepreload"') > home.indexOf('type="importmap"'),
+  'the module preload comes after the import map, which is the only order that survives');
+ok(count(home, '<div class="card">') === 3 && count(home, 'class="grid"') === 1,
+  'the three claims sit in one auto-fitting row, not two rows with a hole in them');
+ok(!home.includes('Loading model') && /function showNoScene\(\)/.test(home)
+  && /classList\.add\('show'\)/.test(home),
+  'nothing claims to be loading, and a browser without WebGL is told so once');
+/* Simplicity is the point of this page: one hero, a few sections, nothing decorative that moves. */
+ok(!home.includes('class="dots"') && !home.includes('id="prev"') && !home.includes('class="arrows"'),
+  'the hero carries no controls for slides that do not exist');
+ok(Buffer.byteLength(home) < 40000,
+  `the landing stays a page a person can read (${Buffer.byteLength(home)} bytes)`);
 ok(count(home, 'in the browser') === 0, 'stale "in the browser" signing claim removed');
 ok(count(home, 'whiteboard') === 0 && count(home, 'Evidence') === 0, 'hackathon framing removed');
 
