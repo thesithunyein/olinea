@@ -10,7 +10,8 @@
  *
  * Reads files only. No network, no dependencies.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import path from 'node:path';
 
 const fails = [];
 const ok = (cond, msg) => { console.log((cond ? 'PASS  ' : 'FAIL  ') + msg); if (!cond) fails.push(msg); };
@@ -66,10 +67,13 @@ ok(missing.length === 0, `every #anchor resolves (missing: ${missing.join(', ') 
 const dupIds = [...home.matchAll(/id="([a-zA-Z0-9_-]+)"/g)].map((m) => m[1]);
 ok(new Set(dupIds).size === dupIds.length, 'no duplicate element ids');
 
+/* An /assets/ link is allowed because assets are a real directory here - and it has to point at a
+   file that exists, so a renamed icon fails this check rather than 404ing for a visitor. */
+const isAsset = (h) => h.startsWith('/assets/') && existsSync(path.join('.', h));
 const internal = [...home.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);
 const homeBad = internal.filter((h) =>
-  h !== '/' && !h.startsWith('/docs/') && !h.startsWith('/app/') && !h.startsWith('/#'));
-ok(homeBad.length === 0, `landing internal links are /, /docs/, /app/ or /#anchor (bad: ${homeBad.join(', ') || 'none'})`);
+  h !== '/' && !h.startsWith('/docs/') && !h.startsWith('/app/') && !h.startsWith('/#') && !isAsset(h));
+ok(homeBad.length === 0, `landing internal links resolve to a page or a file that exists (bad: ${homeBad.join(', ') || 'none'})`);
 
 console.log('--- vault console ---');
 ok(count(app, '<title>Vault console — Olinea</title>') === 1, 'app title');
@@ -140,8 +144,8 @@ ok(app.includes('localStorage') && /gas, nothing more/.test(app), 'the built-in 
 ok(app.includes('7,856') || app.includes('7856'), 'the app states the real signature size');
 
 const appRefs = [...app.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);
-const appBad = appRefs.filter((h) => h !== '/' && h !== '/docs/' && h !== '/app/');
-ok(appBad.length === 0, `app internal links are /, /docs/ or /app/ (bad: ${appBad.join(', ') || 'none'})`);
+const appBad = appRefs.filter((h) => h !== '/' && h !== '/docs/' && h !== '/app/' && !isAsset(h));
+ok(appBad.length === 0, `app internal links resolve to a page or a file that exists (bad: ${appBad.join(', ') || 'none'})`);
 for (const b of ['b-new', 'b-derive', 'b-prove', 'b-create', 'b-deposit', 'b-sign', 'b-release']) {
   ok(appIds.includes(b), `the app has an element for #${b}`);
 }
@@ -318,6 +322,32 @@ for (const [name, html] of [['landing', visible(home)], ['docs', visible(docs)],
   }
 }
 ok(walls.length === 0, `no paragraph reads like a wall of words (over 280c: ${walls.join(' | ') || 'none'})`);
+
+console.log('--- the mark ---');
+/* One piece of artwork, four places it has to appear: the console bar, the landing bar, the docs
+   bar, the browser tab and the README. It is a light mark on a dark page and an ink mark on a
+   light one, cut from the same file rather than redrawn, so the shapes cannot drift apart. */
+const readme = readFileSync('README.md', 'utf8');
+const png = (f) => {
+  const b = readFileSync(f);
+  return b.length > 512 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47;
+};
+for (const f of ['assets/favicon.png', 'assets/logo-mark.png', 'assets/logo-mark-ink.png',
+  'assets/logo-mark-white-96.png', 'assets/logo-mark-ink-96.png']) {
+  ok(png(f), `${f} is a real PNG`);
+}
+const source = readFileSync('assets/logo.jpg');
+ok(source[0] === 0xff && source[1] === 0xd8, 'and assets/logo.jpg, the artwork they were cut from, is kept');
+ok(app.includes('src="/assets/logo-mark-ink-96.png"') && docs.includes('src="/assets/logo-mark-ink-96.png"')
+  && count(home, 'src="/assets/logo-mark-white-96.png"') === 2,
+  'the console, the docs and both landing bars carry the mark, in ink on light and white on dark');
+ok([home, docs, app].every((p) => p.includes('href="/assets/favicon.png"')
+  && p.includes('href="/assets/favicon.png" sizes="180x180"')),
+  'the browser tab shows that artwork on all three pages');
+ok(readme.includes('srcset="assets/logo-mark.png"') && readme.includes('src="assets/logo-mark-ink.png"'),
+  'the README shows it too, in the ink a white page needs and the white a dark one does');
+ok(!count(app, 'border: 5px solid var(--ink); border-radius: 50%') && !home.includes('border: 8px solid #fff'),
+  'no page still draws the mark as a ring of border, which was a stand-in for this artwork');
 
 console.log(fails.length ? `\n${fails.length} CHECK(S) FAILED` : '\nALL CHECKS PASSED');
 process.exit(fails.length ? 1 : 0);

@@ -10,5 +10,7 @@
 LOCAL/
 contracts/
 scripts/
+# The artwork the site's marks were cut from: kept in the repository, not served.
+assets/logo.jpg
 *.md
 LICENSE

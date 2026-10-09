@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-mark.png">
+  <img src="assets/logo-mark-ink.png" alt="Olinea" width="88" height="88">
+</picture>
+
 # Olinea
 
 **USDC a quantum computer can't move.**

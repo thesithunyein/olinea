@@ -7,7 +7,8 @@
 <meta name="description" content="Olinea vault console: back up 24 words, derive an SLH-DSA key in your browser, prove it against Arc mainnet's post-quantum precompile for free, and issue authorizations that cannot fail on the signature.">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#ffffff">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='none' stroke='%230b3b2e' stroke-width='14'/></svg>">
+<link rel="icon" href="/assets/favicon.png" sizes="180x180">
+<link rel="apple-touch-icon" href="/assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -46,7 +47,8 @@
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 62px;
   }
   .brand { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font-size: 15.5px; white-space: nowrap; }
-  .brand-mark { display: block; width: 22px; height: 22px; border: 5px solid var(--ink); border-radius: 50%; flex: none; }
+  /* The mark is the same artwork as the favicon, drawn in ink for a light bar. */
+  .brand-mark { display: block; width: 24px; height: 24px; flex: none; }
   .brand b { font-weight: 700; letter-spacing: -.01em; }
   .brand span { color: var(--dim); font-weight: 400; }
   .bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
@@ -316,7 +318,7 @@
 
 <header class="appbar">
   <div class="appbar-in">
-    <a class="brand" href="/"><span class="brand-mark"></span><span><b>Olinea</b> <span>Vault</span></span></a>
+    <a class="brand" href="/"><img class="brand-mark" src="/assets/logo-mark-ink-96.png" alt="" width="24" height="24"><span><b>Olinea</b> <span>Vault</span></span></a>
 
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview" data-panel="panel-overview" tabindex="0">Dashboard <span class="tick" id="tick-overview" hidden></span></button>
