@@ -170,7 +170,8 @@
 
   /* --------------------------------------------------------------- evidence */
   .kv { display: grid; grid-template-columns: 152px minmax(0, 1fr); gap: 0 16px; font-size: 13px; margin: 16px 0 0; }
-  .kv dt { color: var(--ink); padding: 10px 0; border-top: 1px solid var(--line2); }
+  /* The reference labels a details table in green and leaves the values in ink. */
+  .kv dt { color: var(--link); padding: 10px 0; border-top: 1px solid var(--line2); }
   .kv dd { margin: 0; padding: 10px 0; border-top: 1px solid var(--line2); color: var(--fg); font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.55; overflow-wrap: anywhere; }
   .hexline { display: flex; align-items: center; gap: 8px; }
   .hexline code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

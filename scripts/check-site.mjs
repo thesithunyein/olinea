@@ -194,6 +194,8 @@ ok(/<div class="steps" id="step-bar" role="progressbar"/.test(appMarkup),
   'and the progress bar reports it on the element that claims to be one');
 ok(/\.btn\.ghost\s*\{[^}]*border-color:\s*var\(--acc\)/.test(app),
   'the secondary button is an outline, the way the reference draws it');
+ok(/\.kv dt \{ color: var\(--link\)/.test(app) && /\.kv dd \{[^}]*color: var\(--fg\)/.test(app),
+  'a details table labels its rows in green over ink values, the way the reference prints them');
 /* The reference tables name their columns above the rows; the record is the only list here that has
    columns to name, and it must not name them when it is empty. */
 ok(/\.histhead\s*\{[^}]*background:\s*var\(--sunken\)/.test(app)
