@@ -89,9 +89,14 @@ the failure is visible rather than theoretical. Do not copy it.
 
 ## Deployment status
 
-Nothing is deployed on Arc mainnet yet. The status section of the [README](README.md) is the single
-source of truth; when an address appears there, the code at that commit is what is running, and its
-SHA-256 is checkable against the site.
+The factory is deployed on Arc mainnet: `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`,
+deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
+The status section of the [README](README.md) is the single source of truth; when an address appears
+there, the code at that commit is what is running, and its SHA-256 is checkable against the site.
+
+What is **not** deployed yet: a user vault created through the factory and used end to end in the
+console. The console's vault path (create → deposit → authorize → release) is wired to the deployed
+factory, and a funded vault on the deployed factory is the remaining demo.
 
 ## Supported versions
 

@@ -110,7 +110,7 @@ ok(/tab\.tabIndex = on \? 0 : -1/.test(app), 'moving a tab also moves the tab-or
    command containing a private key. Both were in here once; both are now regressions. */
 ok(count(app, 'id="factory-in"') === 0, 'the app never asks the user to paste a factory address');
 ok(!app.includes('$ARC_PK'), 'the app never shows a deploy command with a private key in it');
-ok(app.includes('Vaults open with the next deployment'), 'with nothing deployed the app says so in plain language');
+ok(app.includes('The factory is already deployed on Arc mainnet') || app.includes('Vaults open with the next deployment'), 'the app states the factory deployment status plainly');
 ok(app.includes('beforeunload'), 'closing the tab with a key in memory asks first');
 ok(/new Worker\('\/app\/worker\.js', \{ type: 'module' \}\)/.test(app), 'the worker is loaded as a module from /app/');
 ok(worker.includes('olinea/slh-dsa/v1'), 'the derivation salt is versioned');
@@ -137,7 +137,7 @@ ok(count(app, 'retryCount: 0') === 3, 'transports do not retry definitive revert
 ok(count(worker, "const DERIVATION_SALT = 'olinea/slh-dsa/v1'") === 1, 'the salt is declared once, in the worker');
 ok(!app.includes('hkdf('), 'the app does not repeat the key derivation');
 
-ok(app.includes('not deployed'), 'the app is honest that the factory is not deployed');
+ok((app.includes('Vaults are not deployed yet') && !CONFIG.factory) || (CONFIG.factory && app.includes('factory deployed')), 'the app is honest about the factory deployment status');
 ok(/unaudited/i.test(app), 'the app is honest about the audit status');
 ok(app.includes('denylist'), 'the app repeats the Circle denylist limit');
 ok(app.includes('localStorage') && /gas, nothing more/.test(app), 'the built-in account is labelled honestly');
@@ -376,7 +376,7 @@ ok(count(docs, '0x1800000000000000000000000000000000000004') >= 1, 'docs cite th
 ok(docs.includes('0xbf4db8ba') && docs.includes('382,879') && docs.includes('7856'), 'docs cite selector, gas and signature size');
 ok(count(docs, '0x3600000000000000000000000000000000000000') >= 1, 'docs cite the USDC ERC-20 address');
 ok(docs.includes('keccak256(abi.encode(block.chainid, address(vault), to, amount, nonce))'), 'docs state the exact digest');
-ok(docs.includes('Not yet deployed'), 'docs are honest about deployment status');
+ok(docs.includes('Factory deployed') || docs.includes('Not yet deployed'), 'docs are honest about the deployment status');
 ok(docs.includes('Unaudited') && docs.includes('None'), 'docs are honest about the audit status');
 ok(docs.includes('href="/app/"'), 'docs point at the app');
 

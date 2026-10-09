@@ -16,12 +16,11 @@ upgrade path. The vault has no privileged role at all, including for the people 
 [![Chain](https://img.shields.io/badge/chain-Arc%20mainnet%20%C2%B7%205042-6ee7b7?style=flat-square)](#the-primitive)
 [![Signature](https://img.shields.io/badge/signature-SLH--DSA--SHA2--128s%20%C2%B7%207%2C856%20B-6ee7b7?style=flat-square)](#the-primitive)
 [![Audit](https://img.shields.io/badge/audit-none-fca5a5?style=flat-square)](#security)
-[![Deployment](https://img.shields.io/badge/deployed-not%20yet-fcd34d?style=flat-square)](#status)
+[![Deployment](https://img.shields.io/badge/deployed-factory%20on%20Arc%20mainnet-6ee7b7?style=flat-square)](#status)
 
 | | |
 |---|---|
-| Site | https://olinea.sithunyein.com |
-| **Try it** | **https://olinea.sithunyein.com/app/** — back up 24 words, prove the key against Arc mainnet, open a vault |
+| Site | https://olinea.sithunyein.com | | **Try it** | **https://olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB** — back up 24 words, prove the key against Arc mainnet, open a vault |
 | Docs | https://olinea.sithunyein.com/docs/ |
 | Contracts | [`contracts/src/OlineaVault.sol`](contracts/src/OlineaVault.sol) · [`OlineaFactory.sol`](contracts/src/OlineaFactory.sol) |
 
@@ -78,11 +77,13 @@ This section is the single source of truth, including the parts that are missing
 - [x] `OlineaFactory.sol` — one transaction per vault, no owner, nothing to administer — 10 Foundry tests
 - [x] **Vault console** at `/app/` — 24-word backup, in-browser derivation, mainnet precompile proof,
       factory deploy, deposit, authorize, release, and the vault's own event history
-- [ ] **The factory and a first vault deployed to Arc mainnet** — this costs about two cents of gas that
-      the project does not have. Everything that needs a vault is verified end to end on a local chain
-      with real transactions; the real precompile is verified separately on mainnet. Neither has been
-      run against the other.
-- [ ] Public evidence: the verifying transaction
+- [x] **The factory deployed to Arc mainnet** — `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`,
+      deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
+      The live console opens against it: `olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`.
+- [ ] **A vault created through the deployed factory and used end to end in the console** — the console's
+      vault path is wired to the live factory and can create/deposit/authorize/release; the one remaining
+      demo is a funded vault on the deployed factory, which needs a few dollars of USDC for gas.
+- [x] Public evidence: the verifying transaction and the deployed factory address
 - [ ] A third-party audit. There has not been one.
 
 ## Verify it yourself

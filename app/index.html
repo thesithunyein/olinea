@@ -531,19 +531,20 @@
     <div id="lock-vault" class="card empty" hidden>
       <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.6" cy="15.4" r="3.6"/><path d="M11.3 13.7 19 6"/><path d="m16.4 8.6 2.6 2.6"/></svg></div>
       <h2>Create a key first</h2>
-      <p>A vault is built around a key. Make one first — a minute, free.</p>
+      <p>Only your key can open a vault. Make one first — a minute, free.</p>
       <div class="row" style="justify-content:center"><button class="btn" id="b-goto-key1">Go to Key</button></div>
     </div>
 
     <div id="vault-soon" class="card" hidden>
       <div class="between">
         <div>
-          <h2 style="margin:0">Vaults open with the next deployment</h2>
+          <h2 style="margin:0">Your vault opens with the next deployment</h2>
           <p class="muted" style="margin-top:5px">One transaction. About two cents of gas.</p>
         </div>
         <span class="chip warn" id="v-soon-chip">not live yet</span>
       </div>
       <p style="margin-top:16px">The rest is ready: this console creates the vault from your key, funds it, and moves USDC only when your key signs. What is missing is two cents of gas — the project has no funding and Arc mainnet has no faucet.</p>
+      <p class="muted" style="margin-top:14px">The factory is already deployed on Arc mainnet (${CONFIG.factory || 'factory address'}), so the console that is missing is not the application — it is one funded vault to demonstrate the money path.</p>
       <ul class="plain">
         <li>Nothing is lost by waiting. Your key works the moment a vault exists.</li>
         <li><strong>Authorize</strong> works today: give it the address your vault will live at, sign, and Arc's precompile verifies it free — the same check a real release makes.</li>
@@ -723,7 +724,7 @@
     </p>
     <div id="limits" hidden>
       <p>
-        <strong>Status.</strong> Vaults are not deployed on Arc mainnet yet — the repository's <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> is the source of truth.
+        <strong>Status.</strong> The factory is deployed on Arc mainnet — see the repository <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> for the address and the deployment transaction. A user vault created through that factory and used end to end in the console is the remaining demo.
       </p>
       <ul class="plain">
         <li><strong>Unaudited.</strong> New code, and a test suite is not a review.</li>
@@ -998,9 +999,7 @@ function renderStats() {
 
   const p = state.proof;
   setStat('proof', p ? (p.ok ? 'on' : 'no') : '', p ? (p.ok ? 'Verified' : 'Rejected') : 'Not proven',
-    p ? `Arc mainnet agreed in ${p.when} ms` : 'free, no account');
-
-  const live = !!CONFIG.factory;
+    p ? `Arc mainnet agreed in ${p.when} ms` : 'free, no account');    const live = !!CONFIG.factory;
   const v = state.vault;
   const mine = hasKey && state.vaultMine;
   setStat('vault', live ? (!v ? '' : mine ? 'on' : hasKey ? 'no' : '') : 'warn',
@@ -1084,6 +1083,11 @@ function renderKey() {
   $('lock-auth').hidden = hasKey;
   $('vault-soon').hidden = !hasKey || !!CONFIG.factory;
   $('vault-live').hidden = !hasKey || !CONFIG.factory;
+  /* When the factory is deployed, the Vault tab still explains itself plainly — but now it says the factory is live and the missing piece is a funded vault, not the application. */
+  if (CONFIG.factory && hasKey) {
+    $('vault-soon-chip').textContent = 'factory deployed — one funded vault remains';
+    $('vault-soon-chip').className = 'chip warn';
+  }
   $('auth-body').hidden = !hasKey;  renderStats();
 }
 

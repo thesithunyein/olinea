@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Olinea vault console — deployed factory</title>
+<meta name="description" content="Live Olinea vault console pointed at the deployed factory on Arc mainnet.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<link rel="icon" href="https://olinea.sithunyein.com/assets/favicon.png" sizes="180x180">
+<link rel="apple-touch-icon" href="https://olinea.sithunyein.com/assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#000; --panel:#0d0f14; --sunken:#12161c; --line:#1e2430; --line2:#1a1f28;
+    --ink:#fff; --fg:#e8edf5; --body:#c3cbd8;
+    --dim:#8b96a8;
+    --acc:#fff; --acc2:#dfe6ef; --link:#6ee7b7; --btn-ink:#08090c;
+    --good:#6ee7b7; --bad:#fca5a5; --warn:#fbbf24;
+    --pad: clamp(18px, 4vw, 32px); --wide: 1100px;
+    --shadow: 0 1px 2px rgba(0,0,0,.5);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; background: var(--bg); color: var(--fg); font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: clip;
+  }
+  a { color: var(--link); text-underline-offset: 2px; }
+  .wrap { max-width: var(--wide); margin: 0 auto; padding: 30px var(--pad) 72px; }
+  .eyebrow { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--link); margin: 0 0 8px; font-weight: 600; }
+  h1 { font-size: clamp(24px, 3vw, 30px); font-weight: 700; letter-spacing: -.022em; margin: 0; line-height: 1.2; color: var(--ink); }
+  .sub { color: var(--body); font-size: 14.5px; line-height: 1.6; margin: 7px 0 0; max-width: 64ch; }
+  .card { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 20px 22px; margin: 0 0 16px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 16.5px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
+  .muted { color: var(--dim); font-size: 12.5px; line-height: 1.65; max-width: 68ch; }
+  .muted a { color: var(--link); }
+  .btn { appearance: none; border: 1px solid var(--acc); background: var(--acc); color: var(--btn-ink); font-weight: 600; font-size: 13.5px; padding: 11px 18px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+  .btn:hover { background: var(--acc2); border-color: var(--acc2); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--line); color: var(--body); background: var(--sunken); }
+  .chip.ok { color: var(--good); border-color: rgba(110,231,183,.34); background: rgba(110,231,183,.09); }
+  .foot { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 18px; color: var(--body); font-size: 12.5px; line-height: 1.75; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+  .foot strong { color: var(--ink); }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="eyebrow">Post-quantum authorization · Arc mainnet</p>
+    <h1>Vault console — deployed factory</h1>
+    <p class="sub">This is the live Olinea console pointed at the factory deployed on Arc mainnet. Open it and you can create a post-quantum signing key in your browser, prove that key against Arc's post-quantum precompile, and create your own vault in one transaction.</p>
+
+    <div class="card">
+      <h2>Deployed factory</h2>
+      <p class="muted">Arc mainnet · USDC vault with a post-quantum signing key.</p>
+      <dl style="margin-top:12px">
+        <div><dt style="color:var(--link); margin-top:8px">Factory address</dt><dd class="mono" style="margin:0; padding-top:8px; border-top:1px solid var(--line2)">0x09574E49690ad378b21D2cb42a529f71A0D1DAdB</dd></div>
+        <div><dt style="color:var(--link); margin-top:8px">Deployment transaction</dt><dd class="mono" style="margin:0; padding-top:8px; border-top:1px solid var(--line2)"><a href="https://explorer.arc.io/tx/0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405" target="_blank" rel="noopener">0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405</a></dd></div>
+        <div><dt style="color:var(--link); margin-top:8px">Open the console</dt><dd style="margin:0; padding-top:8px"><a class="btn" href="https://olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB" target="_blank" rel="noopener">Open vault console</a></dd></div>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2>Repo</h2>
+      <p class="muted">Public source, contracts, and status.</p>
+      <p class="muted" style="margin-top:8px"><a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">github.com/thesithunyein/olinea</a></p>
+    </div>
+
+    <div class="card">
+      <h2>What this is</h2>
+      <p class="muted">Olinea is a personal post-quantum USDC vault on Arc mainnet. You back up 24 words, derive an SLH-DSA-SHA2-128s key in the browser, and only that key can authorize a release through Arc's post-quantum precompile. The deployed factory lets a user create their own vault in one transaction. The console is the part a reviewer can open and try without an account: create a key, prove it on Arc mainnet, then create a vault.</p>
+    </div>
+
+    <div class="card">
+      <h2>About the link</h2>
+      <p class="muted">The console reads the factory address from the URL, so the same app can be pointed at any deployed factory. This page is the canonical submission link for the deployed factory: it opens the console already pointed at the live address.</p>
+    </div>
+
+    <footer class="foot">
+      <strong>Olinea</strong>
+      <p>MIT © 2026 Sithu Nyein · <a href="https://github.com/thesithunyein/olinea/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a> · <a href="/docs/">Documentation</a></p>
+    </footer>
+  </main>
+</body>
+</html>

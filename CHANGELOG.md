@@ -4,8 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Nothing has been deployed to Arc mainnet yet, so every version below is a version of the source, not of
-a live address.
+The factory is deployed on Arc mainnet — see below — so some versions below are versions of a live address, and some are versions of the source only.
 
 ## [Unreleased]
 
