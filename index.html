@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Olinea — USDC a quantum computer can't move</title>
 <meta name="description" content="Olinea is a USDC vault on Arc that releases funds only when a post-quantum signature (SLH-DSA-SHA2-128s, FIPS 205) verifies on-chain. The precompile ABI is mapped and verified against Arc mainnet.">
 <meta property="og:title" content="Olinea — USDC a quantum computer can't move">
@@ -14,11 +15,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg: #000; --fg: #fff; --pad-x: clamp(20px, 6.95vw, 120px); --line: #1e2430; --dim: #8b96a8; }
+  /* One list of names, two sets of values: the light half at the foot of this sheet is the whole
+     difference between the themes, so no rule carries a colour of its own. The hero is a WebGL
+     scene rather than CSS, so --ground and --script-ink are read back out of this same cascade by
+     the script at the bottom - flipping them here flips the canvas, with no second palette in JS. */
+  :root {
+    --pad-x: clamp(20px, 6.95vw, 120px);
+    --bg: #000; --fg: #fff; --ground: #000; --script-ink: #e9e9e9;
+    --line: #1e2430; --rule: #14171d;
+    --panel: #0d0f14; --sunken: #0b0d12;
+    --dim: #8b96a8; --lede: #c3cbd8; --strong: #e8edf5; --foot: #6b7688;
+    --accent: #6ee7b7; --fail: #fca5a5;
+    --stroke: rgba(255, 255, 255, .9);
+    --cta-line: rgba(255, 255, 255, .85); --cta-bg: rgba(0, 0, 0, .15);
+    --cta-hover-bg: #fff; --cta-hover-ink: #000;
+  }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   html, body {
-    margin: 0; background: #000; color: #fff; font-family: 'Poppins', sans-serif;
+    margin: 0; background: var(--bg); color: var(--fg); font-family: 'Poppins', sans-serif;
     -webkit-font-smoothing: antialiased; overflow-x: hidden;
   }
 
@@ -26,7 +41,7 @@
 
   .hero {
     position: relative; width: 100%; height: 100vh; height: 100svh; min-height: 520px;
-    overflow: hidden; background: #000;
+    overflow: hidden; background: var(--ground);
   }
   #scene {
     position: absolute; inset: 0; width: 100%; height: 100%; display: block;
@@ -47,16 +62,19 @@
     display: flex; align-items: center; justify-content: space-between;
   }
   .logo {
-    display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none;
+    display: flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none;
     font-size: 15px; letter-spacing: -0.01em;
   }
+  /* Both cuts are in the markup and the OS picks one, so the <picture> has to stay out of the
+     flex layout or the mark sizes itself as a wrapper instead of an image. */
+  picture { display: contents; }
   .logo-mark {
     display: block; width: 34px; height: 34px;
   }
   .logo b { font-weight: 700; }
   .logo span { font-weight: 400; color: var(--dim); }
   .nav-links { display: flex; gap: clamp(20px, 4.1vw, 60px); list-style: none; margin: 0; padding: 0; }
-  .nav-links a { color: #fff; text-decoration: none; font-size: 15px; font-weight: 500; position: relative; cursor: pointer; }
+  .nav-links a { color: var(--fg); text-decoration: none; font-size: 15px; font-weight: 500; position: relative; cursor: pointer; }
   .nav-links a::after {
     content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px;
     background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .35s ease;
@@ -76,15 +94,15 @@
   }
   .cta {
     flex: none; padding: 0 15px; height: 48px; display: inline-flex; align-items: center;
-    border: 1.5px solid rgba(255, 255, 255, .85); border-radius: 6px; background: rgba(0, 0, 0, .15);
-    color: #fff; font-size: 14px; font-weight: 400; text-decoration: none; cursor: pointer;
+    border: 1.5px solid var(--cta-line); border-radius: 6px; background: var(--cta-bg);
+    color: var(--fg); font-size: 14px; font-weight: 400; text-decoration: none; cursor: pointer;
     transition: background .25s, color .25s;
   }
-  .cta:hover { background: #fff; color: #000; }
-  .cta-line { flex: 1; height: 1.5px; background: rgba(255, 255, 255, .8); min-width: 40px; }
+  .cta:hover { background: var(--cta-hover-bg); color: var(--cta-hover-ink); }
+  .cta-line { flex: 1; height: 1.5px; background: var(--cta-line); min-width: 40px; }
   .count {
     flex: none; font-size: clamp(140px, 21vw, 380px); font-weight: 400; line-height: 1;
-    letter-spacing: -0.02em; color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, .9);
+    letter-spacing: -0.02em; color: transparent; -webkit-text-stroke: 1.5px var(--stroke);
     transform: translateY(6%); user-select: none;
   }
 
@@ -102,35 +120,35 @@
   main { padding: 0 var(--pad-x); }
   .section {
     max-width: 920px; margin: 0 auto; padding: clamp(40px, 7vh, 76px) 0;
-    border-top: 1px solid #14171d;
+    border-top: 1px solid var(--rule);
   }
   .section h2 { font-size: clamp(22px, 2.6vw, 32px); font-weight: 600; letter-spacing: -0.015em; margin: 0 0 14px; }
-  .section p.lede { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.62; color: #c3cbd8; max-width: 64ch; margin: 0 0 22px; }
+  .section p.lede { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.62; color: var(--lede); max-width: 64ch; margin: 0 0 22px; }
   .muted { color: var(--dim); font-size: 14.5px; max-width: 64ch; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 20px; }
   /* .grid auto-fits, so three cards fill one row on a desktop instead of leaving a hole. */
   @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
-  .card { background: #0d0f14; border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
   .card h3 { margin: 0 0 8px; font-size: 15px; letter-spacing: .01em; }
   .card p { margin: 0; color: var(--dim); font-size: 14.5px; }
   table.data { width: 100%; border-collapse: collapse; margin: 14px 0 0; font-size: 14.5px; }
   table.data th, table.data td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
   table.data th { color: var(--dim); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
-  td.ok { color: #6ee7b7; font-weight: 600; }
-  td.no { color: #fca5a5; font-weight: 600; }
+  td.ok { color: var(--accent); font-weight: 600; }
+  td.no { color: var(--fail); font-weight: 600; }
   pre {
-    background: #0b0d12; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--sunken); border: 1px solid var(--line); border-radius: 10px;
     padding: 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 12px 0 0;
   }
-  .bad { color: #fca5a5; }
-  .good { color: #6ee7b7; }
+  .bad { color: var(--fail); }
+  .good { color: var(--accent); }
   ol.steps { padding-left: 22px; margin: 0; }
   ol.steps li { margin: 10px 0; }
   footer.site {
-    padding: clamp(28px, 5vh, 48px) var(--pad-x); border-top: 1px solid #14171d; color: var(--dim);
+    padding: clamp(28px, 5vh, 48px) var(--pad-x); border-top: 1px solid var(--rule); color: var(--dim);
     font-size: 14px; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;
   }
-  a.text { color: #6ee7b7; text-decoration: none; }
+  a.text { color: var(--accent); text-decoration: none; }
   a.text:hover { text-decoration: underline; }
 
   /* ------------------------------------------------------------ product UI */
@@ -142,7 +160,7 @@
   .section h3.sub { font-size: 16.5px; font-weight: 600; margin: 30px 0 8px; letter-spacing: -.005em; }
   ul.plain { color: var(--dim); font-size: 14.5px; line-height: 1.7; padding-left: 20px; margin: 14px 0 0; max-width: 68ch; }
   ul.plain li { margin: 9px 0; }
-  ul.plain strong { color: #e8edf5; }
+  ul.plain strong { color: var(--strong); }
 
   details.faq { border-bottom: 1px solid var(--line); }
   details.faq:first-of-type { border-top: 1px solid var(--line); margin-top: 12px; }
@@ -155,8 +173,8 @@
     content: '+'; flex: none; color: var(--dim); font-size: 21px; font-weight: 300;
     line-height: 1; transition: transform .25s ease;
   }
-  details.faq[open] > summary::after { transform: rotate(45deg); color: #6ee7b7; }
-  details.faq > summary:hover { color: #6ee7b7; }
+  details.faq[open] > summary::after { transform: rotate(45deg); color: var(--accent); }
+  details.faq > summary:hover { color: var(--accent); }
   details.faq .answer {
     padding: 0 0 20px; color: var(--dim); font-size: 14.8px; line-height: 1.72; max-width: 68ch;
   }
@@ -170,16 +188,16 @@
   .foot-cols { display: flex; flex-wrap: wrap; gap: 36px 64px; }
   .foot-cols h4 {
     margin: 0 0 12px; font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase;
-    color: #6b7688; font-weight: 500;
+    color: var(--foot); font-weight: 500;
   }
   .foot-cols ul { list-style: none; margin: 0; padding: 0; }
   .foot-cols li { margin: 0 0 9px; }
   .foot-cols a { color: var(--dim); text-decoration: none; font-size: 14px; }
-  .foot-cols a:hover { color: #fff; }
+  .foot-cols a:hover { color: var(--fg); }
   .foot-bottom {
-    margin-top: 40px; padding-top: 20px; border-top: 1px solid #14171d;
+    margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--rule);
     display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: space-between;
-    color: #6b7688; font-size: 13px;
+    color: var(--foot); font-size: 13px;
   }
 
   /* ---------------------------------------------------------- responsive */
@@ -198,6 +216,25 @@
   }
   @media (max-width: 700px) {
     .nav-links li.nav-sm-hide { display: none; }
+  }
+
+  /* ------------------------------------------- light, when the OS asks for it */
+
+  /* --dim is the value the console measured at 4.84:1 on white and 4.61:1 on --sunken. The docs
+     once shipped #71837b here, which measured 4.01:1 and failed AA; that value is not reused. */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #fff; --fg: #0b0f14; --ground: #fff; --script-ink: #0b0f14;
+      --line: #e3e9e5; --rule: #e3e9e5;
+      --panel: #fff; --sunken: #f8faf9;
+      --dim: #63766d; --lede: #4a5a53; --strong: #13251e; --foot: #63766d;
+      --accent: #0b6b4f; --fail: #b42318;
+      --stroke: rgba(11, 15, 20, .85);
+      --cta-line: rgba(11, 15, 20, .75); --cta-bg: rgba(255, 255, 255, .6);
+      --cta-hover-bg: #0b0f14; --cta-hover-ink: #fff;
+    }
+    /* A white card on a white page needs the rule to do the work, so it gets a soft shadow. */
+    .card { box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
   }
 </style>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -222,7 +259,7 @@
     <h1 class="sr-only">Olinea — post-quantum USDC on Arc</h1>
 
     <header class="nav">
-      <a href="#hero" class="logo"><img class="logo-mark" src="/assets/logo-mark-white-96.png" alt="" width="34" height="34"><b>Olinea</b><span>Vault</span></a>
+      <a href="#hero" class="logo"><picture><source srcset="/assets/logo-mark-ink-96.png" media="(prefers-color-scheme: light)"><img class="logo-mark" src="/assets/logo-mark-white-96.png" alt="" width="34" height="34"></picture><b>Olinea</b><span>Vault</span></a>
       <ul class="nav-links">
         <li class="nav-sm-hide"><a href="#how">How it works</a></li>
         <li class="nav-sm-hide"><a href="#security">Security</a></li>
@@ -355,7 +392,7 @@
 <footer class="site">
   <div class="foot-top">
     <div class="foot-brand">
-      <a href="/" class="logo"><img class="logo-mark" src="/assets/logo-mark-white-96.png" alt="" width="34" height="34"><b>Olinea</b><span>Vault</span></a>
+      <a href="/" class="logo"><picture><source srcset="/assets/logo-mark-ink-96.png" media="(prefers-color-scheme: light)"><img class="logo-mark" src="/assets/logo-mark-white-96.png" alt="" width="34" height="34"></picture><b>Olinea</b><span>Vault</span></a>
       <p>USDC a quantum computer can't move.</p>
     </div>
     <nav class="foot-cols">
@@ -399,8 +436,17 @@ function showNoScene() {
 
 /* ----------------------------------------------------------------- renderer */
 
+/* The hero is painted here, not in CSS, so its colours are read back out of the cascade: the same
+   custom properties every other rule uses, resolved against whichever theme the OS selected. A
+   media query therefore reaches the canvas too, and there is only ever one palette to keep right. */
+const cssColor = (name, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
+const hexOf = (v) => { const h = v.replace('#', ''); return h.length === 3 ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2] : h; };
+const heroGround = () => cssColor('--ground', '#000');
+const heroInk = () => cssColor('--script-ink', '#e9e9e9');
+const applyGround = () => renderer.setClearColor(parseInt(hexOf(heroGround()), 16), 1);
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-renderer.setClearColor(0x000000, 1);
+applyGround();
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -443,7 +489,7 @@ function drawHeadline(W, H) {
     bgTexture.dispose();
   }
   bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  bgCtx.fillStyle = '#000';
+  bgCtx.fillStyle = heroGround();
   bgCtx.fillRect(0, 0, W, H);
 
   let fs = Math.min(H * 0.21, W * (mobile ? 0.21 : 0.118));
@@ -455,7 +501,7 @@ function drawHeadline(W, H) {
     bgCtx.font = `800 ${fs}px Poppins`;
   }
 
-  bgCtx.fillStyle = '#e9e9e9';
+  bgCtx.fillStyle = heroInk();
   bgCtx.textAlign = 'center';
   bgCtx.textBaseline = 'alphabetic';
 
@@ -841,6 +887,8 @@ function animate(now) {
    is why the font's own loading event is the listener here rather than the gate. */
 document.fonts.addEventListener('loadingdone', () => layout());
 window.addEventListener('resize', layout);
+/* The OS flipped: repaint the ground and redraw the headline texture it is baked into. */
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { applyGround(); layout(); });
 
 try {
   layout();

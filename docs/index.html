@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Docs — Olinea</title>
 <meta name="description" content="Olinea documentation: the OlineaVault contract, the authorization digest, Arc's PQ precompile reference, the CLI, and the honest limits of an unaudited post-quantum USDC vault.">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light dark">
 <link rel="icon" href="/assets/favicon.png" sizes="180x180">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +17,9 @@
      than picked: 7.02:1 on the page, 6.44:1 on a panel. */
   :root { --bg:#000; --fg:#e8edf5; --ink:#fff; --line:#1e2430; --line2:#1a1f28; --dim:#8b96a8; --body:#c3cbd8; --link:#6ee7b7; --panel:#0d0f14; --sunken:#12161c; --good:#6ee7b7; --bad:#fca5a5; --warn:#fbbf24; --pad-x: clamp(20px, 6.95vw, 120px); }
   * { box-sizing: border-box; }
+  /* Both cuts of the mark ship and the OS picks one, so the <picture> has to stay out of the flex
+     layout or the mark sizes itself as a wrapper rather than as an image. */
+  picture { display: contents; }
   html { scroll-behavior: smooth; scroll-padding-top: 84px; }
   html, body {
     margin: 0; background: var(--bg); color: var(--fg); font-family: 'Poppins', sans-serif;
@@ -72,7 +75,7 @@
   strong { color: var(--ink); }
   code { font-size: .9em; color: var(--ink); background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 1.5px 5px; }
   pre {
-    background: #0b0d12; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--sunken); border: 1px solid var(--line); border-radius: 10px;
     padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.65; margin: 14px 0 20px;
   }
   pre code { background: none; border: 0; padding: 0; color: var(--fg); font-size: inherit; }
@@ -125,12 +128,29 @@
     .topnav { font-size: 13.5px; gap: 14px; }
     .topnav li.hide-sm { display: none; }
   }
+
+  /* ------------------------------------------- light, when the OS asks for it */
+
+  /* The docs were light before they were dark, so this is that palette with the one correction it
+     always needed: --dim carries real text at 13.5px, and #71837b measured 4.01:1 on white, under
+     the 4.5:1 floor. #63766d measures 4.84:1 on white and 4.61:1 on --sunken. The diagram swaps to
+     its light cut for the same reason - it is drawn in its own colours, not in these. */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:#fff; --fg:#13251e; --ink:#0b3b2e; --line:#e3e9e5; --line2:#eef2f0;
+      --dim:#63766d; --body:#4a5a53; --link:#0b6b4f;
+      --panel:#fff; --sunken:#f8faf9;
+      --good:#15803d; --bad:#b42318; --warn:#b45309;
+    }
+    .topbar { background: rgba(255,255,255,.94); }
+    figure.diagram img { box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <a href="/" class="logo"><img class="logo-mark" src="/assets/logo-mark-white-96.png" alt="" width="30" height="30"><b>Olinea</b><span>Vault</span><em>&nbsp;· Docs</em></a>
+  <a href="/" class="logo"><picture><source srcset="/assets/logo-mark-ink-96.png" media="(prefers-color-scheme: light)"><img class="logo-mark" src="/assets/logo-mark-white-96.png" alt="" width="30" height="30"></picture><b>Olinea</b><span>Vault</span><em>&nbsp;· Docs</em></a>
   <ul class="topnav">
     <li class="hide-sm"><a href="/#how">How it works</a></li>
     <li class="hide-sm"><a href="/#faq">FAQ</a></li>
@@ -181,8 +201,8 @@
     </ol>
 
     <figure class="diagram">
-      <img src="/docs/architecture.svg" width="1200" height="700"
-           alt="The browser derives an SLH-DSA key from 24 words in a Web Worker and signs a 32-byte digest that binds the chain id, the vault, the recipient, the amount and a nonce. The signature is relayed to an OlineaVault on Arc, which asks the post-quantum precompile for a boolean and only then transfers USDC.">
+      <picture><source srcset="/docs/architecture-light.svg" media="(prefers-color-scheme: light)"><img src="/docs/architecture.svg" width="1200" height="700"
+           alt="The browser derives an SLH-DSA key from 24 words in a Web Worker and signs a 32-byte digest that binds the chain id, the vault, the recipient, the amount and a nonce. The signature is relayed to an OlineaVault on Arc, which asks the post-quantum precompile for a boolean and only then transfers USDC."></picture>
       <figcaption>        Left of the dashed line is your machine — no account, no server. The digest is the whole
         authorization: change any one of its five fields and the signature is worthless elsewhere. The
         vault asks the precompile and requires <code>true</code> before it moves anything.

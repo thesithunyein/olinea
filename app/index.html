@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vault console — Olinea</title>
 <meta name="description" content="Olinea vault console: back up 24 words, derive an SLH-DSA key in your browser, prove it against Arc mainnet's post-quantum precompile for free, and issue authorizations that cannot fail on the signature.">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="/assets/favicon.png" sizes="180x180">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,12 +23,15 @@
        measured, not picked: 7.02:1 on --bg, 6.44:1 on --panel and 6.07:1 on --sunken. The check
        suite recomputes all three from these tokens, so a palette edit that dims a label fails. */
     --dim:#8b96a8;
-    --acc:#fff; --acc2:#dfe6ef; --link:#6ee7b7;
+    --acc:#fff; --acc2:#dfe6ef; --link:#6ee7b7; --btn-ink:#08090c;
     --good:#6ee7b7; --bad:#fca5a5; --warn:#fbbf24;
     --pad: clamp(18px, 4vw, 32px); --wide: 1100px;
     --shadow: 0 1px 2px rgba(0,0,0,.5);
   }
   * { box-sizing: border-box; }
+  /* Both cuts of the mark ship and the OS picks one, so the <picture> has to stay out of the flex
+     layout or the mark sizes itself as a wrapper rather than as an image. */
+  picture { display: contents; }
   /* An author rule carrying a class outranks the user agent's [hidden] rule, so a hidden flex row
      still painted as an empty greyed-out button. Nothing marked hidden may ever be drawn. */
   [hidden] { display: none !important; }
@@ -148,7 +152,7 @@
 
   /* --------------------------------------------------------------- controls */
   .btn {
-    appearance: none; border: 1px solid var(--acc); background: var(--acc); color: #08090c; font-weight: 600;
+    appearance: none; border: 1px solid var(--acc); background: var(--acc); color: var(--btn-ink); font-weight: 600;
     font-size: 13.5px; padding: 11px 18px; border-radius: 8px; cursor: pointer; min-height: 44px;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
   }
@@ -319,13 +323,50 @@
     .histhead span:nth-child(n + 3) { display: none; }
     .histrow a, .histrow .mono { grid-column: 2; }
   }
+
+  /* ------------------------------------------- light, when the OS asks for it */
+
+  /* The palette this console wore before it went dark, restored as an override rather than as a
+     second set of rules. --dim is the measured value - 4.84:1 on white, 4.61:1 on --sunken - and
+     not the #71837b that measured 4.01:1 and failed AA. Only chrome that cannot be a token - a
+     wash, a ring, a dot - is re-declared, so nothing here can drift out of the token list. */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:#fff; --panel:#fff; --sunken:#f8faf9; --line:#e3e9e5; --line2:#eef2f0;
+      --ink:#0b3b2e; --fg:#13251e; --body:#4a5a53; --dim:#63766d;
+      --acc:#0b3b2e; --acc2:#08543d; --link:#0b6b4f; --btn-ink:#fff;
+      --good:#15803d; --bad:#b42318; --warn:#b45309;
+      --shadow: 0 1px 2px rgba(16,24,40,.04);
+    }
+    .appbar { background: rgba(255,255,255,.94); }
+    .statusdot.on { border-color: #abefc6; background: #ecfdf3; }
+    .statusdot.on i { background: #17b26a; }
+    .statusdot.off { border-color: #fecdca; background: #fef3f2; }
+    .statusdot.off i { background: #f04438; }
+    .tab .tick { background: #17b26a; }
+    .stat:hover { border-color: #c9d6d0; }
+    .btn.ghost:hover:not(:disabled) { background: var(--sunken); color: var(--acc2); border-color: var(--acc2); }
+    .btn.danger { border-color: #fecdca; }
+    .btn.danger:hover:not(:disabled) { background: #fef3f2; }
+    input:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(11,107,79,.14); }
+    .chip.ok { border-color: #abefc6; background: #ecfdf3; }
+    .chip.no { border-color: #fecdca; background: #fef3f2; }
+    .chip.warn { border-color: #fedf89; background: #fffaeb; }
+    .verdict.ok { border-color: #abefc6; background: #f6fef9; }
+    .verdict.no { border-color: #fecdca; background: #fffbfa; }
+    .verdict .glyph { background: #eaecf0; }
+    .verdict.ok .glyph { background: #d1fadf; }
+    .verdict.no .glyph { background: #fee4e2; }
+    .bar { background: #eaeef0; }
+    .toast { background: #fff; box-shadow: 0 8px 24px rgba(16,24,40,.12); }
+  }
 </style>
 </head>
 <body>
 
 <header class="appbar">
   <div class="appbar-in">
-    <a class="brand" href="/"><img class="brand-mark" src="/assets/logo-mark-white-96.png" alt="" width="24" height="24"><span><b>Olinea</b> <span>Vault</span></span></a>
+    <a class="brand" href="/"><picture><source srcset="/assets/logo-mark-ink-96.png" media="(prefers-color-scheme: light)"><img class="brand-mark" src="/assets/logo-mark-white-96.png" alt="" width="24" height="24"></picture><span><b>Olinea</b> <span>Vault</span></span></a>
 
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview" data-panel="panel-overview" tabindex="0">Dashboard <span class="tick" id="tick-overview" hidden></span></button>

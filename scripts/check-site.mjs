@@ -214,8 +214,9 @@ ok(count(app, 'function renderNext()') === 1 && count(app, 'renderNext()') >= 2 
 ok(count(app, 'const HEADINGS =') === 1
   && ['panel-overview', 'panel-key', 'panel-vault', 'panel-authorize', 'panel-activity'].every((id) => app.includes(`'${id}': [`)),
   'every section says what it is at the top of the page');
-ok(app.includes('name="color-scheme" content="dark"') && /--bg:#000/.test(app),
-  'the console is dark, the same surface as the landing, and says so to the browser');
+ok([['index.html', home], ['app/index.html', app], ['docs/index.html', docs]]
+  .every(([, src]) => src.includes('name="color-scheme" content="light dark"')),
+  'all three pages hand the colour scheme to the browser instead of forcing one');
 /* The reference shows a flow as three steps, so the Authorize panel does too - and a step counts
    as done only when the signature, the precompile or the receipt itself said so. */
 ok(appMarkup.indexOf('id="auth-steps"') > appMarkup.indexOf('id="auth-body"')
@@ -264,9 +265,10 @@ ok(appMarkup.includes('id="b-explorer"') && appMarkup.includes('id="step-link" h
    Each of the following was measured in a browser before it was changed: a colour ratio, a tile
    that wrapped four-then-one, a focus ring that was missing, an empty state drawn as a bullet. */
 /* --- contrast, computed from the tokens rather than eyeballed ---
-   The console and the docs sit on the landing's black now. Picking a palette by eye is exactly how
-   #71837b shipped at 4.01:1 on white, so every token that carries text is measured against every
-   surface it can land on, and the worst pair is named in the result. */
+   Every page now carries two palettes: the base :root, and the :root inside the light media query
+   that follows it. Both are measured. Picking a palette by eye is exactly how #71837b reached
+   4.01:1 on white, and a theme that only reads well in one of its two halves is that same mistake
+   made twice. */
 const chan = (v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
 const lum = (h) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -276,32 +278,50 @@ const contrast = (a, b) => {
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 };
-/* #000 has to expand to #000000, or the one token carrying the page ground is silently skipped. */
-const tk = (src, name) => {
-  const m = src.match(new RegExp(name + ':(#(?:[0-9a-f]{3}|[0-9a-f]{6}))(?![0-9a-f])'));
+/* #000 has to expand to #000000, or the token carrying the page ground is silently skipped. */
+const tk = (block, name) => {
+  /* The landing writes its tokens as `--bg: #000` and the console as `--bg:#000`, so the space is
+     optional here. Requiring it either way would silently measure nothing and pass. */
+  const m = block.match(new RegExp(name + ': *(#(?:[0-9a-f]{3}|[0-9a-f]{6}))(?![0-9a-f])'));
   if (!m) return undefined;
   return m[1].length === 4 ? '#' + m[1][1] + m[1][1] + m[1][2] + m[1][2] + m[1][3] + m[1][3] : m[1];
 };
-for (const [label, src] of [['console', app], ['docs', docs]]) {
-  const pairs = [];
-  for (const t of ['--ink', '--fg', '--body', '--dim']) {
-    for (const s of ['--bg', '--panel', '--sunken']) {
-      if (tk(src, t) && tk(src, s)) pairs.push([t, s, contrast(tk(src, t), tk(src, s))]);
-    }
+const baseOf = (src) => (src.match(/:root \{([\s\S]*?)\}/) || [])[1] || '';
+const lightOf = (src) => (src.match(/@media \(prefers-color-scheme: light\) \{\s*:root \{([\s\S]*?)\}/) || [])[1] || '';
+/* Only the combinations that a rule actually produces. Measuring every token against every surface
+   would invent pairs that never meet and fail on colours that are never adjacent. */
+const on = (fgs, bgs) => fgs.flatMap((f) => bgs.map((b) => [f, b]));
+const PALETTE_PAIRS = {
+  'index.html': [
+    ...on(['--fg', '--dim', '--lede', '--strong', '--foot', '--accent', '--fail'], ['--bg', '--ground']),
+    ...on(['--dim', '--lede', '--strong', '--accent'], ['--panel']),
+    ...on(['--dim', '--accent', '--fail'], ['--sunken']),
+    ...on(['--cta-hover-ink'], ['--cta-hover-bg']),
+  ],
+  'app/index.html': [
+    ...on(['--ink', '--fg', '--body', '--dim'], ['--bg', '--panel', '--sunken']),
+    ...on(['--link', '--good', '--bad', '--warn'], ['--bg']),
+    ...on(['--btn-ink'], ['--acc']),
+  ],
+  'docs/index.html': [
+    ...on(['--ink', '--fg', '--body', '--dim'], ['--bg', '--panel', '--sunken']),
+    ...on(['--link', '--good', '--bad', '--warn'], ['--bg']),
+  ],
+};
+for (const [file, pairs] of Object.entries(PALETTE_PAIRS)) {
+  const src = readFileSync(file, 'utf8');
+  const wanted = [...new Set(pairs.flat())];
+  for (const [which, block] of [['dark', baseOf(src)], ['light', lightOf(src)]]) {
+    const missing = wanted.filter((t) => !tk(block, t));
+    const measured = missing.length ? [] : pairs.map(([f, b]) => ({ f, b, r: contrast(tk(block, f), tk(block, b)) }));
+    const worst = measured.reduce((m, p) => (p.r < m.r ? p : m), measured[0] || { f: '-', b: '-', r: 0 });
+    const under = measured.filter((p) => p.r < 4.5);
+    ok(missing.length === 0 && under.length === 0 && measured.length === pairs.length,
+      `${file} ${which}: all ${pairs.length} pairs that occur clear 4.5:1 `
+      + `(worst ${worst.f} on ${worst.b} ${worst.r.toFixed(2)}:1`
+      + (missing.length ? `, UNDEFINED ${missing.join(' ')}` : '') + ')');
   }
-  for (const t of ['--link', '--good', '--bad', '--warn']) {
-    if (tk(src, t) && tk(src, '--bg')) pairs.push([t, '--bg', contrast(tk(src, t), tk(src, '--bg'))]);
-  }
-  const under = pairs.filter((p) => p[2] < 4.5);
-  const worst = pairs.reduce((m, p) => (p[2] < m[2] ? p : m), pairs[0] || ['none', 'none', 0]);
-  ok(pairs.length === 16 && under.length === 0,
-    `every ${label} text token clears 4.5:1 on every surface it can land on `
-    + `(worst ${worst[0]} on ${worst[1]} at ${worst[2].toFixed(2)}:1 of ${pairs.length} pairs measured)`);
 }
-/* A filled button is the one place two tokens meet: a dark label on the light fill, never white on
-   white. --acc carries the fill, so if it ever goes dark this fails instead of shipping. */
-ok(contrast('#08090c', tk(app, '--acc')) >= 4.5,
-  'the filled button paints a dark label on its light fill, not white on white');
 ok(/input::placeholder, textarea::placeholder \{ color: var\(--dim\); \}/.test(app),
   'and the placeholder that used to be the faintest text in the app uses that same colour');
 ok(/\.stats\s*\{[^}]*grid-template-columns: repeat\(5,/.test(app) && !app.includes('auto-fit, minmax(184px'),
@@ -389,10 +409,30 @@ for (const f of ['assets/favicon.png', 'assets/logo-mark.png', 'assets/logo-mark
 }
 const source = readFileSync('assets/logo.jpg');
 ok(source[0] === 0xff && source[1] === 0xd8, 'and assets/logo.jpg, the artwork they were cut from, is kept');
-ok(app.includes('src="/assets/logo-mark-white-96.png"') && docs.includes('src="/assets/logo-mark-white-96.png"')
-  && count(home, 'src="/assets/logo-mark-white-96.png"') === 2
-  && !app.includes('logo-mark-ink-96.png') && !docs.includes('logo-mark-ink-96.png'),
-  'all four bars carry the mark, in the white cut a dark page needs');
+ok(count(home, 'src="/assets/logo-mark-white-96.png"') === 2
+  && [home, app, docs].every((p) => p.includes('srcset="/assets/logo-mark-ink-96.png"'))
+  && count(home, 'srcset="/assets/logo-mark-ink-96.png"') === 2,
+  'every bar ships both cuts of the mark and lets the OS pick: white on dark, ink on light');
+/* The diagram is drawn in its own colours rather than in tokens, so it needs one file per theme -
+   and each file has to be drawn for the theme it is handed to. */
+const svgGround = (f) => (readFileSync(f, 'utf8').match(/\.bg \{ fill: (#[0-9a-f]{6}); \}/) || [])[1];
+ok(svgGround('docs/architecture.svg') === '#0d0f14' && svgGround('docs/architecture-light.svg') === '#ffffff',
+  'the architecture diagram ships a dark cut and a light cut, each drawn on its own ground');
+ok(docs.includes('srcset="/docs/architecture-light.svg" media="(prefers-color-scheme: light)"')
+  && docs.includes('src="/docs/architecture.svg"')
+  && !readFileSync('docs/architecture-light.svg', 'utf8').includes('#71837b'),
+  'the docs hand the light visitor the light diagram, and it avoids the #71837b that failed on white');
+/* <picture> may hold only <source> elements and one <img>: a caption parked inside it is invalid
+   markup the browser happens to tolerate, so the shape is pinned here rather than trusted. The tag
+   count runs over markup with the <style> blocks removed, because a comment that says "<picture>"
+   in prose would otherwise read as an element that was never closed. */
+const markup = (src) => src.replace(/<style>[\s\S]*?<\/style>/g, '');
+const picsOf = (src) => [...markup(src).matchAll(/<picture>([\s\S]*?)<\/picture>/g)].map((m) => m[1]);
+ok([home, app, docs].every((p) => picsOf(p).length > 0
+  && picsOf(p).every((b) => /<img\b/.test(b) && !/<figcaption/.test(b))),
+  'every <picture> on all three pages holds only its sources and the image');
+ok([home, app, docs].every((p) => count(markup(p), '<picture>') === count(markup(p), '</picture>')),
+  'and every <picture> a page opens is closed');
 ok([home, docs, app].every((p) => p.includes('href="/assets/favicon.png"')
   && p.includes('href="/assets/favicon.png" sizes="180x180"')),
   'the browser tab shows that artwork on all three pages');
