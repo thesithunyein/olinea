@@ -194,8 +194,10 @@ Read [**SECURITY.md**](SECURITY.md) before trusting this with money. The short v
 
 Ordered by how much it would change an honest reader's mind, not by how impressive it sounds.
 
-1. **Deploy.** About two cents of gas, and it converts the largest untested seam in this repository —
-   "the vault runs on a local chain, the precompile was proven on mainnet" — into a single tested path.
+1. **A funded vault end to end in the console.** About two cents of gas converts the last untested seam
+   in this repository — "the vault runs on a local chain, the precompile was proven on mainnet" — into a
+   single tested path: create a vault through the deployed factory, deposit USDC, authorize a release,
+   and release it, all from the live console.
 2. **M-of-N release.** k-of-n SLH-DSA signatures over the same digest, reusing the same precompile.
    The digest already binds the whole intent, so the contract change is small and the story is not:
    a vault that no single compromised machine can open.
