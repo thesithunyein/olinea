@@ -14,3 +14,6 @@ scripts/
 assets/logo.jpg
 *.md
 LICENSE
+# the local static server's log and pid, if one is running while a deploy happens
+.serve.log
+.serve.pid

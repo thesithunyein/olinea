@@ -1,0 +1,18 @@
+{
+  "name": "olinea-vendor-build",
+  "private": true,
+  "type": "module",
+  "description": "Bundles the console's runtime dependencies so the site loads no third-party origin. Output goes to app/vendor/.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "@noble/post-quantum": "0.7.1",
+    "@scure/bip39": "2.4.0",
+    "viem": "2.21.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

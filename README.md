@@ -16,7 +16,7 @@ A USDC vault on Arc that releases funds only when a post-quantum signature — *
 including for the people who wrote it.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-6ee7b7?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-27%20passing-6ee7b7?style=flat-square)](#verify-it-yourself)
+[![Tests](https://img.shields.io/badge/tests-31%20passing-6ee7b7?style=flat-square)](#verify-it-yourself)
 [![Chain](https://img.shields.io/badge/chain-Arc%20mainnet%20%C2%B7%205042-6ee7b7?style=flat-square)](#the-primitive)
 [![Signature](https://img.shields.io/badge/signature-SLH--DSA--SHA2--128s%20%C2%B7%207%2C856%20B-6ee7b7?style=flat-square)](#the-primitive)
 [![Audit](https://img.shields.io/badge/audit-none-fca5a5?style=flat-square)](#security)
@@ -167,7 +167,7 @@ git clone --recurse-submodules https://github.com/thesithunyein/olinea
 cd olinea
 
 # 1. the contracts
-cd contracts && forge test                       # 27 tests, 0 failed
+cd contracts && forge test                       # 31 tests, 0 failed
 
 # 2. a real signature, verified by Arc's real precompile on mainnet
 cd ../scripts && npm install
@@ -175,6 +175,11 @@ node pq.mjs conformance                          # valid → true; tampered / wr
 
 # 3. the site and console still agree with the contracts
 cd .. && node scripts/check-site.mjs             # no network, no dependencies
+
+# 4. the committed crypto still derives the key the live vault is holding
+#    (reads LOCAL/browser-vault.txt if you have it — the words are never printed)
+cd scripts/vendor && npm install && cd ../..
+node scripts/vendor/parity.mjs                   # bundle vs the packages it was built from, and vs chain
 ```
 
 Point the last one at the deployed factory and it checks the deployed claims too:
@@ -190,20 +195,25 @@ olinea/
 │   └── architecture.svg        the diagram above, and in the docs
 ├── app/
 │   ├── index.html              the vault console                       → /app/
-│   └── worker.js               keygen and signing, off the main thread
+│   ├── worker.js               keygen and signing, off the main thread
+│   └── vendor/                 viem and the noble primitives, bundled — nothing loads at runtime
 ├── contracts/                  Foundry project
 │   ├── src/
 │   │   ├── OlineaVault.sol     the vault: no owner, no admin, no upgrade path
 │   │   ├── OlineaFactory.sol   createVault(bytes verifyingKey) in one transaction
 │   │   ├── interfaces/         IPQ.sol · IUSDC.sol — the ABIs, kept minimal
 │   │   └── mocks/              MockUSDC · MockPQ · NaiveVault (deliberately broken)
-│   ├── test/                   OlineaVault.t.sol (17) · OlineaFactory.t.sol (10)
+│   ├── test/                   OlineaVault.t.sol (19) · OlineaFactory.t.sol (12)
 │   ├── lib/forge-std           a submodule — clone with --recurse-submodules
 │   ├── README.md               the two load-bearing details and the mainnet runbook
 │   └── foundry.toml            arc / arc_blockdaemon RPC endpoints · fmt rules
+├── assets/
+│   ├── fonts/                  Poppins: 18 committed faces and the one stylesheet that names them
+│   └── three/                  three.js and the single addon the hero imports
 ├── scripts/
 │   ├── pq.mjs                  keygen · authorize · conformance — no wallet, no gas
-│   └── check-site.mjs          structural checks: docs and console vs the contracts
+│   ├── check-site.mjs          structural checks: docs and console vs the contracts
+│   └── vendor/                 how the committed copies were made: build.mjs · fonts.mjs · parity.mjs
 ├── .github/                    CI (contracts + site), issue forms, PR template
 ├── .vercelignore               the deploy publishes web pages and nothing else
 ├── .editorconfig
@@ -214,9 +224,13 @@ olinea/
 └── LICENSE                     MIT
 ```
 
-There is no build step and no bundler. The pages are hand-written HTML with ES modules imported from a
-CDN at pinned versions, so what is deployed is what is in the repository — the live site can be diffed
-against a commit, byte for byte. `LOCAL/` and build output are gitignored; nothing else is.
+There is no build step, but there is no CDN either: the pages are hand-written HTML, and every module,
+font and geometry they load is committed beside them — the console's crypto under `app/vendor/`
+(bundled by `scripts/vendor/build.mjs`, versions pinned to the ones the key derivation was measured
+against), three.js under `assets/three/`, the typeface under `assets/fonts/`. So what is deployed is
+what is in the repository, the live site can be diffed against a commit byte for byte, and a cold load
+names no host but this one — a page is only as available as its slowest third party. `LOCAL/` and
+dependency folders are gitignored; everything a page loads at runtime is committed.
 
 ## Security
 

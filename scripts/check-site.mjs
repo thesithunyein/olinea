@@ -10,7 +10,7 @@
  *
  * Reads files only. No network, no dependencies.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 /* The one thing this file cannot read off disk: whether the site is being checked against a
@@ -43,8 +43,8 @@ ok(count(home, 'href="/app/"') === 3, 'the app is linked from the nav, the hero 
    drew anything - and again for the webfont. Nothing may gate the first frame any more. */
 ok(!home.includes('.glb') && !home.includes('GLTFLoader'),
   'the hero fetches no model: the cube is built from the geometry the addon already ships');
-ok(home.includes('rel="modulepreload"') && home.includes('rel="preconnect" href="https://cdn.jsdelivr.net"'),
-  'and its module host is preconnected and preloaded, so the fetch starts before the script is parsed');
+ok(home.includes('rel="modulepreload" href="/assets/three/three.module.js"'),
+  'and its module is preloaded from this origin, so the fetch starts before the script is parsed');
 ok(!home.includes('Promise.race([') && /^requestAnimationFrame\(animate\);$/m.test(home),
   'the first frame is drawn without waiting for the webfont');
 /* The map has to be parsed before anything triggers a module load, and a module preload ahead of
@@ -249,6 +249,12 @@ ok(appMarkup.indexOf('<header class="appbar">') >= 0 && navAt > appMarkup.indexO
 ok(/\.appbar\s*\{[^}]*position:\s*sticky/.test(app), 'and the bar stays put');
 ok(count(app, 'function renderNext()') === 1 && count(app, 'renderNext()') >= 2 && app.includes('id="next-btn"'),
   'the dashboard names one next action and opens the tab that does it');
+/* The paragraph under the vault chip has three states — this key, another key, no key in this tab —
+   and the chip had two: a keyless reader, who is only reading, was shown the red warning that belongs
+   to someone holding a vault they cannot open. */
+ok(app.includes("mine ? 'matches your key' : state.vk ? 'different key' : 'no key in this tab'")
+  && app.includes("'chip' + (mine ? ' ok' : state.vk ? ' no' : '')"),
+  'and the vault chip states which of those three it is, in the three colours they have');
 ok(count(app, 'const HEADINGS =') === 1
   && ['panel-overview', 'panel-key', 'panel-vault', 'panel-authorize', 'panel-activity'].every((id) => app.includes(`'${id}': [`)),
   'every section says what it is at the top of the page');
@@ -478,6 +484,124 @@ ok(readme.includes('srcset="assets/logo-mark.png"') && readme.includes('src="ass
   'the README shows it too, in the ink a white page needs and the white a dark one does');
 ok(!count(app, 'border: 5px solid var(--ink); border-radius: 50%') && !home.includes('border: 8px solid #fff'),
   'no page still draws the mark as a ring of border, which was a stand-in for this artwork');
+
+console.log('--- no third-party origin ---');
+/* The console fetched viem and the noble primitives from esm.sh at runtime: ~250 requests to a host
+   we do not control, on the critical path of the one page that has to work. They are bundled into
+   app/vendor/ instead, and this is what keeps them there. */
+const vendorDeps = ['app/vendor/viem.js', 'app/vendor/viem-accounts.js', 'app/vendor/worker-deps.js'];
+ok(!app.includes('esm.sh') && !worker.includes('esm.sh') && !/const CDN/.test(app) && !/const CDN/.test(worker),
+  'neither the page nor the worker still names a CDN to load its own crypto from');
+ok(app.includes("import('/app/vendor/viem.js')") && app.includes("import('/app/vendor/viem-accounts.js')")
+  && worker.includes("import('./vendor/worker-deps.js')"),
+  'both seams point at this origin: the page at the two viem bundles, the worker at its primitives');
+const vendorMissing = vendorDeps.filter((f) => !existsSync(f));
+ok(vendorMissing.length === 0,
+  `every vendored bundle the seams reference exists on disk (missing: ${vendorMissing.join(', ') || 'none'})`);
+/* A bundle that reached back out to a CDN would defeat the point, and the page would not show it:
+   the page only ever names the entry file. So every line of every vendored file is read and every
+   specifier in it has to resolve here. Comment-only lines are skipped, because these bundles carry
+   their libraries' prose with them. */
+const vendorFiles = existsSync('app/vendor') ? readdirSync('app/vendor').filter((f) => f.endsWith('.js')) : [];
+const vendorLines = vendorFiles.flatMap((f) => readFileSync(path.join('app/vendor', f), 'utf8')
+  .split(/\r?\n/)
+  .filter((l) => !/^\s*(\/\/|\*)/.test(l))
+  .map((l) => [f, l]));
+const specifiers = vendorLines.flatMap(([f, l]) =>
+  [...l.matchAll(/(?:from|import)\s*\(?\s*"([^"]+)"/g)].map((m) => [f, m[1]]));
+const external = specifiers.filter(([, s]) => !s.startsWith('./') && !s.startsWith('/'));
+ok(vendorFiles.length >= 3 && specifiers.length > 0 && external.length === 0,
+  `all ${specifiers.length} specifiers inside the vendored bundles resolve on this origin (external: ${external.map(([f, s]) => `${f} -> ${s}`).join(', ') || 'none'})`);
+/* The crypto is the same crypto only if the versions are the ones the derivation was measured
+   against: a caret or a tilde here would let a rebuild change the keys a backup restores. */
+const vendorPkg = JSON.parse(readFileSync('scripts/vendor/package.json', 'utf8'));
+const loose = Object.entries({ ...vendorPkg.dependencies, ...vendorPkg.devDependencies })
+  .filter(([, v]) => !/^\d+\.\d+\.\d+$/.test(v));
+ok(Object.keys(vendorPkg.dependencies).length === 4 && loose.length === 0,
+  `the vendor build pins exact versions, so a rebuild cannot change the derivation (loose: ${loose.map(([n, v]) => `${n}@${v}`).join(', ') || 'none'})`);
+
+/* The docs print how many tests each contract has, which is a claim a reader can check in one command.
+   Counted from the suite here so a number that has drifted from the tests fails the build instead of
+   quietly overstating the evidence. */
+const countTests = (f) => [...readFileSync(f, 'utf8').matchAll(/function (?:test|testFuzz)\w*\(/g)].length;
+const vaultTests = countTests('contracts/test/OlineaVault.t.sol');
+const factoryTests = countTests('contracts/test/OlineaFactory.t.sol');
+ok(docs.includes(`<td>${vaultTests} Foundry tests green`)
+  && docs.includes(`<td>${factoryTests} Foundry tests green`)
+  && docs.includes(`# ${vaultTests + factoryTests} tests`),
+  `the docs print the suite's real counts (${vaultTests} vault + ${factoryTests} factory = ${vaultTests + factoryTests})`);
+
+console.log('--- everything a page needs ships with it ---');
+/* The typeface came from googleapis/gstatic and the hero's three.js from jsdelivr, so a cold visitor's
+   first paint waited on hosts we do not control. A page is only as available as its slowest third
+   party. Nothing a page loads or runs may leave this origin now — a link a reader clicks may, and
+   that is why this reads the tags that fetch rather than every URL in the file. */
+const shipped = {
+  'index.html': home,
+  'app/index.html': app,
+  'docs/index.html': docs,
+  'submit.html': readFileSync('submit.html', 'utf8'),
+};
+const SUBRESOURCE = /<(?:link|script|img|source|iframe)\b[^>]*?(?:href|src|srcset)="(?:https?:)?\/\/[^"]*"/gi;
+const offOrigin = Object.entries(shipped)
+  .flatMap(([name, src]) => (src.match(SUBRESOURCE) || []).map((tag) => `${name}: ${tag.trim()}`));
+ok(offOrigin.length === 0,
+  `no shipped page points at another host for something it loads (found: ${offOrigin.join(' | ') || 'none'})`);
+
+/* A root-absolute path is a path into the deploy, so a file that is not in the repository is a page
+   that breaks where only a browser would notice. Every image, stylesheet and script a page names is
+   resolved here. */
+const rootPaths = (src) => [
+  ...src.matchAll(/(?:href|src)="(\/[^"?#]+)"/g),
+  ...src.matchAll(/srcset="([^"]*)"/g),
+].flatMap((m) => m[1].split(',')).map((s) => s.trim().split(/\s+/)[0])
+  .filter((p) => /^\/[^?#]+\.(png|jpg|svg|css|js|woff2)$/.test(p)).map((p) => p.slice(1));
+const named = [...new Set(Object.values(shipped).flatMap(rootPaths))];
+const absent = named.filter((p) => !existsSync(p));
+ok(named.length >= 6 && absent.length === 0,
+  `every asset the pages name at this origin is a file in the deploy (${named.length} checked, missing: ${absent.join(', ') || 'none'})`);
+
+/* The typeface is one stylesheet and 18 committed faces. A stylesheet that still reached for a Google
+   host would put the dependency back without any page naming it. */
+const fontCss = readFileSync('assets/fonts/poppins.css', 'utf8');
+const faces = [...new Set([...fontCss.matchAll(/url\(\/assets\/fonts\/[^)]+\.woff2\)/g)].map((m) => m[0].slice(5, -1)))];
+const facesMissing = faces.filter((p) => !existsSync(p));
+ok(Object.values(shipped).every((src) => src.includes('href="/assets/fonts/poppins.css"')),
+  'every page loads the typeface from one stylesheet of its own');
+ok(faces.length >= 18 && facesMissing.length === 0 && !/https?:\/\//.test(fontCss),
+  `and all ${faces.length} faces it names are committed beside it, with no host left in the stylesheet (missing: ${facesMissing.join(', ') || 'none'})`);
+
+/* The hero's two bare specifiers resolve through the import map, so the map is what has to point at
+   files that exist — the hero's own code never changed. */
+const imports = JSON.parse(home.match(/<script type="importmap">([\s\S]*?)<\/script>/)[1]).imports;
+ok(imports.three === '/assets/three/three.module.js' && imports['three/addons/'] === '/assets/three/'
+  && existsSync('assets/three/three.module.js') && existsSync('assets/three/geometries/RoundedBoxGeometry.js')
+  && !/https?:/.test(JSON.stringify(imports)),
+  'the hero imports three.js and the one addon it uses, and both files are committed beside the page');
+ok(/from 'three'/.test(readFileSync('assets/three/geometries/RoundedBoxGeometry.js', 'utf8')),
+  'and the addon asks for the same bare specifier, so one copy of three.js is the one that runs');
+
+console.log('--- the policy that enforces it ---');
+/* A source check cannot stop a page loading from another host; the header can. It is asserted here so
+   the claim and the enforcement cannot drift apart — and so that a directive loosened to make some
+   new dependency work is a failing check rather than a quiet edit. */
+const csp = JSON.parse(readFileSync('vercel.json', 'utf8')).headers
+  .flatMap((r) => r.headers).find((h) => h.key === 'Content-Security-Policy')?.value ?? '';
+const directive = (name) => csp.split(';').map((d) => d.trim()).find((d) => d.startsWith(`${name} `)) ?? '';
+ok(directive('default-src') === "default-src 'self'"
+  && directive('script-src') === "script-src 'self' 'unsafe-inline'"
+  && directive('style-src') === "style-src 'self' 'unsafe-inline'"
+  && directive('img-src') === "img-src 'self' data:"
+  && directive('font-src') === "font-src 'self'"
+  && directive('worker-src') === "worker-src 'self'"
+  && directive('object-src') === "object-src 'none'"
+  && directive('frame-ancestors') === "frame-ancestors 'none'"
+  && !/\*|http:|unsafe-eval/.test(csp),
+  'the CSP confines code, styles, images, fonts and workers to this origin — no wildcard, no http:, no unsafe-eval');
+/* The console names the RPC it reads from, and `?rpc=` can name another, so connect-src is the one
+   directive that has to reach out. It reaches only over https. */
+ok(directive('connect-src') === "connect-src 'self' https:",
+  'and connect-src reaches exactly as far as the console needs: this origin, or https');
 
 console.log(fails.length ? `\n${fails.length} CHECK(S) FAILED` : '\nALL CHECKS PASSED');
 process.exit(fails.length ? 1 : 0);

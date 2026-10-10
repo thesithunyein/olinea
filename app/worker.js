@@ -13,7 +13,7 @@
  * for a signature by handing over a 32-byte digest.
  */
 
-const CDN = 'https://esm.sh';
+/* Primitives are bundled locally; see scripts/vendor/build.mjs. Nothing loads from a third-party origin. */
 
 /* Changing anything in this derivation breaks every backup taken with the old one. It is versioned
  * for exactly that reason. See docs#vault. */
@@ -25,13 +25,7 @@ let verifyingKey = null;
 
 async function load() {
   if (mods) return mods;
-  const [bip39, wordlist, hkdf, sha2, pq] = await Promise.all([
-    import(`${CDN}/@scure/bip39@2.4.0`),
-    import(`${CDN}/@scure/bip39@2.4.0/wordlists/english.js`),
-    import(`${CDN}/@noble/hashes@2.4.0/hkdf.js`),
-    import(`${CDN}/@noble/hashes@2.4.0/sha2.js`),
-    import(`${CDN}/@noble/post-quantum@0.7.1/slh-dsa.js`),
-  ]);
+  const { bip39, wordlist, hkdf, sha2, pq } = await import('./vendor/worker-deps.js');
   mods = {
     bip39,
     wordlist: wordlist.wordlist ?? wordlist.english ?? wordlist.default,

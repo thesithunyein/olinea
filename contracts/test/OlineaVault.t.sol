@@ -202,6 +202,36 @@ contract OlineaVaultTest is Test {
         vault.release(BOB, 0, 2, hex"deadbeef");
     }
 
+    /* ------------------------------------------------- a token that refuses to move */
+
+    /// @notice Circle can deny an address and Arc's USDC then reverts the transfer. A genuine
+    ///         authorization cannot get around it, and the nonce rolls back with the revert — so the
+    ///         same signed authorization still works once the deny is lifted. This is the largest
+    ///         caveat in the project, and this is what it actually does rather than what it implies.
+    function test_aDeniedAddressKeepsItsFundsAndItsNonce() public {
+        _acceptRelease(BOB, ONE_USDC, 1);
+        usdc.setTransfersRevert(true);
+
+        vm.expectRevert(bytes("USDC: address blacklisted"));
+        vault.release(BOB, ONE_USDC, 1, hex"deadbeef");
+
+        assertEq(vault.balance(), 10 * ONE_USDC, "the balance is still there to read");
+        assertEq(usdc.balanceOf(BOB), 0, "and nothing left the vault");
+        assertFalse(vault.nonceUsed(1), "the revert took the nonce back with it");
+
+        usdc.setTransfersRevert(false);
+        vault.release(BOB, ONE_USDC, 1, hex"deadbeef");
+        assertEq(usdc.balanceOf(BOB), ONE_USDC, "the same authorization works once the deny is lifted");
+        assertTrue(vault.nonceUsed(1));
+    }
+
+    /// @notice The deny also closes the door on the way in: a denied vault cannot be topped up either.
+    function test_aDepositIntoADeniedVaultReverts() public {
+        usdc.setTransfersRevert(true);
+        vm.expectRevert(bytes("USDC: address blacklisted"));
+        vault.deposit(ONE_USDC);
+    }
+
     /* ---------------------------------------------------------------------- fuzz */
 
     function testFuzz_arbitraryUnauthorizedReleaseAlwaysFails(uint256 amount, uint256 nonce) public {

@@ -8,9 +8,10 @@
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="/assets/favicon.png" sizes="180x180">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- The typeface is one stylesheet of @font-face rules over woff2 files this origin serves. It used
+     to be two preconnects and a request to googleapis, which put a host we do not control on the
+     path to the first paint. -->
+<link rel="stylesheet" href="/assets/fonts/poppins.css">
 <style>
   /* The landing's palette, so the docs read as the same product: black behind dark panels, white
      headings, mint for every link. --dim carries real text at 13.5px, so it is measured rather
@@ -216,8 +217,8 @@
         <thead><tr><th>Component</th><th>Status</th></tr></thead>
         <tbody>
           <tr><td>PQ precompile ABI</td><td>Mapped from Circle's public <code>arc-node</code> source, then verified against Arc mainnet: real signature <code>true</code>; tampered signature, wrong key and wrong message all <code>false</code></td></tr>
-          <tr><td>OlineaVault.sol</td><td>17 Foundry tests green; its exact authorization digest verified against the live mainnet precompile (3/3)</td></tr>
-          <tr><td>OlineaFactory.sol</td><td>10 Foundry tests green; one transaction per vault, no owner and nothing to administer</td></tr>
+          <tr><td>OlineaVault.sol</td><td>19 Foundry tests green; its exact authorization digest verified against the live mainnet precompile (3/3)</td></tr>
+          <tr><td>OlineaFactory.sol</td><td>12 Foundry tests green; one transaction per vault, no owner and nothing to administer</td></tr>
           <tr><td>Vault console</td><td>Live against Arc mainnet — key derivation, the precompile proof and every read; the create, deposit and release path is verified end to end on a local chain</td></tr>           <tr><td>Arc mainnet deployment</td><td>Factory deployed — <a class="text" href="#deploy">runbook</a></td></tr>
           <tr><td>Independent audit</td><td class="no">None</td></tr>
         </tbody>
@@ -242,7 +243,7 @@
     </div>
 <pre><code><span class="cmt"># the vault and its test suite</span>
 git clone https://github.com/thesithunyein/olinea
-cd olinea/contracts &amp;&amp; forge test            <span class="cmt"># 17 tests</span>
+cd olinea/contracts &amp;&amp; forge test            <span class="cmt"># 31 tests</span>
 
 <span class="cmt"># post-quantum tooling</span>
 cd ../scripts &amp;&amp; npm install
@@ -407,7 +408,21 @@ node pq.mjs conformance [--vault 0x..]</code></pre>
       <li><strong>Verification is not free.</strong> 382,879 gas per release, ≈ $0.0077 at Arc's 20 Gwei base fee — about 1,300× a plain transfer.</li>
       <li><strong>Signatures are large.</strong> 7,856 bytes of calldata per release, not compressible. That is the price of hash-based signatures.</li>
       <li><strong>Signing is slow by design.</strong> Seconds per signature, not milliseconds — SLH-DSA-SHA2-128s trades speed for small keys and conservative assumptions.</li>
+      <li><strong>Reads need an RPC.</strong> Code and assets are served from one origin, but chain reads are not: the console and the CLI talk to public Arc endpoints. If both are down, a page can only show what it last read.</li>
     </ul>
+    <h3 style="margin-top:26px">What happens when it goes wrong</h3>
+    <p>
+      The questions an auditor asks first, each one settled by a test rather than an adjective. The long version, with the files, is in <a href="https://github.com/thesithunyein/olinea/blob/main/SECURITY.md">SECURITY.md</a>.
+    </p>
+    <ul>
+      <li><strong>Circle denies the address.</strong> The transfer inside a release reverts, so nothing moves — and because the call rolls back, the nonce is not spent, so the same signed authorization works when the deny lifts. No contract routes around the issuer, including this one.</li>
+      <li><strong>The deployer key is lost.</strong> The factory has no owner, no pause and no upgrade path, and every vault is an independent contract that never calls it back. Nothing that exists stops working; the cost is one redeploy.</li>
+      <li><strong>SLH-DSA has to be replaced.</strong> A vault cannot rotate its key — rotation needs an authority, and there is none. Migration is a release into a replacement vault signed by the old key; the verifier is a constructor argument, so a new precompile is a deployment, not a rewrite.</li>
+      <li><strong>A key that was never written down.</strong> One vault on mainnet is authorized by a keypair generated offline, with no words, and the machine that holds it holds the only copy. That vault is named in <code>SECURITY.md</code> rather than left to be discovered.</li>
+    </ul>
+    <p>
+      The site is part of this: every page, module, font and geometry it loads is served from one origin, so a cold load names no host that could be slow, wrong or gone. That is asserted in <code>scripts/check-site.mjs</code>, not promised.
+    </p>
 
     <h2 id="deploy">Deploying a vault</h2>
     <p>

@@ -11,9 +11,10 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="/assets/favicon.png" sizes="180x180">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- The typeface is one stylesheet of @font-face rules over woff2 files this origin serves. It used
+     to be two preconnects and a request to googleapis, which put a host we do not control on the
+     path to the first paint. -->
+<link rel="stylesheet" href="/assets/fonts/poppins.css">
 <style>
   /* One list of names, two sets of values: the light half at the foot of this sheet is the whole
      difference between the themes, so no rule carries a colour of its own. The hero is a WebGL
@@ -237,19 +238,20 @@
     .card { box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
   }
 </style>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- three.js ships beside the page now: the same file, from this origin, with no host to be slow.
+     The map keeps the bare specifier the hero imports, so the hero's code did not change. -->
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    "three": "/assets/three/three.module.js",
+    "three/addons/": "/assets/three/"
   }
 }
 </script>
 <!-- after the import map, never before it: a module preload ahead of the map makes Chrome
      refuse the map itself ("added after module script load was triggered") and every import
      in the page then fails to resolve -->
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" crossorigin>
+<link rel="modulepreload" href="/assets/three/three.module.js">
 </head>
 <body>
 

@@ -6,6 +6,9 @@ LOCAL/
 .vercel/
 node_modules/
 .DS_Store
+# the local static server's log and pid, while `node scripts/vendor/serve.mjs` is running
+.serve.log
+.serve.pid
 
 .vercel
 .env*

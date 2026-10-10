@@ -148,6 +148,62 @@ contract OlineaFactoryTest is Test {
         assertEq(first.balance(), 5 * ONE_USDC);
     }
 
+    /* ------------------------------------------------- what a lost deployer key costs */
+
+    /// @notice The key that deployed the factory cannot be un-lost, and this is why it does not
+    ///         matter: a vault is its own contract with no owner and no link back to the factory.
+    ///         Erase the factory's code entirely — which is what losing the key means to every vault
+    ///         that already exists — and the vault still releases.
+    function test_theVaultOutlivesTheFactory() public {
+        vm.prank(ALICE);
+        OlineaVault vault = OlineaVault(factory.createVault(abi.encodePacked(VK)));
+
+        vm.startPrank(ALICE);
+        usdc.approve(address(vault), type(uint256).max);
+        vault.deposit(10 * ONE_USDC);
+        vm.stopPrank();
+
+        vm.etch(address(factory), new bytes(0)); // the factory, and the key that deployed it, are gone
+
+        pq.accept(keccak256(abi.encodePacked(vault.authorizationDigest(BOB, ONE_USDC, 1))), true);
+        vault.release(BOB, ONE_USDC, 1, hex"deadbeef");
+
+        assertEq(usdc.balanceOf(BOB), 101 * ONE_USDC);
+        assertEq(vault.balance(), 9 * ONE_USDC);
+        assertEq(address(factory).code.length, 0, "and nothing needed to call it");
+    }
+
+    /* ------------------------------------------------------- replacing the algorithm */
+
+    /// @notice The only migration a vault has, by design: a release signed by the old key, into a
+    ///         vault created with a new one. There is no rotation inside a vault, because rotation
+    ///         needs an authority, and an authority is the key this project does not have. So
+    ///         "upgrade in five years" is this, from the old vault's side.
+    function test_replacingAKeyIsAReleaseIntoTheNewVault() public {
+        vm.startPrank(ALICE);
+        OlineaVault oldVault = OlineaVault(factory.createVault(abi.encodePacked(VK)));
+        usdc.approve(address(oldVault), type(uint256).max);
+        oldVault.deposit(10 * ONE_USDC);
+        OlineaVault newVault = OlineaVault(factory.createVault(abi.encodePacked(VK2)));
+        vm.stopPrank();
+
+        // every last unit, to the replacement, authorized by the old key
+        pq.accept(
+            keccak256(abi.encodePacked(oldVault.authorizationDigest(address(newVault), 10 * ONE_USDC, 0))),
+            true
+        );
+        oldVault.release(address(newVault), 10 * ONE_USDC, 0, hex"deadbeef");
+
+        assertEq(newVault.balance(), 10 * ONE_USDC, "the replacement holds everything the old one did");
+        assertEq(oldVault.balance(), 0, "and the old one holds nothing");
+        assertTrue(oldVault.nonceUsed(0));
+
+        // the old key is now empty; the new vault answers to the new one
+        pq.setMode(MockPQ.Mode.AlwaysFalse);
+        vm.expectRevert(OlineaVault.InvalidPostQuantumSignature.selector);
+        newVault.release(BOB, ONE_USDC, 0, hex"deadbeef");
+    }
+
     /* -------------------------------------------------------------------- inputs */
 
     function test_createVaultRejectsAKeyThatIsNot32Bytes() public {

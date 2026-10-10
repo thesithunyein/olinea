@@ -10,6 +10,27 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Added
 
+- **Every page loads from one origin, and the crypto is proved to be the same crypto.** The console's
+  viem and noble primitives came from esm.sh, the hero's three.js from jsdelivr and the typeface from
+  Google — several hundred requests to three hosts we do not control, on the critical path of the one
+  page that has to work. The crypto is now bundled into `app/vendor/` (seven dynamic imports across
+  five packages, versions pinned to the ones the derivation was measured against), three.js under
+  `assets/three/` and 18 Poppins faces under `assets/fonts/`, so a cold load names no host but this one.
+  `scripts/vendor/parity.mjs` is what makes that a swap rather than a rewrite: the vendored bundle
+  derives the same key as the packages it was built from, and it re-derives the live vault's on-chain
+  key from that vault's own 24 words — the chain is holding a key a browser made before any of this was
+  bundled, so a match means the shipped path is unchanged. None of the requests are made at runtime
+  either: `check-site.mjs` fails on any off-origin subresource in a shipped page, on any CDN specifier
+  left inside a vendored file, and on any asset a page names that is not in the deploy. The claim is
+  enforced rather than asserted — a Content-Security-Policy now confines scripts, styles, images, fonts
+  and workers to this origin — and the app is verified under it: the local server applies the headers
+  from `vercel.json`, so the policy a page is tested with is the policy it is served with.
+- **Four failure drills, and a test for each one.** `SECURITY.md` now answers what an auditor asks first
+  with the file or the test that settles it: Circle denying the address (the release reverts, the
+  nonce rolls back with it, and the same signed authorization works when the deny lifts), the deployer
+  key lost (the factory is erased in the test and the vault releases anyway), replacing SLH-DSA (a
+  release into a replacement vault, since there is no rotation without an authority), and the live
+  vault whose key was never written down. The suite is 31 tests.
 - **A vault created from the console's own 24-word backup, used end to end on Arc mainnet.**
   `0xA36f07eEB907C0eBc09ecb79802f5037a0382A22`: 24 words generated in the tab, the SLH-DSA key
   derived there, the vault created through the deployed factory with that key, 0.20 USDC deposited, and
@@ -26,6 +47,10 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Changed
 
+- **The vault chip says which of three situations it is.** It had two: matching or not. The paragraph
+  under it has three — this key, another key, no key in this tab — so a visitor with no key at all, who
+  is only reading someone else's vault, was shown the red warning that belongs to a person holding a
+  vault they cannot open. It is neutral now, because reading is not a warning.
 - **The console moves on from a provider that stalls.** Both public RPC endpoints are measured with a
   real read at boot, the faster one is asked first, each request is wrapped so the console knows which
   endpoint actually answered, and an endpoint that fails is rested before it is asked again. Against a
