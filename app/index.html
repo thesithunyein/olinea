@@ -30,6 +30,9 @@
     --shadow: 0 1px 2px rgba(0,0,0,.5);
   }
   * { box-sizing: border-box; }
+  /* Long headings and short paragraphs break where they read best rather than where they fit. */
+  h1, .card h2, .empty h2 { text-wrap: balance; }
+  .sub, .card p, .muted { text-wrap: pretty; }
   /* Both cuts of the mark ship and the OS picks one, so the <picture> has to stay out of the flex
      layout or the mark sizes itself as a wrapper rather than as an image. */
   picture { display: contents; }
@@ -39,7 +42,7 @@
   html { scroll-behavior: smooth; }
   html, body {
     margin: 0; background: var(--bg); color: var(--fg); font-family: 'Poppins', sans-serif;
-    -webkit-font-smoothing: antialiased; overflow-x: clip;
+    -webkit-font-smoothing: antialiased; overflow-x: clip; -webkit-tap-highlight-color: transparent;
   }
   code, pre, .mono, input, textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   a { color: var(--link); text-underline-offset: 2px; }
@@ -52,14 +55,17 @@
   }
   .appbar-in {
     max-width: var(--wide); margin: 0 auto; padding: 0 var(--pad);
-    display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 62px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 62px; justify-content: space-between;
   }
   .brand { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font-size: 15.5px; white-space: nowrap; }
   /* The mark is the same artwork as the favicon, drawn in ink for a light bar. */
   .brand-mark { display: block; width: 24px; height: 24px; flex: none; }
   .brand b { font-weight: 700; letter-spacing: -.01em; }
   .brand span { color: var(--dim); font-weight: 400; }
-  .bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  /* No margin-left: auto here. The bar spreads its three groups with space-between, and an auto
+     margin on the last one swallowed all the free space first, which left the sections sitting
+     next to the mark and a void before the buttons. */
+  .bar-right { display: flex; align-items: center; gap: 10px; }
   .statusdot { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--body); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; white-space: nowrap; background: var(--panel); }
   .statusdot i { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
   .statusdot.on { color: var(--good); border-color: rgba(110,231,183,.34); background: rgba(110,231,183,.09); }
@@ -69,7 +75,10 @@
 
   /* -------------------------------------------------------------------- tabs */
   /* The section you are in lives in the bar, so it never scrolls away. */
-  .tabs { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0 auto; padding: 0; min-height: 62px; }
+  /* margin: auto centred the sections between the mark and the buttons, which are not the same width,
+     so the bar read as off-centre whatever the page width was. space-between on the bar balances the
+     gaps instead, and the sections stay centred on the column. */
+  .tabs { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; min-height: 62px; }
   .tab {
     appearance: none; background: none; border: 0; font: inherit; font-size: 14px; font-weight: 500;
     color: var(--body); padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap;
@@ -92,7 +101,7 @@
   h1 { font-size: clamp(24px, 3vw, 30px); font-weight: 700; letter-spacing: -.022em; margin: 0; line-height: 1.2; color: var(--ink); }
   .sub { color: var(--body); font-size: 14.5px; line-height: 1.6; margin: 7px 0 0; max-width: 64ch; }
   .sub .hi { color: var(--ink); font-weight: 500; }
-  h2.sec { font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; margin: 30px 0 12px; }
+  h2.sec { font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; margin: 34px 0 12px; }
   h2.sec:first-child { margin-top: 0; }
 
   /* ------------------------------------------------------------- dashboard */
@@ -115,8 +124,9 @@
     appearance: none; font: inherit; text-align: left; cursor: pointer; color: inherit;
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
     display: flex; flex-direction: column; gap: 7px; box-shadow: var(--shadow);
+    transition: border-color .16s ease, transform .16s ease;
   }
-  .stat:hover { border-color: #2b3542; }
+  .stat:hover { border-color: #2b3542; transform: translateY(-1px); }
   .stat-lbl { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink); font-weight: 500; }
   /* Icons are drawn here, not fetched and not glyphs, so they cost one paint and no request. */
   svg.ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -136,7 +146,7 @@
   /* ------------------------------------------------------------------ cards */
   .card {
     border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
-    padding: 20px 22px; margin: 0 0 16px; box-shadow: var(--shadow);
+    padding: 22px 24px; margin: 0 0 16px; box-shadow: var(--shadow);
   }
   .card h2 { font-size: 16.5px; font-weight: 600; color: var(--ink); letter-spacing: -.012em; margin: 0 0 6px; }
   .card h3 { font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--dim); font-weight: 600; margin: 22px 0 10px; }
@@ -156,6 +166,7 @@
     appearance: none; border: 1px solid var(--acc); background: var(--acc); color: var(--btn-ink); font-weight: 600;
     font-size: 13.5px; padding: 11px 18px; border-radius: 8px; cursor: pointer; min-height: 44px;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
   }
   .btn:hover:not(:disabled) { background: var(--acc2); border-color: var(--acc2); }
   /* The secondary button is an outline in the reference: white fill, a green rule, a green label. */
@@ -244,6 +255,10 @@
   .w { background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--fg); font-family: ui-monospace, Menlo, Consolas, monospace; }
   .w i { font-style: normal; color: var(--dim); margin-right: 7px; font-size: 11px; }
   .blur { filter: blur(5px); user-select: none; }
+  /* A 24-word backup is read left to right, so the box it goes into is a column, not the whole page.
+     At 1100px the words ran the full width of the shell and the card read as an empty page. */
+  #key-start, #key-locked .card { max-width: 780px; }
+  #key-start textarea, #key-locked textarea { max-width: 620px; }
 
   /* ------------------------------------------------------------------ tables */
   .hist { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
@@ -325,6 +340,25 @@
     .histrow a, .histrow .mono { grid-column: 2; }
   }
 
+  @media (max-width: 560px) {
+    /* The bar is sticky, so every row it grows to is a row off the page for good. At 390px the mark,
+       the status pill and the account button needed 394px in a 373px bar, so they wrapped into three
+       rows and cost 157px of a 844px screen. Sized to fit the one row instead. */
+    .appbar-in { padding: 8px 12px; gap: 10px; }
+    /* If it ever does wrap, the status and the button belong on the right, not stacked under the
+       mark, which is where a wrapped line puts a single item. */
+    .bar-right { margin-left: auto; }
+    .statusdot { font-size: 11.5px; padding: 4px 8px; }
+    .btn.account { font-size: 12px; padding: 8px 11px; }
+    /* Five sections have to share the strip at this width: 348px of labels in 349px of bar is the
+       same as overflowing. This is what stopped Activity being cut off mid-word. */
+    .tab { font-size: 13px; padding: 7px 7px; gap: 5px; }
+    /* The mark kept its product suffix and pushed the bar onto a third row by 8px. The suffix is the
+       cheaper half of the pair to lose: this page is titled Vault console and has a Your vault tab,
+       while the pill next to it is a live fact about the chain that only the pill states. */
+    .brand > span > span { display: none; }
+  }
+
   /* ------------------------------------------- light, when the OS asks for it */
 
   /* The palette this console wore before it went dark, restored as an override rather than as a
@@ -393,7 +427,8 @@
   <!-- ============================================================== OVERVIEW -->
   <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
 
-    <h2 class="sec">Account overview</h2>
+    <!-- The page title already says Dashboard, so a section heading repeating it said nothing. The
+         tiles are the overview; they do not need to be labelled as one. -->
     <!-- Five facts, each one a way into the tab that owns the work. -->
     <div class="stats" aria-label="Account at a glance">
       <button class="stat" type="button" data-goto="panel-key" id="stat-key">
@@ -432,7 +467,7 @@
       <button class="btn" id="next-btn" type="button">Create a key</button>
     </div>
 
-    <h2 class="sec">System</h2>
+    <h2 class="sec">Status</h2>
     <div class="card">
       <div id="selfcheck"></div>
     </div>
@@ -440,14 +475,14 @@
 
   <!-- ==================================================================== KEY -->
 
-  <section id="panel-key" role="tabpanel" aria-labelledby="tab-key">
+  <section id="panel-key" role="tabpanel" aria-labelledby="tab-key" hidden>
 
     <div id="key-start" class="card">
       <h2>Create your key</h2>
-      <p>The backup is the only copy — no reset, no support. Lose the 24 words and the money is unspendable by anyone.</p>
+      <p>The 24 words are the only copy. Lose them and nothing can recover the funds.</p>
       <div class="row">
-        <button class="btn" id="b-new">Create a new key</button>
-        <button class="btn ghost" id="b-restore">Restore from a backup</button>
+        <button class="btn" id="b-new">Create a key</button>
+        <button class="btn ghost" id="b-restore">Restore a backup</button>
       </div>
 
       <div id="pane-new" hidden>
@@ -478,7 +513,7 @@
           <label for="idx">Vault index</label>
           <input type="number" id="idx" value="0" min="0" max="255" step="1">
         </div>
-        <p class="muted" style="margin-top:10px">One backup opens many vaults. The index is mixed into the derivation, so index 0 and index 1 are unrelated keys. Leave it at 0.</p>
+        <p class="muted" style="margin-top:10px">Leave it at 0. Each index derives an unrelated key from the same backup.</p>
       </details>
     </div>
 
@@ -487,7 +522,7 @@
         <div class="between">
           <div>
             <h2 style="margin:0">Key ready</h2>
-            <p class="muted" style="margin-top:5px">In this tab only. Closing or locking clears it.</p>
+            <p class="muted" style="margin-top:5px">Clears when this tab closes.</p>
           </div>
           <span class="chip ok" id="k-chip">in memory</span>
         </div>
@@ -497,15 +532,15 @@
           <dt>Derivation</dt><dd id="k-deriv">—</dd>
         </dl>
         <div class="row">
-          <button class="btn" id="b-prove">Prove it on Arc mainnet</button>
-          <button class="btn ghost" id="b-reveal">Show my words</button>
+          <button class="btn" id="b-prove">Prove on mainnet</button>
+          <button class="btn ghost" id="b-reveal">Show words</button>
           <button class="btn danger" id="b-lock">Lock</button>
         </div>
         <div id="pane-show" hidden>
           <div class="words" id="words-again"></div>
           <div class="row tight"><button class="btn ghost sm" id="b-copy-again">Copy words</button></div>
         </div>
-        <p class="muted" style="margin-top:12px">Proving signs one message and asks Arc's precompile to check it. Free, no account — the same call a vault makes before moving USDC.</p>
+        <p class="muted" style="margin-top:12px">Signs one message and asks Arc's precompile to check it. Free, no account.</p>
         <div id="p2"></div>
       </div>
     </div>
@@ -513,7 +548,7 @@
     <div id="key-locked" hidden>
       <div class="card">
         <h2>Unlock your key</h2>
-        <p>This browser remembers your fingerprint <span class="mono" id="k-remembered">—</span> — never the key. Enter your 24 words to use it again.</p>
+        <p>This browser kept your fingerprint <span class="mono" id="k-remembered">—</span> — never the key. Enter your 24 words to unlock.</p>
         <div class="field">
           <label for="unlock-in">Your 24 words</label>
           <textarea id="unlock-in" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="word word word …"></textarea>
@@ -532,7 +567,7 @@
     <div id="lock-vault" class="card empty" hidden>
       <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.6" cy="15.4" r="3.6"/><path d="M11.3 13.7 19 6"/><path d="m16.4 8.6 2.6 2.6"/></svg></div>
       <h2>Create a key first</h2>
-      <p>Only your key can open a vault. Make one first — a minute, free.</p>
+      <p>Your vault is created from your key.</p>
       <div class="row" style="justify-content:center"><button class="btn" id="b-goto-key1">Go to Key</button></div>
     </div>
 
@@ -544,10 +579,10 @@
         </div>
         <span class="chip warn" id="v-soon-chip">no factory configured</span>
       </div>
-      <p style="margin-top:16px">Nothing is broken and nothing is lost: the console, your key and Arc's precompile all work. A vault just needs a factory address in the URL — <code>?factory=0x…</code> — or the shipped default.</p>
+      <p style="margin-top:16px">Nothing is broken: your key, this console and Arc's precompile all work. A vault needs a factory address in the URL — <code>?factory=0x…</code>.</p>
       <p class="muted" style="margin-top:14px">The factory is already deployed on Arc mainnet: <code>0x09574E49690ad378b21D2cb42a529f71A0D1DAdB</code>. It has created a vault that holds USDC, so a vault is one transaction, not a deployment.</p>
       <ul class="plain">
-        <li>Nothing is lost by waiting. Your key works the moment a vault exists.</li>
+        <li>Waiting loses nothing. Your key works the moment a vault exists.</li>
         <li><strong>Authorize</strong> works today: give it the address your vault will live at, sign, and Arc's precompile verifies it free — the same check a real release makes.</li>
         <li>The <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">repository status</a>
           is the source of truth for this.</li>
@@ -595,7 +630,7 @@
             <input type="text" id="dep-in" value="10.00" inputmode="decimal" spellcheck="false" aria-label="Amount of USDC to deposit">
             <button class="btn" id="b-deposit">Deposit</button>
           </div>
-          <p class="muted" style="margin-top:10px">Approve, then deposit. After that, only a signature from your key can move it — yours included.</p>
+          <p class="muted" style="margin-top:10px">Approve, then deposit. After that, only your key can move it — yours included.</p>
         </div>
         <div id="p5"></div>
       </div>
@@ -612,7 +647,7 @@
     <div id="lock-auth" class="card empty" hidden>
       <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.6 19.4l1.3-3.9L15 6.4a1.9 1.9 0 0 1 2.7 0l.9.9a1.9 1.9 0 0 1 0 2.7L9.5 19.1z"/><path d="M14.2 7.2l3.6 3.6"/></svg></div>
       <h2>Create a key first</h2>
-      <p>Authorizations are signed by your key. Make one first.</p>
+      <p>Authorizations are signed by your key.</p>
       <div class="row" style="justify-content:center"><button class="btn" id="b-goto-key2">Go to Key</button></div>
     </div>
 
@@ -629,7 +664,7 @@
 
       <div class="card">
         <h2>Authorize a payment</h2>
-        <p>One signature binds recipient, amount and nonce. Arc mainnet checks it <em>before</em> anything is sent, so a release cannot fail on the signature.</p>
+        <p>One signature binds recipient, amount and nonce. Arc checks it <em>before</em> anything is sent.</p>
         <div class="grid2" style="margin-top:16px">
           <div><label for="to-in">Recipient</label>
             <input type="text" id="to-in" spellcheck="false" autocomplete="off" placeholder="0x…" inputmode="text"></div>
@@ -642,7 +677,7 @@
         </div>
         <p class="muted" style="margin-top:10px" id="d-nonce">—</p>
         <div class="row">
-          <button class="btn" id="b-sign">Sign and check on mainnet</button>
+          <button class="btn" id="b-sign">Sign &amp; check</button>
         </div>
         <div id="p6"></div>
       </div>
@@ -662,7 +697,7 @@
         </div>
         <span id="d-json" hidden></span>
         <p class="muted" style="margin-top:12px" id="relay-note">
-          Portable: anyone can send the release and pay the gas, and it still moves this amount, to this recipient, once.
+          Anyone can send this and pay the gas. It moves this amount, to this recipient, once.
         </p>
       </div>
 
@@ -672,7 +707,7 @@
           <label for="vault-in">Vault address</label>
           <input type="text" id="vault-in" spellcheck="false" autocomplete="off" placeholder="0x…">
         </div>
-        <p class="muted" style="margin-top:10px">Usually filled from the Vault tab. The digest binds this address, so a signature for one vault is worthless in another.</p>
+        <p class="muted" style="margin-top:10px">Usually filled from the Vault tab. The digest binds this address, so a signature is worthless in another vault.</p>
       </details>
     </div>
 
@@ -681,8 +716,8 @@
     <div class="card" id="verify-card">
       <div class="between">
         <div>
-          <h2 style="margin:0">Check an authorization you were handed</h2>
-          <p class="muted" style="margin-top:5px">Read-only. No key, no wallet, no gas — for whoever gets paid, or relays it.</p>
+          <h2 style="margin:0">Check an authorization</h2>
+          <p class="muted" style="margin-top:5px">Read-only. No key, no wallet, no gas.</p>
         </div>
         <span class="chip" id="v-chip">nothing loaded</span>
       </div>
@@ -692,11 +727,11 @@
           placeholder='{"chainId":5042,"vault":"0x…","digest":"0x…","calldata":"0x…","signature":"0x…","verifyingKey":"0x…"}'></textarea>
       </div>
       <div class="row">
-        <button class="btn" id="b-bundle-check">Check it against Arc mainnet</button>
+        <button class="btn" id="b-bundle-check">Check on mainnet</button>
         <button class="btn ghost" id="b-bundle-file">Open a file…</button>
-        <button class="btn ghost" id="b-bundle-send" disabled>Send it and pay the gas</button>
+        <button class="btn ghost" id="b-bundle-send" disabled>Send it</button>
       </div>
-      <p class="muted" style="margin-top:12px">Checking is free. Sending needs a gas account from the Vault tab — and anyone can send a valid authorization.</p>
+      <p class="muted" style="margin-top:12px">Checking is free. Sending needs a gas account.</p>
       <input type="file" id="bundle-file" accept="application/json,.json" hidden>
       <div id="p7"></div>
     </div>
@@ -716,12 +751,6 @@
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 11.3v4.6"/><path d="M12 7.9h.01"/></svg>
       Limits &amp; status
     </button>
-    <p class="foot-links" style="margin:0">
-      <a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">Source</a> ·
-      <a href="/docs/">Documentation</a> ·
-      <a href="https://github.com/thesithunyein/olinea/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a> ·
-      MIT © 2026 Sithu Nyein
-    </p>
     <div id="limits" hidden>
       <p>
         <strong>Status.</strong> The factory is deployed on Arc mainnet, and a vault created from a 24-word backup in this console has been funded and released end to end — <code>0xA36f07eEB907C0eBc09ecb79802f5037a0382A22</code>, still holding USDC. The repository <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> lists every transaction.
@@ -732,6 +761,12 @@
         <li><strong>Circle's denylist still applies.</strong> No key stops a freeze.</li>
         <li><strong>No recovery.</strong> Lose your 24 words and the money is gone, permanently.</li>
       </ul>
+      <p class="muted" style="margin-top:14px">
+        <a href="https://github.com/thesithunyein/olinea" target="_blank" rel="noopener">Source</a> ·
+        <a href="/docs/">Documentation</a> ·
+        <a href="https://github.com/thesithunyein/olinea/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a> ·
+        MIT © 2026 Sithu Nyein
+      </p>
     </div>
   </footer>
 </main>
@@ -1044,8 +1079,8 @@ const TABS = [...document.querySelectorAll('.tab')];
 const HEADINGS = {
   'panel-overview': ['Dashboard', 'Your key, your vault, and what Arc mainnet says about both.'],
   'panel-key': ['Your key', 'A 24-word backup makes an SLH-DSA key in this tab. Nothing leaves this device.'],
-  'panel-vault': ['Your vault', 'One transaction to create it. After that, only a signature from your key moves what it holds.'],
-  'panel-authorize': ['Authorize a payment', 'One signature binds recipient, amount and nonce, and Arc mainnet checks it before anything is sent.'],
+  'panel-vault': ['Your vault', 'One transaction to create it. After that, only your key moves what it holds.'],
+  'panel-authorize': ['Authorize a payment', 'One signature binds recipient, amount and nonce. Arc checks it before anything is sent.'],
   'panel-activity': ['Activity', 'Read from Arc mainnet, not from a log kept in this tab.'],
 };
 function show(panelId, { focus = true } = {}) {
@@ -1055,6 +1090,15 @@ function show(panelId, { focus = true } = {}) {
     tab.tabIndex = on ? 0 : -1;
     $(tab.dataset.panel).hidden = !on;
   }
+  /* The strip scrolls on a narrow phone, so the section you are in has to be brought into it — a
+     selected tab sitting off the end of the strip is a selected tab nobody can see. Only the strip's
+     own scrollLeft moves; the page does not. */
+  const strip = document.querySelector('.tabs');
+  const active = TABS.find((t) => t.dataset.panel === panelId);
+  if (strip && active && strip.scrollWidth > strip.clientWidth) {
+    strip.scrollLeft = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
+  }
+
   const [title, line] = HEADINGS[panelId] || [];
   if (title) { $('headline').textContent = title; $('subline').textContent = line; }
   if (focus) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1108,9 +1152,9 @@ function renderStats() {
   setStat('vault', live ? (!v ? '' : mine ? 'on' : hasKey ? 'no' : '') : 'warn',
     v && state.vaultBal ? state.vaultBal : 'None',
     !live ? 'not deployed yet'
-      : !v ? 'none yet — create one on the Vault tab'
+      : !v ? 'create one'
         : mine ? `yours · ${hex(v, 5)}`
-          : hasKey ? 'this vault answers to another key' : `remembered · ${hex(v, 5)}`);
+          : hasKey ? 'answers to another key' : `remembered · ${hex(v, 5)}`);
 
   setStat('gas', state.account ? 'on' : '', state.account ? state.gasBal || 'Connected' : 'None',
     state.account ? (state.mode === 'builtin' ? 'built-in account, gas only' : 'your wallet, gas only')
@@ -1514,8 +1558,8 @@ async function paintVault() {
    * reading — and it is the audience this console was written to be readable by. */
   $('a-foreign').innerHTML = mine ? ''
     : state.vk
-      ? 'This vault answers to a different key. Only that other key can move what you deposit here — not yours.'
-      : 'You have no key in this tab, so you can read this vault but not spend from it. Only the key that created it can move its USDC.';
+      ? 'This vault answers to a different key. Only that key can move what you deposit here.'
+      : 'You have no key in this tab, so you can read this vault but not spend from it.';
   $('dep-wrap').hidden = false;
   $('b-create').disabled = !canCreate();
   try {
@@ -2022,7 +2066,7 @@ function markActivity() {
     node.innerHTML = `<div class="empty">
       <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.7V12l3 1.9"/></svg></div>
       <h2>Nothing yet</h2>
-      <p>Prove your key on the Key tab and the result is recorded here. Vault activity appears once a vault exists.</p>
+      <p>Prove your key on the Key tab and the result appears here. Vault activity appears once a vault exists.</p>
       <div class="row" style="justify-content:center"><button class="btn ghost" id="b-goto-key3">Go to Key</button></div>
     </div>`;
     $('b-goto-key3').onclick = () => show('panel-key');
@@ -2034,7 +2078,7 @@ function markActivity() {
     <b>${p.ok ? 'key proof' : 'failed proof'}</b>
     <span class="mono">Arc mainnet · ${p.when} ms · ${(p.ms / 1000).toFixed(1)} s to sign</span>
     <a href="https://explorer.arc.io/address/${CONFIG.precompile}" target="_blank" rel="noopener">precompile</a></div></div>
-    <p class="muted" style="margin-top:12px">A read call leaves no trace on the chain, so this is a record of what
+    <p class="muted" style="margin-top:12px">Read calls leave no trace on the chain. This is what
       this tab did, not a transaction. ${state.vault ? '' : 'Vault activity appears here once a vault exists.'}</p>`;
 }
 function renderSelfcheck() {
@@ -2048,7 +2092,7 @@ function renderSelfcheck() {
   $('selfcheck').innerHTML = `<div class="hist">${rows.map(([label, ok]) => `<div class="histrow">
       <span class="kind ${ok ? 'good' : ''}">${ok ? 'ready' : 'waiting'}</span>
       <b style="grid-column:2 / -1">${label}</b></div>`).join('')}</div>
-    <p class="muted" style="margin-top:12px">The app checking itself. Every other number here is read from Arc mainnet.</p>`;
+    <p class="muted" style="margin-top:12px">The app checking itself. Every other number comes from Arc mainnet.</p>`;
 }
 
 /* -------------------------------------------------------------- network */
@@ -2066,7 +2110,7 @@ async function net(force = false) {
     /* The endpoint is worth naming, but not the whole hostname: which of the two answered is all
        anyone needs when a number looks wrong. The tooltip carries the measurement behind the name. */
     const first = rpc.answered || rpc.order[0];
-    $('net-block').textContent = `Arc mainnet · ${hostOf(first)}${rpc.ms.has(first) ? ` · ${rpc.ms.get(first)} ms` : ''}`;
+    $('net-block').textContent = `${hostOf(first)}${rpc.ms.has(first) ? ` · ${rpc.ms.get(first)} ms` : ''}`;
     $('net').title = `Arc mainnet · chain ${chainId} · ` + rpcNote();
     return true;
   } catch {

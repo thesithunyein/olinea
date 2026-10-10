@@ -10,6 +10,30 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Added
 
+- **The release path, drawn — a 3D strip between the three claims and "How it works".** The landing
+  said the order of operations in words and left the reader to trust it; the strip now shows it: a
+  vault on the left, Arc's precompile as a gate in the middle, and a stream of signature bytes that
+  crosses from one to the other, turning from ink to accent the moment it is past the gate. Once per
+  cycle a coin leaves the vault, the gate pulses as the coin crosses it, and only then does the coin
+  travel out — the drawing happens in the order the page claims it does. It is procedural geometry
+  from the three.js already committed beside the page (`assets/three/flow.js`, 11 KB, no model file,
+  no host, nothing fetched), it draws only while it is on screen, a visitor who asked their OS for
+  less motion gets one composed frame at the moment of verification, and the caption underneath says
+  the whole thing for a browser without WebGL. `scripts/check-site.mjs` holds the canvas to one, the
+  module to the deploy and the caption to its wording, and the page is still inside the 40 KB budget
+  a person can read (37.4 KB).
+- **The README is checked like the rest of the site.** `scripts/check-site.mjs` now reads it as a
+  document instead of a file that happens to be in the tree: every `#` anchor in it — the badges
+  included, not only the table of contents — has to resolve to a real section, every section has to be
+  listed in that table, the test-count badge and the counts in the structure listing are counted from
+  the suite itself, the precompile address, its selector and the 7,856-byte signature have to be
+  there, every file and every `pq.mjs` subcommand it tells a reviewer to run has to exist and be
+  dispatched, the factory address it publishes has to be the one the console defaults to and the
+  submission page opens, and the audit it does not have has to stay disclaimed. Proven by mutation,
+  because a check that has never failed is a check nobody has tested: a badge reading 30, a renamed
+  anchor in the table of contents, a renamed anchor in a badge, a deleted `## Security` heading and a
+  factory address that drifted from the console each fail the run, and restoring the file returns it
+  to zero.
 - **Every page loads from one origin, and the crypto is proved to be the same crypto.** The console's
   viem and noble primitives came from esm.sh, the hero's three.js from jsdelivr and the typeface from
   Google — several hundred requests to three hosts we do not control, on the critical path of the one

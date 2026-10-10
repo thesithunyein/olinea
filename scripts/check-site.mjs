@@ -29,6 +29,10 @@ const worker = readFileSync('app/worker.js', 'utf8');
 
 console.log('--- landing page ---');
 ok(count(home, 'id="scene"') === 1, 'hero canvas present exactly once');
+/* The strip between the claims and "How it works": one canvas, one module beside it, and a caption
+   that carries the whole story for a browser with no WebGL or a visitor who asked for less motion. */
+ok(count(home, 'id="flow"') === 1 && existsSync('assets/three/flow.js') && /<figcaption>Sign/.test(home),
+  'the release-path strip is one canvas over one committed module, with a caption that reads without it');
 ok(count(home, 'bgTexture.dispose') === 1, 'background texture fix still present');
 ok(count(home, "LINES = ['Quantum', 'Proof', 'USDC']") === 1, 'headline copy is Quantum/Proof/USDC');
 ok(count(home, '<li class="nav-sm-hide">') === 3, 'three nav links marked mobile-hideable');
@@ -247,6 +251,14 @@ const navAt = appMarkup.indexOf('<nav class="tabs"');
 ok(appMarkup.indexOf('<header class="appbar">') >= 0 && navAt > appMarkup.indexOf('<header class="appbar">')
   && navAt < appMarkup.indexOf('</header>'), 'the sections live in the app bar');
 ok(/\.appbar\s*\{[^}]*position:\s*sticky/.test(app), 'and the bar stays put');
+/* show() is what hides a section, and it runs after the chain probe, so whatever the markup says is
+   what the first paint shows. The Key panel shipped without its hidden attribute, and its whole card
+   sat under the dashboard until the first tab click. Four sections are hidden and the dashboard is
+   the one that is not. */
+const sectionTags = [...appMarkup.matchAll(/<section id="(panel-[a-z]+)"[^>]*>/g)].map((m) => m[0]);
+const shownAtBoot = sectionTags.filter((tag) => !/\shidden>/.test(tag));
+ok(sectionTags.length === 5 && shownAtBoot.length === 1 && /id="panel-overview"/.test(shownAtBoot[0]),
+  `exactly one section is painted before show() runs (found ${shownAtBoot.length}: ${shownAtBoot.length} of ${sectionTags.length})`);
 ok(count(app, 'function renderNext()') === 1 && count(app, 'renderNext()') >= 2 && app.includes('id="next-btn"'),
   'the dashboard names one next action and opens the tab that does it');
 /* The paragraph under the vault chip has three states — this key, another key, no key in this tab —
@@ -538,6 +550,77 @@ ok(docs.includes(`<td>${vaultTests} Foundry tests green`)
   && docs.includes(`<td>${factoryTests} Foundry tests green`)
   && docs.includes(`# ${vaultTests + factoryTests} tests`),
   `the docs print the suite's real counts (${vaultTests} vault + ${factoryTests} factory = ${vaultTests + factoryTests})`);
+
+console.log('--- the README ---');
+/* The README is the first thing a visitor and a reviewer read, and the one document nothing watched:
+   a badge could print a test count the suite no longer had, a section could be deleted while its
+   table of contents still linked to it, and both would render perfectly while being wrong. These
+   read it as a document — its anchors against its own headings, its numbers against the files they
+   describe, its commands against the files that have to exist to run them. The line endings are
+   normalised first: an anchor pattern that only matches an LF checkout would pass by finding
+   nothing at all. */
+const md = readme.replace(/\r\n/g, '\n');
+const slug = (h) => h.trim().toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/ /g, '-');
+const mdSections = [...md.matchAll(/^## (.+)$/gm)].map((m) => slug(m[1]));
+const mdToc = [...md.matchAll(/^- \[[^\]]+\]\(#([a-z0-9-]+)\)$/gm)].map((m) => m[1]);
+/* Every # link in the file, not just the table of contents: the badges point at sections too, and a
+   badge whose target was renamed is a dead link rendered in the first screen. */
+const mdAnchorList = [
+  ...md.matchAll(/href="#([a-z0-9-]+)"/g),
+  ...md.matchAll(/\]\(#([a-z0-9-]+)\)/g),
+].map((m) => m[1]);
+const mdTargets = [...new Set([...mdToc, ...mdAnchorList])];
+const deadAnchors = mdTargets.filter((id) => !mdSections.includes(id));
+ok(mdToc.length >= 8 && deadAnchors.length === 0,
+  `every README #anchor resolves to one of its ${mdSections.length} sections (dead: ${deadAnchors.join(', ') || 'none'})`);
+const unlisted = mdSections.filter((id) => id !== 'table-of-contents' && !mdToc.includes(id));
+ok(unlisted.length === 0, `and every README section is listed in that table (unlisted: ${unlisted.join(', ') || 'none'})`);
+
+/* The three numbers a reader can check in one command, all counted from the suite above: the badge,
+   the structure listing and the line the verify step promises. */
+const suite = vaultTests + factoryTests;
+ok(md.includes(`badge/tests-${suite}%20passing`),
+  `the README badge prints the suite's real total (${suite})`);
+ok(md.includes(`OlineaVault.t.sol (${vaultTests})`) && md.includes(`OlineaFactory.t.sol (${factoryTests})`),
+  `and the structure listing prints each file's real count (${vaultTests} + ${factoryTests})`);
+ok(md.includes(`# ${suite} tests, 0 failed`),
+  `and the command a reviewer is told to run promises what the suite holds (${suite} tests)`);
+
+/* The primitive the whole README rests on — the address, the selector, and the size of what gets
+   verified. The badge spells the size with %2C, so both spellings are checked. */
+ok(md.includes('0x1800000000000000000000000000000000000004') && md.includes('0xbf4db8ba')
+  && md.includes('7%2C856%20B') && md.includes('7856 B'),
+  'the README cites the canonical precompile, its selector and the 7,856-byte signature it verifies');
+
+/* Every command a reviewer is handed has to exist, and every subcommand has to be one the CLI
+   dispatches. A renamed file or verb would leave the README pointing at nothing, which is the kind
+   of claim this file exists to fail. */
+const mdFiles = [...new Set([...md.matchAll(/node (scripts\/[\w./-]+\.mjs)/g)].map((m) => m[1]))];
+const mdFilesMissing = mdFiles.filter((f) => !existsSync(f));
+ok(mdFiles.length >= 2 && mdFilesMissing.length === 0,
+  `every file the README tells a reviewer to run exists (${mdFiles.length} named, missing: ${mdFilesMissing.join(', ') || 'none'})`);
+const mdVerbs = [...new Set([...md.matchAll(/node pq\.mjs ([a-z]+)/g)].map((m) => m[1]))];
+const cliVerbs = [...new Set([...cli.matchAll(/command === '([a-z]+)'/g)].map((m) => m[1]))];
+const unknownVerbs = mdVerbs.filter((v) => !cliVerbs.includes(v));
+ok(mdVerbs.length >= 1 && unknownVerbs.length === 0,
+  `and every pq.mjs subcommand it names is one the CLI dispatches (unknown: ${unknownVerbs.join(', ') || 'none'})`);
+
+/* Two addresses a reader can compare between files without trusting any prose: the factory the
+   console opens by default, and the vault the submission page holds up. A deploy that updates one
+   page and not the README, or the reverse, fails here rather than reaching a visitor. */
+const submission = readFileSync('submit.html', 'utf8');
+const publishedFactory = (md.match(/^\| Factory \| `(0x[0-9a-fA-F]{40})` \|/m) || [])[1];
+const consoleFactory = (app.match(/localStorage\.getItem\('olinea:factory'\) \|\| '(0x[0-9a-fA-F]{40})'/) || [])[1];
+ok(publishedFactory && consoleFactory === publishedFactory && submission.includes(publishedFactory),
+  'the factory the README publishes is the address the console defaults to and the submission page opens');
+const publishedVault = (md.match(/24 words\*\* \| `(0x[0-9a-fA-F]{40})`/) || [])[1];
+ok(publishedVault && submission.includes(publishedVault),
+  'and the vault the README holds up is the one the submission page opens');
+
+/* The one badge that is a negative claim. If it ever says something else, this fails rather than
+   letting a project with no audit imply otherwise. */
+ok(md.includes('badge/audit-none') && /unaudited/i.test(md),
+  'the README still prints the audit it does not have, in the badge and in the Security section');
 
 console.log('--- everything a page needs ships with it ---');
 /* The typeface came from googleapis/gstatic and the hero's three.js from jsdelivr, so a cold visitor's

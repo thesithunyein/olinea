@@ -132,6 +132,12 @@
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
   .card h3 { margin: 0 0 8px; font-size: 15px; letter-spacing: .01em; }
   .card p { margin: 0; color: var(--dim); font-size: 14.5px; }
+  /* The release path, drawn: a short wide strip under the three claims. Canvas only — the caption
+     under it is what a browser without WebGL, or a visitor who asked for less motion, still reads. */
+  .flow { margin: 24px 0 0; }
+  .flow canvas { display: block; width: 100%; height: clamp(170px, 24vw, 236px); }
+  .flow figcaption { margin-top: 10px; color: var(--dim); font-size: 13px; text-align: center; }
+  .flow figcaption b { color: var(--fg); }
   table.data { width: 100%; border-collapse: collapse; margin: 14px 0 0; font-size: 14.5px; }
   table.data th, table.data td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
   table.data th { color: var(--dim); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
@@ -305,6 +311,15 @@
         <p>Nothing can pause, upgrade or redirect it. Depositing grants no rights.</p>
       </div>
     </div>
+
+    <!-- The release path, drawn rather than described. Procedural geometry from the three.js already
+         committed beside this page — nothing is fetched. The caption is the whole story on a browser
+         without WebGL, and the single frame a visitor who asked for less motion gets shows the same
+         moment: signature at the gate. -->
+    <figure class="flow">
+      <canvas id="flow" aria-label="Animation of the release path: a stream of hash-based signature bytes crosses from a vault through Arc's precompile gate, and only after the gate pulses does a USDC coin leave the vault."></canvas>
+      <figcaption>Sign → verify at the gate → release. Nothing moves until the precompile returns <b>true</b>.</figcaption>
+    </figure>
   </section>
 
   <section class="section" id="how">
@@ -421,6 +436,10 @@
     <span>Factory deployed · Arc mainnet (chain 5042)</span>
   </div>
 </footer>
+
+<!-- The strip above “How it works”: its own module, so the page's own bytes barely move and the
+     scene can be read on its own. Deferred, and after the import map, like every module here. -->
+<script type="module" src="/assets/three/flow.js"></script>
 
 <script type="module">
 import * as THREE from 'three';
