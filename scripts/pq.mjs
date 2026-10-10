@@ -153,7 +153,11 @@ async function conformance() {
       ? '\nthe vault authorization path is verified against the real Arc mainnet precompile'
       : `\n${failures} case(s) FAILED — do not deploy`,
   );
-  process.exit(failures === 0 ? 0 : 1);
+  /* The exit code is set rather than forced. process.exit() here tore down the process while the
+   * three RPC clients were still closing their sockets, and Node aborted at the libuv layer on
+   * Windows — exit 127 on a run whose every case passed, which is the one outcome a verification
+   * command must never produce. Setting the code lets the loop drain and close on its own. */
+  process.exitCode = failures === 0 ? 0 : 1;
 }
 
 const command = process.argv[2];

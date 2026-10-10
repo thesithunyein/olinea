@@ -520,6 +520,14 @@ const loose = Object.entries({ ...vendorPkg.dependencies, ...vendorPkg.devDepend
 ok(Object.keys(vendorPkg.dependencies).length === 4 && loose.length === 0,
   `the vendor build pins exact versions, so a rebuild cannot change the derivation (loose: ${loose.map(([n, v]) => `${n}@${v}`).join(', ') || 'none'})`);
 
+/* The README tells a reviewer to run the CLI's conformance check, so its exit status is part of what
+   the site promises: nonzero must mean a case failed, not that the process was torn down badly. A
+   forced exit while the RPC clients are still closing their sockets aborted at the libuv layer and
+   returned 127 on a run where every case passed. */
+const cli = readFileSync('scripts/pq.mjs', 'utf8');
+ok(cli.includes('process.exitCode = failures === 0 ? 0 : 1') && !cli.includes('process.exit(failures'),
+  'the conformance check sets its exit code and lets the loop drain, instead of forcing an exit it cannot finish');
+
 /* The docs print how many tests each contract has, which is a claim a reader can check in one command.
    Counted from the suite here so a number that has drifted from the tests fails the build instead of
    quietly overstating the evidence. */
