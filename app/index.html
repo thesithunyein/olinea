@@ -744,8 +744,13 @@ const $ = (id) => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const CONFIG = {
   chainId: 5042,
-  rpc: q.get('rpc') || 'https://rpc.drpc.mainnet.arc.io',
-  rpcAlt: 'https://rpc.blockdaemon.mainnet.arc.io',
+  /* Two public providers, because neither is dependable alone: dRPC rate-limits bursts and can
+     stall for half a minute on a cold start, and blockdaemon has quiet moments of its own. ?rpc=
+     puts another in front. Which one answers is measured at boot, not assumed. */
+  rpcs: [...new Set([q.get('rpc'), 'https://rpc.drpc.mainnet.arc.io', 'https://rpc.blockdaemon.mainnet.arc.io'].filter(Boolean))],
+  rpcTimeout: 8_000,
+  rpcProbe: 4_000,
+  rpcBackoff: 5 * 60_000,
   usdc: q.get('usdc') || '0x3600000000000000000000000000000000000000',
   precompile: '0x1800000000000000000000000000000000000004',
   /* The factory on Arc mainnet, so the console works from a bare /app/ link. The query string and
@@ -802,16 +807,106 @@ try {
 const arcChain = {
   id: CONFIG.chainId, name: 'Arc',
   nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-  rpcUrls: { default: { http: [CONFIG.rpc] } },
+  rpcUrls: { default: { http: CONFIG.rpcs } },
 };
-/* dRPC rate-limits bursts and is slow on a cold start, so a second provider sits behind it — but
- * viem's own retry re-sends *reverts* too, which turns a definitive answer into a ten-second wait.
- * Retries happen here instead, and only for failures that might succeed next time. */
-const transport = () => V.fallback([
-  V.http(CONFIG.rpc, { retryCount: 0, timeout: 15_000 }),
-  V.http(CONFIG.rpcAlt, { retryCount: 0, timeout: 15_000 }),
-], { retryCount: 0 });
+/* One order, decided by a probe rather than by the order this file was written in. viem's fallback
+ * still sits in the chain, so a single request can move to the next endpoint, but its retryCount
+ * stays 0: a revert is a definitive answer and re-sending it only turns a fast "no" into a slow
+ * one. Retries for failures that might succeed next time happen in call(), below. */
+let rpc = { order: CONFIG.rpcs.slice(), ms: new Map(), downAt: new Map(), answered: '' };
+const hostOf = (url) => {
+  const h = String(url).replace(/^https?:\/\//, '').split('/')[0];
+  return /^[\d.:]+$/.test(h) ? h : h.replace(/^rpc\./, '').split('.')[0];
+};
+/* Each endpoint is wrapped so the console can tell which one actually answered. Without this, a
+ * provider that accepts a request and never replies is invisible: viem's fallback quietly rescues
+ * the call through the other provider, the page keeps working, and every single read pays the
+ * stalled provider's timeout first — a page that is up but appears stuck on "connecting", which
+ * is exactly what this console did the day this was written. */
+const watched = (url) => {
+  const base = V.http(url, { retryCount: 0, timeout: CONFIG.rpcTimeout });
+  return (opts) => {
+    const t = base(opts);
+    return {
+      ...t,
+      request: async (...args) => {
+        try {
+          const out = await t.request(...args);
+          rpc.answered = url;
+          return out;
+        } catch (err) {
+          /* It was asked and did not answer. Only a failure that might succeed elsewhere moves the
+             order — a revert or a bad request is a definitive answer from a healthy endpoint, and
+             rotating on it would churn the order for no reason. */
+          if (transient(err) && url === rpc.order[0]) retire('stalled');
+          throw err;
+        }
+      },
+    };
+  };
+};
+const transport = () => V.fallback(rpc.order.map(watched), { retryCount: 0 });
 let reads = V.createPublicClient({ transport: transport() });
+/* The endpoint that just stalled moves behind the one that might answer, so it is paid for once
+ * rather than on every call. */
+function retire(why = 'failed') {
+  if (rpc.order.length < 2) return;
+  rpc.order = [...rpc.order.slice(1), rpc.order[0]];
+  reads = V.createPublicClient({ transport: transport() });
+  const label = $('net-block');
+  if (label && label.textContent) label.textContent = `Arc mainnet · ${hostOf(rpc.order[0])}`;
+  console.info(`rpc: ${why}, now asking ${hostOf(rpc.order[0])}`);
+}
+/* Two raw calls per endpoint, each with its own short deadline, because a provider can answer the
+ * handshake and then go quiet on real work — which is what turns into a page that is up but reads
+ * nothing. This is the only place a provider is picked, and what it returns is a measurement. */
+async function jsonRpc(url, method, timeout) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), timeout);
+  try {
+    const res = await fetch(url, {
+      method: 'POST', signal: ac.signal, headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: [] }),
+    });
+    const body = await res.json();
+    if (body.error) throw new Error(body.error.message || 'rpc error');
+    return body.result;
+  } finally { clearTimeout(timer); }
+}
+async function probe(url) {
+  const t0 = performance.now();
+  const chainId = await jsonRpc(url, 'eth_chainId', CONFIG.rpcProbe);
+  if (Number(chainId) !== CONFIG.chainId) throw new Error(`chain ${chainId}`);
+  await jsonRpc(url, 'eth_blockNumber', CONFIG.rpcProbe);
+  return { url, ms: Math.round(performance.now() - t0) };
+}
+const pinned = q.get('rpc');
+async function probeAll(force = false) {
+  const now = Date.now();
+  /* An endpoint that just failed is not asked again on every pass — paying a dead provider's
+     timeout every thirty seconds is its own kind of stuck. It is retried once the rest has had a
+     turn, and immediately when someone presses Refresh. */
+  let due = force
+    ? CONFIG.rpcs.slice()
+    : CONFIG.rpcs.filter((u) => !rpc.downAt.has(u) || now - rpc.downAt.get(u) > CONFIG.rpcBackoff);
+  /* If everything is in backoff, the backoff must not hide a recovery. */
+  if (!due.length) due = CONFIG.rpcs.slice();
+  const settled = await Promise.allSettled(due.map(probe));
+  const live = [], dead = [];
+  settled.forEach((r, i) => {
+    const url = due[i];
+    if (r.status === 'fulfilled') { live.push(r.value); rpc.ms.set(url, r.value.ms); rpc.downAt.delete(url); }
+    else { dead.push(url); rpc.ms.delete(url); rpc.downAt.set(url, now); }
+  });
+  /* Endpoints still inside backoff were not asked this pass; they sit behind everything that
+     answered. */
+  const resting = rpc.order.filter((u) => !due.includes(u));
+  /* ?rpc= is someone naming the endpoint they want; it stays first unless it does not answer. */
+  live.sort((a, b) => ((a.url === pinned ? -1 : 0) - (b.url === pinned ? -1 : 0)) || (a.ms - b.ms));
+  rpc.order = [...live.map((l) => l.url), ...resting, ...dead];
+  reads = V.createPublicClient({ transport: transport() });
+  return live[0] || null;
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const transient = (e) => /HttpRequestError|TimeoutError|RateLimit|429|fetch failed|network|ECONN|socket/i.test(
@@ -819,7 +914,14 @@ const transient = (e) => /HttpRequestError|TimeoutError|RateLimit|429|fetch fail
 async function call(fn, tries = 3) {
   let last;
   for (let i = 0; i < tries; i++) {
-    try { return await fn(); } catch (err) { last = err; if (!transient(err)) throw err; await sleep(500 * (i + 1)); }
+    try { return await fn(); }
+    catch (err) {
+      last = err;
+      if (!transient(err)) throw err;
+      /* The endpoint that stalled has already been moved back by its wrapper; this wait is for the
+         one that failed on both. */
+      await sleep(500 * (i + 1));
+    }
   }
   throw last;
 }
@@ -1335,7 +1437,7 @@ $('b-connect').onclick = async () => {
       await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
         chainId: '0x' + CONFIG.chainId.toString(16), chainName: 'Arc',
         nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-        rpcUrls: [CONFIG.rpc], blockExplorerUrls: ['https://explorer.arc.io'],
+        rpcUrls: rpc.order.slice(), blockExplorerUrls: ['https://explorer.arc.io'],
       }] });
     }
     state.account = { address: addr };
@@ -1350,7 +1452,7 @@ $('b-builtin').onclick = () => {
   state.mode = 'builtin';
   paintAccount();
 };
-$('b-refresh').onclick = () => { net(); paintAccount(); if (state.vault) paintVault(); };
+$('b-refresh').onclick = () => { net(true); paintAccount(); if (state.vault) paintVault(); };
 
 async function readVaultKey(addr) {
   const vk = await call(() => reads.readContract({ address: addr, abi: VAULT_ABI, functionName: 'verifyingKey' }));
@@ -1934,7 +2036,11 @@ function renderSelfcheck() {
 }
 
 /* -------------------------------------------------------------- network */
-async function net() {
+async function net(force = false) {
+  /* Probed on every pass, not once: which provider is answering changes under load, and the label
+   * is only worth printing if it was measured this run. */
+  await probeAll(force);
+  rpc.answered = '';
   try {
     const [chainId, block] = await Promise.all([call(() => reads.getChainId(), 2), call(() => reads.getBlockNumber(), 2)]);
     if (chainId !== CONFIG.chainId) throw new Error(`rpc is chain ${chainId}`);
@@ -1942,12 +2048,10 @@ async function net() {
     $('net-text').textContent = 'Arc mainnet';    $('stat-chain').className = 'stat on';
     $('stat-chain-v').textContent = Number(block).toLocaleString();
     /* The endpoint is worth naming, but not the whole hostname: which of the two answered is all
-       anyone needs when a number looks wrong. */
-    const endpoint = CONFIG.rpc.replace(/^https?:\/\//, '').split('/')[0];
-    const host = /^[\d.:]+$/.test(endpoint) ? endpoint : endpoint.replace(/^rpc\./, '').split('.')[0];
-    $('net-block').textContent = `Arc mainnet · ${host}`;
-    /* Which endpoint answered is the first thing anyone asks when a number looks wrong. */
-    $('net').title = `Arc mainnet · chain ${chainId} · ${CONFIG.rpc.replace(/^https?:\/\//, '')}`;
+       anyone needs when a number looks wrong. The tooltip carries the measurement behind the name. */
+    const first = rpc.answered || rpc.order[0];
+    $('net-block').textContent = `Arc mainnet · ${hostOf(first)}${rpc.ms.has(first) ? ` · ${rpc.ms.get(first)} ms` : ''}`;
+    $('net').title = `Arc mainnet · chain ${chainId} · ` + rpcNote();
     return true;
   } catch {
     $('net').className = 'statusdot off';
@@ -1955,10 +2059,14 @@ async function net() {
     $('stat-chain-v').textContent = '—';
     /* A block number that was true a minute ago is a lie next to the words "no RPC". */
     $('net-block').textContent = '';
-    $('net').title = 'Nothing is answering on the Arc RPC right now';
+    $('net').title = `Nothing is answering · ${rpcNote()}`;
     return false;
   }
 }
+/* Exactly what was measured: every endpoint the console knows, and whether it answered this pass. */
+const rpcNote = () => CONFIG.rpcs
+  .map((u) => `${hostOf(u)}${rpc.ms.has(u) ? ` ${rpc.ms.get(u)} ms` : ' no answer'}`)
+  .join(' · ');
 
 /* -------------------------------------------------------- safety net */
 window.addEventListener('beforeunload', (e) => {

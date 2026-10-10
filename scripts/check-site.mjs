@@ -136,7 +136,25 @@ ok(count(app, "{ type: 'uint256' }, { type: 'address' }") === 1,
 ok(count(app, 'authorizationDigest') >= 2, 'the app cross-checks its digest against the contract&rsquo;s own');
 ok(app.includes('createVault') && app.includes('deposit') && app.includes('release'),
   'the app can create, fund and spend from a vault');
-ok(count(app, 'retryCount: 0') === 3, 'transports do not retry definitive reverts');
+/* A definitive revert must never be retried — re-sending it turns a fast "no" into a slow one —
+   and an endpoint that stalls must not be asked again while another one is answering. The day this
+   was written the console had one hardcoded primary and sat on "connecting" when it stalled, so
+   the order now comes from a measurement. */
+ok(count(app, 'retryCount: 0') === 2, 'transports do not retry definitive reverts');
+ok(app.includes('rpc.drpc.mainnet.arc.io') && app.includes('rpc.blockdaemon.mainnet.arc.io'),
+  'the console knows both public endpoints');
+ok(app.includes('Promise.allSettled') && app.includes("jsonRpc(url, 'eth_chainId'") && app.includes("jsonRpc(url, 'eth_blockNumber'") && app.includes('(a.ms - b.ms)'),
+  'both endpoints are measured with a real read, and the faster one is asked first');
+ok(app.includes('CONFIG.rpcProbe') && app.includes('rpc.downAt') && app.includes('CONFIG.rpcBackoff'),
+  'the probe has its own deadline, and an endpoint that fails is rested before it is asked again');
+ok(/function retire\(/.test(app) && /retire\('stalled'\)/.test(app),
+  'an endpoint that stalls moves behind the one that may still answer');
+ok(app.includes('await probeAll(force)') && app.includes('rpcNote()'),
+  'the status line names the endpoint that answered, with the measurement behind it');
+ok(app.includes('rpc.answered = url') && app.includes('const first = rpc.answered || rpc.order[0]'),
+  'the status line names the endpoint that actually answered, not the one asked first');
+ok(app.includes('const watched = (url)') && app.includes("if (transient(err) && url === rpc.order[0]) retire('stalled')"),
+  'a provider that accepts a request and never replies is retired on the spot');
 /* The derivation itself lives only in the worker. The app may display the label, but it must not
    perform the HKDF step itself, or the two would be able to drift apart. */
 ok(count(worker, "const DERIVATION_SALT = 'olinea/slh-dsa/v1'") === 1, 'the salt is declared once, in the worker');
