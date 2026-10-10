@@ -121,7 +121,7 @@
   <rect class="box" x="926" y="490" width="214" height="76" rx="8"/>
   <text class="bt" x="944" y="516">PQ precompile</text>
   <text class="bm" x="944" y="536">0x1800&#8230;0004</text>
-  <text class="bs" x="944" y="554">382,879 gas per verification</text>
+  <text class="bs" x="944" y="554">448,502 gas per release</text>
 
   <path class="flow" d="M 918 212 L 918 300"/>
   <text class="fl" x="928" y="260">creates</text>
@@ -141,5 +141,5 @@
   <text class="fl" x="66" y="679">runs on the user&#8217;s machine</text>
   <rect x="238" y="668" width="18" height="12" rx="3" fill="none" stroke="#2a3440" stroke-width="1.25"/>
   <text class="fl" x="264" y="679">enforced by consensus</text>
-  <text class="fl" x="424" y="679">key size 32 B · signature 7,856 B · 6&#8211;16 s and 382,879 gas are measurements, not estimates</text>
+  <text class="fl" x="424" y="679">key size 32 B · signature 7,856 B · 6&#8211;16 s and 448,502 gas are measurements, not estimates</text>
 </svg>

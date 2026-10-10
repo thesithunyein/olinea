@@ -336,8 +336,8 @@ error TransferFailed();</code></pre>
           <tr><td>Selector</td><td><code>0xbf4db8ba</code> — <code>verifySlhDsaSha2128s(bytes,bytes,bytes)</code></td></tr>
           <tr><td>Arguments</td><td><code>(bytes verifyingKey /*32 B*/, bytes message /*any length*/, bytes signature /*7856 B*/)</code></td></tr>
           <tr><td>Returns</td><td><code>bool</code> — <code>false</code> for an invalid signature</td></tr>
-          <tr><td>Gas</td><td>382,879 per verification</td></tr>
-          <tr><td>Cost</td><td>≈ <strong>$0.0077</strong> at Arc's pinned 20 Gwei base fee</td></tr>
+          <tr><td>Gas</td><td>448,502 per release, measured on the release transaction</td></tr>
+          <tr><td>Cost</td><td><strong>0.00897 USDC</strong> at Arc's base fee of about 20 Gwei</td></tr>
         </tbody>
       </table>
     </div>
@@ -405,7 +405,7 @@ node pq.mjs conformance [--vault 0x..]</code></pre>
     <ul>
       <li><strong>No recovery.</strong> Lose the key and the funds are unrecoverable by design — the property, not an oversight, and why there is nothing to phish.</li>
       <li><strong>Circle's denylist still applies.</strong> A forged signature cannot move funds, but the USDC token can still block transfers. This is not denylist resistance.</li>
-      <li><strong>Verification is not free.</strong> 382,879 gas per release, ≈ $0.0077 at Arc's 20 Gwei base fee — about 1,300× a plain transfer.</li>
+      <li><strong>Verification is not free.</strong> 448,502 gas per release, 0.00897 USDC at Arc's base fee of about 20 Gwei. The 7,856 bytes of signature calldata are a fixed part of that.</li>
       <li><strong>Signatures are large.</strong> 7,856 bytes of calldata per release, not compressible. That is the price of hash-based signatures.</li>
       <li><strong>Signing is slow by design.</strong> Seconds per signature, not milliseconds — SLH-DSA-SHA2-128s trades speed for small keys and conservative assumptions.</li>
       <li><strong>Reads need an RPC.</strong> Code and assets are served from one origin, but chain reads are not: the console and the CLI talk to public Arc endpoints. If both are down, a page can only show what it last read.</li>

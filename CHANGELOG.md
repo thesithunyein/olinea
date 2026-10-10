@@ -109,6 +109,14 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Fixed
 
+- **The cost of a release was stated as 382,879 gas and $0.0077 on every surface, and the chain says
+  448,502 gas and 0.008970824 USDC.** Read from the release transaction's own receipt. The old figure
+  was a verification-only estimate wearing the label of a release, so the README, the docs table, the
+  docs limitations list, the two architecture drawings and the landing page now state what the chain
+  charged, and `scripts/check-site.mjs` pins the measured number and fails if the stale one returns.
+  The "about 1,300× a plain transfer" comparison is gone rather than adjusted: no plain USDC transfer
+  on Arc could be measured to support any ratio. `contracts/README.md` also advertised `forge test`
+  as 17 tests; the suite is 31, 19 for the vault and 12 for the factory.
 - **The conformance check no longer lies in either direction.** `node pq.mjs conformance` had two
   faults, and the first fix addressed only the second. It forced the process down while three RPC
   clients were still closing their sockets, so it returned **127** on a run whose every case passed.

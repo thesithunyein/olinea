@@ -125,7 +125,7 @@ someone else's release and gain nothing by it.
 | Selector | `0xbf4db8ba` — `verifySlhDsaSha2128s(bytes,bytes,bytes)` |
 | Arguments | `(verifyingKey 32 B, message any length, signature 7856 B)` |
 | Returns | `bool` — an invalid signature returns `false`, **it does not revert** |
-| Gas | 382,879 ≈ $0.0077 per verification — about 1,300× a plain USDC transfer |
+| Gas | 448,502 per release, 0.00897 USDC paid (measured on the release transaction) |
 
 Verified on Arc mainnet with real keypairs: a valid signature returns `true`; a one-bit tampered
 signature, the same signature checked against a different public key, and a valid signature over a

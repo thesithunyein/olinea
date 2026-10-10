@@ -429,7 +429,10 @@ for (const fn of ['deposit(uint256)', 'release(address,uint256,uint256,bytes)', 
   ok(docs.includes(fn), `docs reference the real function: ${fn}`);
 }
 ok(count(docs, '0x1800000000000000000000000000000000000004') >= 1, 'docs cite the canonical precompile address');
-ok(docs.includes('0xbf4db8ba') && docs.includes('382,879') && docs.includes('7856'), 'docs cite selector, gas and signature size');
+/* The gas figure is measured, so it is pinned to the release transaction's own receipt: 448,502 gas.
+   The stale 382,879 was a verification-only estimate and must not come back. */
+ok(docs.includes('0xbf4db8ba') && docs.includes('448,502') && docs.includes('7856')
+  && !docs.includes('382,879'), 'docs cite selector, measured release gas and signature size');
 ok(count(docs, '0x3600000000000000000000000000000000000000') >= 1, 'docs cite the USDC ERC-20 address');
 ok(docs.includes('keccak256(abi.encode(block.chainid, address(vault), to, amount, nonce))'), 'docs state the exact digest');
 ok(docs.includes('Factory deployed') || docs.includes('Not yet deployed'), 'docs are honest about the deployment status');

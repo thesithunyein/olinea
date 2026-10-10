@@ -20,7 +20,7 @@ computer that breaks ECDSA cannot forge it.
 ## Test suite
 
 ```bash
-forge test          # 17 tests
+forge test          # 31 tests: 19 for the vault, 12 for the factory
 ```
 
 | Area | Tests |
@@ -84,4 +84,4 @@ cast call $VAULT "balance()(uint256)" --rpc-url $ARC_RPC
   escape hatch. That is the property, not an oversight.
 - **Denylist still applies.** A forged SLH-DSA signature cannot move funds, but Circle's USDC
   denylist can still block transfers. Post-quantum authorization is not denylist resistance.
-- **Verification cost.** 382,879 gas per release (≈ $0.008 at Arc's 20 Gwei base fee).
+- **Verification cost.** 448,502 gas per release (0.00897 USDC paid, at Arc's base fee of about 20 Gwei).
