@@ -27,6 +27,11 @@ const KEY_FILE = join(HERE, 'keys', 'pq-key.json');
 const CHAIN_ID = 5042n; // Arc mainnet
 const PQ_PRECOMPILE = '0x1800000000000000000000000000000000000004';
 const RPC = process.env.ARC_RPC ?? 'https://rpc.drpc.mainnet.arc.io';
+/* Both endpoints the console uses, the named one first. A public provider that is rate-limiting is
+ * ordinary weather for this project rather than a conformance failure, and one that fails must not
+ * end the run: that is what turned a passing check into a crash and a stack trace. */
+const RPC_FALLBACKS = ['https://rpc.drpc.mainnet.arc.io', 'https://rpc.blockdaemon.mainnet.arc.io'];
+const endpoints = () => [...new Set([RPC, ...RPC_FALLBACKS])];
 const PROBE_VAULT = '0x0000000000000000000000000000000000000abc'; // placeholder for conformance runs
 
 const PQ_ABI = [
@@ -66,17 +71,29 @@ function loadKey() {
   return { vk: Uint8Array.from(Buffer.from(vk, 'hex')), sk: Uint8Array.from(Buffer.from(sk, 'hex')) };
 }
 
-function client() {
-  return createPublicClient({ transport: http(RPC) });
+function client(url = RPC) {
+  return createPublicClient({ transport: http(url) });
 }
 
+/* Each endpoint is asked in turn. What a failure means is the caller's judgement, not this
+ * function's: conformance() reports it as a case nobody could check rather than as a wrong answer,
+ * because an endpoint that did not reply has said nothing at all about the signature. */
 async function verifyOnMainnet(vk, message, signature) {
-  return client().readContract({
-    address: PQ_PRECOMPILE,
-    abi: PQ_ABI,
-    functionName: 'verifySlhDsaSha2128s',
-    args: [toHex(vk), message, toHex(signature)],
-  });
+  let lastError;
+  for (const url of endpoints()) {
+    try {
+      return await client(url).readContract({
+        address: PQ_PRECOMPILE,
+        abi: PQ_ABI,
+        functionName: 'verifySlhDsaSha2128s',
+        args: [toHex(vk), message, toHex(signature)],
+      });
+    } catch (err) {
+      lastError = err;
+      console.log(`  … ${new URL(url).host} did not answer (${err.shortMessage ?? err.message})`);
+    }
+  }
+  throw lastError;
 }
 
 function keygen() {
@@ -130,7 +147,7 @@ async function conformance() {
   tampered[4000] ^= 0x01;
   const otherDigest = authorizationDigest(vault, to, amount, nonce + 1n);
 
-  console.log(`RPC:        ${RPC}`);
+  console.log(`RPC:        ${endpoints().join(' → ')}`);
   console.log(`precompile: ${PQ_PRECOMPILE}`);
   console.log(`chain:      Arc mainnet (${CHAIN_ID})\n`);
 
@@ -141,17 +158,33 @@ async function conformance() {
   ];
 
   let failures = 0;
+  let unanswered = 0;
   for (const [name, message, sig, expected] of cases) {
-    const got = await verifyOnMainnet(vk, message, sig);
-    const pass = got === expected;
+    let got;
+    let error;
+    try {
+      got = await verifyOnMainnet(vk, message, sig);
+    } catch (err) {
+      error = err;
+    }
+    /* A case nobody could check is not a case that passed. It is counted against the run and it says
+     * so, because reporting "unverified" as "PASS" is how a project comes to believe something that
+     * is not true of it — and reporting it as a stack trace is how a reader stops reading. */
+    if (error) unanswered++;
+    const pass = !error && got === expected;
     if (!pass) failures++;
-    console.log(`  [${pass ? 'PASS' : 'FAIL'}] ${name.padEnd(42)} expected=${expected} got=${got}`);
+    const answer = error
+      ? `no answer from ${endpoints().length} endpoints (${error.shortMessage ?? error.message})`
+      : got;
+    console.log(`  [${pass ? 'PASS' : 'FAIL'}] ${name.padEnd(42)} expected=${expected} got=${answer}`);
   }
 
   console.log(
     failures === 0
       ? '\nthe vault authorization path is verified against the real Arc mainnet precompile'
-      : `\n${failures} case(s) FAILED — do not deploy`,
+      : unanswered === failures
+        ? `\n${failures} case(s) could not be checked: no endpoint answered, so nothing is known about\nthe path yet. This is not a failing signature — run it again.`
+        : `\n${failures} case(s) FAILED — do not deploy`,
   );
   /* The exit code is set rather than forced. process.exit() here tore down the process while the
    * three RPC clients were still closing their sockets, and Node aborted at the libuv layer on

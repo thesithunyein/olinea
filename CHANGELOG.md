@@ -76,11 +76,15 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Fixed
 
-- **The conformance check no longer fails on success.** `node pq.mjs conformance` passed all three
-  cases against the live precompile and then exited **127**: it forced the process down while three RPC
-  clients were still closing their sockets, and Node aborted at the libuv layer. A verification command
-  whose exit status lies is the one outcome this project cannot afford, so the code is set and the loop
-  is left to drain — the same three cases now print the same three PASS lines and return 0.
+- **The conformance check no longer lies in either direction.** `node pq.mjs conformance` had two
+  faults, and the first fix addressed only the second. It forced the process down while three RPC
+  clients were still closing their sockets, so it returned **127** on a run whose every case passed.
+  And when an endpoint did not answer — which one of the two public providers does, regularly — the
+  error escaped as an unhandled rejection: a stack trace carrying the whole 7,856-byte signature, and
+  no verdict at all. The exit code is now set and the loop drains on its own; each case asks both
+  endpoints the console uses before giving up; and a case nobody could check is reported as unchecked
+  and counted against the run, never as a PASS and never as a stack trace. Three consecutive runs now
+  return 0 in 7–9 s with all three cases verified.
 - **The Authorize panel was unreachable whenever a factory was set and a key was in memory.**
   `renderKey()` wrote to `vault-soon-chip`; the element is `v-soon-chip`. The lookup returned null, the
   function threw before its last line, and that last line was the one that un-hides the Authorize form —
