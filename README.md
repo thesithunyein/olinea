@@ -7,58 +7,40 @@
 
 <h1 align="center">Olinea</h1>
 
+<p align="center">
+  <a href="#deployment"><img src="https://img.shields.io/badge/deployed-factory%20on%20Arc%20mainnet-6ee7b7?style=flat-square" alt="Deployed: factory on Arc mainnet"></a>
+  <a href="#the-primitive"><img src="https://img.shields.io/badge/signature-SLH--DSA--SHA2--128s%20%C2%B7%207%2C856%20B-6ee7b7?style=flat-square" alt="Signature: SLH-DSA-SHA2-128s, 7,856 bytes"></a>
+  <a href="#verify-it-yourself"><img src="https://img.shields.io/badge/tests-31%20passing-6ee7b7?style=flat-square" alt="Tests: 31 passing"></a>
+  <a href="#security"><img src="https://img.shields.io/badge/audit-none-fca5a5?style=flat-square" alt="Audit: none"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6ee7b7?style=flat-square" alt="License: MIT"></a>
+</p>
+
 <p align="center">Post-quantum USDC vault on Arc mainnet · SLH-DSA-SHA2-128s · no owner, no admin, no pause, no upgrade path</p>
 
 **USDC a quantum computer can't move.**
 
 A USDC vault on Arc that releases funds only when a post-quantum signature — **SLH-DSA-SHA2-128s**
-(FIPS 205) — verifies on-chain through Arc's PQ precompile. The vault has no privileged role at all, 
+(FIPS 205) — verifies on-chain through Arc's PQ precompile. The vault has no privileged role at all,
 including for the people who wrote it.
-
-[![License: MIT](https://img.shields.io/badge/license-MIT-6ee7b7?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-31%20passing-6ee7b7?style=flat-square)](#verify-it-yourself)
-[![Chain](https://img.shields.io/badge/chain-Arc%20mainnet%20%C2%B7%205042-6ee7b7?style=flat-square)](#the-primitive)
-[![Signature](https://img.shields.io/badge/signature-SLH--DSA--SHA2--128s%20%C2%B7%207%2C856%20B-6ee7b7?style=flat-square)](#the-primitive)
-[![Audit](https://img.shields.io/badge/audit-none-fca5a5?style=flat-square)](#security)
-[![Deployment](https://img.shields.io/badge/deployed-factory%20on%20Arc%20mainnet-6ee7b7?style=flat-square)](#deployment)
 
 ## The problem
 
 Every USDC account on every chain today is guarded by an elliptic-curve key. A quantum computer running
-Shor's algorithm breaks that, retroactively for recorded signatures. By the time that is a practical 
+Shor's algorithm breaks that, retroactively for recorded signatures. By the time that is a practical
 threat against an active key, the signatures will already be sitting in many chains' historical record.
 
-There are two honest answers to that: 
+There are two honest answers to that:
 
-- **don't hold long-lived USDC in an ECDSA account**, or 
+- **don't hold long-lived USDC in an ECDSA account**, or
 - **hold it in a vault whose release a quantum computer still cannot forge**.
 
-Olinea is the second answer on Arc mainnet. The vault releases USDC only when an SLH-DSA-SHA2-128s 
-signature verifies through Arc's PQ precompile. ECDSA can be broken; hash-based signatures from this 
+Olinea is the second answer on Arc mainnet. The vault releases USDC only when an SLH-DSA-SHA2-128s
+signature verifies through Arc's PQ precompile. ECDSA can be broken; hash-based signatures from this
 class are not broken by breaking ECDSA.
 
-This is not a claim about a future, hypothetical property. It is a claim about the release path the vault 
-actually uses today: a 32-byte verifying key fixed at deployment, a digest that binds chain id, vault, 
+This is not a claim about a future, hypothetical property. It is a claim about the release path the vault
+actually uses today: a 32-byte verifying key fixed at deployment, a digest that binds chain id, vault,
 recipient, amount and nonce, and an on-chain check against Arc's PQ precompile before anything moves.
-
-
-## Status
-
-- [x] The factory is deployed on Arc mainnet: `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`, deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
-- [x] **A vault created from the console's own 24-word backup, funded and released from end to end on
-  mainnet**: `0xA36f07eEB907C0eBc09ecb79802f5037a0382A22`. The 24 words were generated in a browser tab
-  and the SLH-DSA key was derived there; the vault was created through the deployed factory with that
-  key, 0.20 USDC was deposited, and 0.10 USDC was released against a signature the page signed in
-  21.0 s and Arc's precompile accepted in 404 ms — after the console had recomputed the digest and
-  shown it identical to the vault's own `authorizationDigest`. 0.10 USDC is still held, nonce 0 is
-  spent, and the browser's own backup is the only key that can move it.
-- [x] An earlier vault from the same factory, signed by a key from `scripts/pq.mjs keygen` instead of a
-  browser phrase: `0x88fCbF5896902527C175A9114584d5E92Cac8eB9` — 0.10 USDC deposited, 0.05 released,
-  0.05 held.
-- [x] The live console reads either one with no wallet, no key and no gas:
-  `olinea.sithunyein.com/app/?vault=0xA36f07eEB907C0eBc09ecb79802f5037a0382A22` shows the vault above —
-  address, balance and both events straight off Arc mainnet.
-- [ ] A third-party audit. There has not been one.
 
 ## Deployment
 
@@ -79,14 +61,19 @@ recipient, amount and nonce, and an on-chain check against Arc's PQ precompile b
 | Console | `olinea.sithunyein.com/app/?vault=0xA36f07eEB907C0eBc09ecb79802f5037a0382A22` |
 
 Every one of those is on `explorer.arc.io`. A reviewer can open the console link above with no wallet,
-no key and no gas, and read the vault's balance and its two events off the chain. The vault that the
-console link opens is the one whose key was made from 24 words in a browser tab — the same path any
-visitor takes when they create a key and a vault for themselves.
+no key and no gas, and read the vault's address, balance and both events off Arc mainnet. That vault is
+the one whose key was made from 24 words generated in a browser tab — the same path any visitor takes
+when they create a key and a vault for themselves. Its release was signed there in 21.0 s, the page
+recomputed the digest and showed it identical to the vault's own `authorizationDigest`, and Arc's
+precompile accepted the signature in 404 ms before anything was broadcast. nonce 0 is spent, 0.10 USDC
+is still held, and the browser's backup is the only key that can move it.
+
+The second vault followed the same path with a key from `scripts/pq.mjs keygen` instead of a browser
+phrase: 0.10 USDC deposited, 0.05 released, 0.05 still held.
 
 ## Table of contents
 
 - [The problem](#the-problem)
-- [Status](#status)
 - [Deployment](#deployment)
 - [How a release works](#how-a-release-works)
 - [The primitive](#the-primitive)
@@ -99,7 +86,6 @@ visitor takes when they create a key and a vault for themselves.
 - [License](#license)
 
 ## How a release works
-
 
 ```mermaid
 sequenceDiagram
@@ -137,10 +123,11 @@ someone else's release and gain nothing by it.
 | Returns | `bool` — an invalid signature returns `false`, **it does not revert** |
 | Gas | 382,879 ≈ $0.0077 per verification — about 1,300× a plain USDC transfer |
 
-Verified on Arc mainnet with a real keypair: a valid signature returns `true`; a one-bit tampered
-signature, a wrong public key, and a mismatched message all return `false`. Arc's execution layer is
-public in `circlefin/arc-node` (`crates/pq-precompile`), so the ABI is not a secret — the work is in
-executing it correctly and saying honestly what it does and does not buy you.
+Verified on Arc mainnet with real keypairs: a valid signature returns `true`; a one-bit tampered
+signature, the same signature checked against a different public key, and a valid signature over a
+different digest all return `false`. Arc's execution layer is public in `circlefin/arc-node`
+(`crates/pq-precompile`), so the ABI is not a secret — the work is in executing it correctly and saying
+honestly what it does and does not buy you.
 
 ## The footgun
 
@@ -171,7 +158,7 @@ cd contracts && forge test                       # 31 tests, 0 failed
 
 # 2. a real signature, verified by Arc's real precompile on mainnet
 cd ../scripts && npm install
-node pq.mjs conformance                          # valid → true; tampered / wrong key / wrong message → false
+node pq.mjs conformance                          # valid → true; tampered signature and a different digest → false
 
 # 3. the site and console still agree with the contracts
 cd .. && node scripts/check-site.mjs             # no network, no dependencies
@@ -190,9 +177,11 @@ Point the last one at the deployed factory and it checks the deployed claims too
 ```
 olinea/
 ├── index.html                  the landing page                        → /
+├── submit.html                 the console pinned to the deployed factory
 ├── docs/
 │   ├── index.html              the documentation                       → /docs/
-│   └── architecture.svg        the diagram above, and in the docs
+│   ├── architecture.svg        the diagram above, drawn on a dark ground
+│   └── architecture-light.svg  the same diagram, drawn on white
 ├── app/
 │   ├── index.html              the vault console                       → /app/
 │   ├── worker.js               keygen and signing, off the main thread
@@ -209,12 +198,16 @@ olinea/
 │   └── foundry.toml            arc / arc_blockdaemon RPC endpoints · fmt rules
 ├── assets/
 │   ├── fonts/                  Poppins: 18 committed faces and the one stylesheet that names them
-│   └── three/                  three.js and the single addon the hero imports
+│   ├── three/                  three.js and the single addon the hero imports
+│   ├── favicon.png             the mark, cut to the size a browser tab asks for
+│   └── logo-mark*.png          one artwork, cut for dark, light and ink grounds
 ├── scripts/
 │   ├── pq.mjs                  keygen · authorize · conformance — no wallet, no gas
 │   ├── check-site.mjs          structural checks: docs and console vs the contracts
-│   └── vendor/                 how the committed copies were made: build.mjs · fonts.mjs · parity.mjs
+│   └── vendor/                 how the committed copies were made — build.mjs · fonts.mjs ·
+│                               parity.mjs · serve.mjs, the local server used to verify them
 ├── .github/                    CI (contracts + site), issue forms, PR template
+├── vercel.json                 the security headers, including the CSP below
 ├── .vercelignore               the deploy publishes web pages and nothing else
 ├── .editorconfig
 ├── SECURITY.md                 threat model: what this protects you from, and what it does not

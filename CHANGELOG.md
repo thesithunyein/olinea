@@ -47,6 +47,15 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Changed
 
+- **The README opens on the project, not on its history.** The shields now sit directly under the
+  title, where a reader looks for them. The Status list is gone — every fact it carried (the factory,
+  both vaults, the 21.0 s browser signature, the audit that does not exist) already lives in the
+  Deployment table or the paragraph under it, and two places that can disagree is one too many. The
+  structure listing was checked against the tree instead of against memory: `vercel.json`,
+  `submit.html`, the light-cut diagram and the mark cuts had all been missing from it. And the
+  conformance line in "Verify it yourself" no longer advertises a wrong-key case the command does not
+  run — that case was checked against Arc mainnet on its own and does return `false`, which is what
+  the primitive table has always said.
 - **The vault chip says which of three situations it is.** It had two: matching or not. The paragraph
   under it has three — this key, another key, no key in this tab — so a visitor with no key at all, who
   is only reading someone else's vault, was shown the red warning that belongs to a person holding a
