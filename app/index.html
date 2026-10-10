@@ -723,7 +723,7 @@
     </p>
     <div id="limits" hidden>
       <p>
-        <strong>Status.</strong> The factory is deployed on Arc mainnet, and a vault created through it has been funded and released from end to end — <code>0x88fCbF5896902527C175A9114584d5E92Cac8eB9</code>, still holding USDC. See the repository <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> for the addresses and every transaction.
+        <strong>Status.</strong> The factory is deployed on Arc mainnet, and a vault created from a 24-word backup in this console has been funded and released end to end — <code>0xA36f07eEB907C0eBc09ecb79802f5037a0382A22</code>, still holding USDC. The repository <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> lists every transaction.
       </p>
       <ul class="plain">
         <li><strong>Unaudited.</strong> New code, and a test suite is not a review.</li>
@@ -1190,7 +1190,10 @@ function renderKey() {
   $('vault-live').hidden = !CONFIG.factory || (!hasKey && !state.vault);
   /* When the factory is deployed, the Vault tab still explains itself plainly — but now it says the factory is live and the missing piece is a funded vault, not the application. */
   if (CONFIG.factory && hasKey) {
-    $('v-soon-chip').textContent = 'factory deployed — vault 0x88fCb…8eb9 live';
+    /* No address here on purpose: this chip has outlived one earlier vault already, and a chip that
+     * names a vault is a claim that can go stale. The card it sits in is hidden whenever a factory
+     * is deployed, so the console never shows it; boot() is what labels the visible status. */
+    $('v-soon-chip').textContent = 'factory deployed';
     $('v-soon-chip').className = 'chip warn';
   }
   $('auth-body').hidden = !hasKey;  renderStats();

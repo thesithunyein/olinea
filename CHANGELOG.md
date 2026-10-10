@@ -10,6 +10,12 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Added
 
+- **A vault created from the console's own 24-word backup, used end to end on Arc mainnet.**
+  `0xA36f07eEB907C0eBc09ecb79802f5037a0382A22`: 24 words generated in the tab, the SLH-DSA key
+  derived there, the vault created through the deployed factory with that key, 0.20 USDC deposited, and
+  0.10 USDC released. The page cross-checked its digest against the vault's own `authorizationDigest`
+  ("identical to the vault's own hash"), signed in 21.0 s, and Arc's precompile accepted the signature
+  in 404 ms before anything was broadcast. 0.10 USDC remains, spendable only with the words.
 - **A vault on Arc mainnet, used end to end.** `0x88fCbF5896902527C175A9114584d5E92Cac8eB9`, created
   through the deployed factory, 0.10 USDC deposited with `deposit()`, then 0.05 USDC released against an
   SLH-DSA-SHA2-128s signature that Arc's precompile returned `true` for — before the transaction was
@@ -20,6 +26,14 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Changed
 
+- **The console moves on from a provider that stalls.** Both public RPC endpoints are measured with a
+  real read at boot, the faster one is asked first, each request is wrapped so the console knows which
+  endpoint actually answered, and an endpoint that fails is rested before it is asked again. Against a
+  local provider that accepted every request and replied to none, the probe abandoned it at 4.0 s, the
+  in-flight read at 8.0 s, and it was asked nothing further while the console carried on reading Arc.
+- **The signing-time copy matches the measurement.** It said 6–16 s; the console's own browser run
+  measured 25.1 s for the proof signature and 21.0 s for the release, so the copy, the worker header,
+  the README diagram and this file now say 10–30 s and cite the run.
 - **A vault no longer needs a key to be read.** Its address, balance and record come from Arc, not from
   a secret, so the Vault tab now opens on a vault that is in view instead of asking for a key first. The
   key is still what creates a vault and what moves money — a visitor with no wallet can now check
@@ -37,6 +51,14 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Fixed
 
+- **The Authorize panel was unreachable whenever a factory was set and a key was in memory.**
+  `renderKey()` wrote to `vault-soon-chip`; the element is `v-soon-chip`. The lookup returned null, the
+  function threw before its last line, and that last line was the one that un-hides the Authorize form —
+  so the console that creates a vault could not authorize a release out of it. `scripts/check-site.mjs`
+  now pairs every id the app looks up with the ids in its own markup, which is the check that would have
+  caught it; it found no others.
+- **A vault read as "different key" after its own key was restored.** A key arriving after the vault did
+  not repaint the vault card, so a restored backup was shown the warning meant for someone else's vault.
 - **`scripts/check-site.mjs` had been cut from 449 lines to 14** — the header and one constant. It still
   exited 0, so CI's structural check passed without checking anything. The whole file is back, it reads
   `CONFIG_factory` from the environment instead of crashing on it, and it now holds at 182 assertions.

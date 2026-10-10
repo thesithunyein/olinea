@@ -45,16 +45,19 @@ recipient, amount and nonce, and an on-chain check against Arc's PQ precompile b
 ## Status
 
 - [x] The factory is deployed on Arc mainnet: `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`, deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
-- [x] A vault created through that factory, funded, and released from end to end on mainnet:
-  `0x88fCbF5896902527C175A9114584d5E92Cac8eB9`. 0.10 USDC deposited, 0.05 USDC released against a
-  signature Arc's precompile returned `true` for, 0.05 USDC still held. The whole path was signed by a
-  key from `scripts/pq.mjs keygen` — not by a phrase made in the browser.
-- [x] The live console opens it, and needs no wallet to do it:
-  `olinea.sithunyein.com/app/?vault=0x88fCbF5896902527C175A9114584d5E92Cac8eB9` reads the vault's
-  address, balance and record straight off Arc mainnet.
-- [ ] The same path driven from the console's own 24-word backup. The console's create → deposit →
-  authorize → release path is wired to the deployed factory and its digest is checked by the same
-  precompile, but a vault created from a phrase made in the tab has not run yet.
+- [x] **A vault created from the console's own 24-word backup, funded and released from end to end on
+  mainnet**: `0xA36f07eEB907C0eBc09ecb79802f5037a0382A22`. The 24 words were generated in a browser tab
+  and the SLH-DSA key was derived there; the vault was created through the deployed factory with that
+  key, 0.20 USDC was deposited, and 0.10 USDC was released against a signature the page signed in
+  21.0 s and Arc's precompile accepted in 404 ms — after the console had recomputed the digest and
+  shown it identical to the vault's own `authorizationDigest`. 0.10 USDC is still held, nonce 0 is
+  spent, and the browser's own backup is the only key that can move it.
+- [x] An earlier vault from the same factory, signed by a key from `scripts/pq.mjs keygen` instead of a
+  browser phrase: `0x88fCbF5896902527C175A9114584d5E92Cac8eB9` — 0.10 USDC deposited, 0.05 released,
+  0.05 held.
+- [x] The live console reads either one with no wallet, no key and no gas:
+  `olinea.sithunyein.com/app/?vault=0xA36f07eEB907C0eBc09ecb79802f5037a0382A22` shows the vault above —
+  address, balance and both events straight off Arc mainnet.
 - [ ] A third-party audit. There has not been one.
 
 ## Deployment
@@ -63,16 +66,22 @@ recipient, amount and nonce, and an on-chain check against Arc's PQ precompile b
 |---|---|
 | Factory | `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB` |
 | Factory deploy tx | `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405` |
-| Vault created through it | `0x88fCbF5896902527C175A9114584d5E92Cac8eB9` |
-| Vault created by | `0x21aa83cede65ebcc31564225e471f52821579422b82b8d2d59edd5ab4d124605` |
-| Deposit tx (0.10 USDC) | `0x5ef9a9b9453f11a161e1ce725b1dfa5ceca5ee2acf347a20788555d25846090d` |
-| Release tx (0.05 USDC) | `0x983129eeed46931305393eb831042244b23fa8f50aa89acc0889db9daf3ed5ed` |
-| Signed digest | `0x971bf6bebc77db014b5cbc24df9daf932b719a9aaad1cfaf24e813ee1d287162` |
 | Chain | Arc mainnet · 5042 |
-| Console | `olinea.sithunyein.com/app/?vault=0x88fCbF5896902527C175A9114584d5E92Cac8eB9` |
+| **Vault created from the console's 24 words** | `0xA36f07eEB907C0eBc09ecb79802f5037a0382A22` |
+| Its createVault tx | `0xdc170513882823758fc047d41e58d241a5fa8c7491446587ce34ee2d2210f0ab` |
+| Its deposit tx (0.20 USDC) | `0x1b13b14016ae6232dffcb5e86229f2ac230b1fa82a85d1e8a10ea39bef2aa92e` |
+| Its release tx (0.10 USDC, nonce 0) | `0x4f637edd2c27f0b2988e0c2cf62f833b215623a23cd624c7e7fa9b63e8320c43` |
+| Signed digest (browser) | `0x8b63f119dfb0f6bc490629d59e957e73cb4f7993a1d5b4966d949f8b9df9a2c2` |
+| Earlier vault (key from `pq.mjs` keygen) | `0x88fCbF5896902527C175A9114584d5E92Cac8eB9` |
+| Its createVault tx | `0x21aa83cede65ebcc31564225e471f52821579422b82b8d2d59edd5ab4d124605` |
+| Its deposit tx (0.10 USDC) | `0x5ef9a9b9453f11a161e1ce725b1dfa5ceca5ee2acf347a20788555d25846090d` |
+| Its release tx (0.05 USDC) | `0x983129eeed46931305393eb831042244b23fa8f50aa89acc0889db9daf3ed5ed` |
+| Console | `olinea.sithunyein.com/app/?vault=0xA36f07eEB907C0eBc09ecb79802f5037a0382A22` |
 
 Every one of those is on `explorer.arc.io`. A reviewer can open the console link above with no wallet,
-no key and no gas, and read the vault's balance and its two events off the chain.
+no key and no gas, and read the vault's balance and its two events off the chain. The vault that the
+console link opens is the one whose key was made from 24 words in a browser tab — the same path any
+visitor takes when they create a key and a vault for themselves.
 
 ## Table of contents
 
@@ -229,16 +238,12 @@ Read [**SECURITY.md**](SECURITY.md) before trusting this with money. The short v
 
 Ordered by how much it would change an honest reader's mind, not by how impressive it sounds.
 
-1. **The same path from the browser's own backup.** A vault has now been created through the deployed
-   factory, funded, authorized and released on Arc mainnet — but with a key from `scripts/pq.mjs`, not
-   with a phrase made in the console. What is left is the seam between the tab and that same run: create
-   the vault from a 24-word backup, then deposit and release from the same page.
-2. **M-of-N release.** k-of-n SLH-DSA signatures over the same digest, reusing the same precompile.
+1. **M-of-N release.** k-of-n SLH-DSA signatures over the same digest, reusing the same precompile.
    The digest already binds the whole intent, so the contract change is small and the story is not:
    a vault that no single compromised machine can open.
-3. **Make the console's limits visible in the console.** A per-transaction cap and an allowlist enforced
+2. **Make the console's limits visible in the console.** A per-transaction cap and an allowlist enforced
    on-chain, so a stolen key has a bounded loss rather than an unbounded one.
-4. **Borrowing, when it is real.** Arc mainnet has 14 live Morpho markets reachable through Circle's
+3. **Borrowing, when it is real.** Arc mainnet has 14 live Morpho markets reachable through Circle's
    Borrow Kit with no credential, and a total of **0.274 USDC** of borrowable liquidity across all of
    them. A borrow feature built today is a UI for a market where nobody can borrow. Revisit when that
    number is worth a user's time; the interesting composition is a borrowing position whose authority
