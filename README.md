@@ -17,6 +17,10 @@
 
 <p align="center">Post-quantum USDC vault on Arc mainnet · SLH-DSA-SHA2-128s · no owner, no admin, no pause, no upgrade path</p>
 
+<p align="center">
+  <img src="assets/landing.png" alt="The Olinea landing page: a cube marked Quantum Proof USDC, and the button into the console.">
+</p>
+
 **USDC a quantum computer can't move.**
 
 A USDC vault on Arc that releases funds only when a post-quantum signature — **SLH-DSA-SHA2-128s**
