@@ -1190,8 +1190,8 @@ function renderKey() {
   $('vault-live').hidden = !CONFIG.factory || (!hasKey && !state.vault);
   /* When the factory is deployed, the Vault tab still explains itself plainly — but now it says the factory is live and the missing piece is a funded vault, not the application. */
   if (CONFIG.factory && hasKey) {
-    $('vault-soon-chip').textContent = 'factory deployed — vault 0x88fCb…8eb9 live';
-    $('vault-soon-chip').className = 'chip warn';
+    $('v-soon-chip').textContent = 'factory deployed — vault 0x88fCb…8eb9 live';
+    $('v-soon-chip').className = 'chip warn';
   }
   $('auth-body').hidden = !hasKey;  renderStats();
 }
@@ -1265,6 +1265,10 @@ async function deriveFrom(words, label, { remember: keep = true } = {}) {
     renderKey();
     renderProof();
     renderAuth();
+    /* A key arriving after the vault did is still the vault's key. Without this the vault card
+     * keeps the answer it read when no key was in memory — "different key" — which is a warning
+     * about someone else's vault, shown to the person whose vault it is. */
+    if (state.vault) await paintVault();
     /* The caller decides whether this identity becomes the remembered one, so a wrong backup
      * entering the unlock flow can never overwrite the key this browser already knows. */
     if (keep) {
@@ -1352,7 +1356,7 @@ function renderProof() {
 $('b-prove').onclick = async () => {
   if (state.busy) return;
   state.busy = true;
-  const bar = busy($('p2'), 'Signing on this device…', expected('sign', 'expect 9–16 s — real cryptography, not a stub'));
+  const bar = busy($('p2'), 'Signing on this device…', expected('sign', 'expect ~10–30 s — real cryptography, not a stub'));
   const vkHex = '0x' + state.vk;
   /* Deliberately not shaped like an authorization: keccak("olinea/self-test/v1" ‖ vk), so a self-test
      signature can never be mistaken for permission to move money. */
@@ -1675,7 +1679,7 @@ $('b-sign').onclick = async () => {
   try { built = await buildDigest(); } catch (err) { say($('p6'), esc(err.message), 'bad'); return; }
   state.busy = true;
   state.sig = ''; state.calldata = '';
-  const bar = busy($('p6'), 'Signing the authorization…', expected('sign', 'expect 9–16 s — the tab stays usable, try scrolling'));
+  const bar = busy($('p6'), 'Signing the authorization…', expected('sign', 'expect ~10–30 s — the tab stays usable, try scrolling'));
   try {
     let agree = '—';
     try {

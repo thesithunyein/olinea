@@ -102,7 +102,7 @@ sequenceDiagram
     participant T as USDC ERC-20
 
     U->>W: sign(keccak256(abi.encode(chainId, vault, to, amount, nonce)))
-    Note over W: 7,856 B · 6–16 s · the secret key never leaves the tab
+    Note over W: 7,856 B · ~10–30 s · the secret key never leaves the tab
     W-->>U: signature
     U->>P: eth_call verify(vk, digest, sig)
     P-->>U: true

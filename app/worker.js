@@ -1,8 +1,9 @@
 /*
  * Olinea vault console — post-quantum key worker.
  *
- * SLH-DSA-SHA2-128s keygen costs about 1.3–2.2 s and a single signature costs 9–16 s in a
- * browser. Both block the thread they run on, so they run here and the page stays interactive.
+ * SLH-DSA-SHA2-128s keygen costs about 1.3–2.2 s and a single signature costs roughly 10–30 s,
+ * measured at 25.1 s in the console's own browser run and 31.1 s from the Node helper on the same
+ * machine. Both block the thread they run on, so they run here and the page stays interactive.
  *
  * noble reports no progress from inside keygen or sign, so each stage is announced *before* it
  * starts and the page renders its own elapsed timer. The durations above are measurements, not

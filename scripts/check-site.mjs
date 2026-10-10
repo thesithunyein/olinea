@@ -186,6 +186,15 @@ ok(appBad.length === 0, `app internal links resolve to a page or a file that exi
 for (const b of ['b-new', 'b-derive', 'b-prove', 'b-create', 'b-deposit', 'b-sign', 'b-release']) {
   ok(appIds.includes(b), `the app has an element for #${b}`);
 }
+/* Every id the app reaches for has to exist in its own markup. A lookup that returns null is not a
+   missing line — it is a TypeError at whatever point the function happens to call it, and the
+   console once lost its whole Authorize panel to exactly that while every check here stayed green:
+   renderKey() wrote to 'vault-soon-chip' while the element is 'v-soon-chip', so with a factory set
+   and a key in memory the function threw before it could un-hide the form. */
+const lookedUp = [...new Set([...app.matchAll(/\$\('([^']+)'\)/g)].map((m) => m[1]))];
+const notInMarkup = lookedUp.filter((id) => !appIds.includes(id));
+ok(notInMarkup.length === 0,
+  `every id the app looks up exists in the markup (missing: ${notInMarkup.join(', ') || 'none'})`);
 
 /* --- the check tool ---
    A recipient has no key, no wallet and nothing to spend, so nothing about it may be gated on a

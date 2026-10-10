@@ -54,8 +54,8 @@ The release that made this usable by someone who is not its author.
 
 - **Vault console** at `/app/`. A 24-word BIP-39 backup is stretched by PBKDF2 and HKDF (salt
   `olinea/slh-dsa/v1`, info `vault/<index>`) into the 48-byte seed that SLH-DSA-SHA2-128s keygen takes;
-  key generation and signing run in a Web Worker so the page stays interactive through the 6–16 s a
-  signature costs. The console creates a vault, funds it, authorizes a release, and checks that
+  key generation and signing run in a Web Worker so the page stays interactive through the 10–30 s a
+  signature costs (25.1 s measured in the console's own browser run on the machine that shipped it). The console creates a vault, funds it, authorizes a release, and checks that
   authorization against Arc's precompile **before** anything is broadcast.
 - **`OlineaFactory.sol`** — `createVault(bytes verifyingKey)` in one transaction, plus `vaultsOf`,
   `vaultCount` and `vaultAt`. No owner, holds no funds, nothing to administer. `isVault` is
