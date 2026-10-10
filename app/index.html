@@ -1505,8 +1505,13 @@ async function paintVault() {
   /* Money sent to a vault this key cannot open is money this key cannot move. Saying so beats
    * letting a red chip carry the whole warning. */
   $('a-foreign').hidden = mine;
-  $('a-foreign').innerHTML = mine ? '' :
-    'This vault answers to a different key. Only that other key can move what you deposit here — not yours.';
+  /* Two different situations, and telling them apart is the difference between a warning and a lie:
+   * a tab with the wrong key is holding money it cannot move, while a tab with no key at all is just
+   * reading — and it is the audience this console was written to be readable by. */
+  $('a-foreign').innerHTML = mine ? ''
+    : state.vk
+      ? 'This vault answers to a different key. Only that other key can move what you deposit here — not yours.'
+      : 'You have no key in this tab, so you can read this vault but not spend from it. Only the key that created it can move its USDC.';
   $('dep-wrap').hidden = false;
   $('b-create').disabled = !canCreate();
   try {

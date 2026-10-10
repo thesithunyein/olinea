@@ -178,6 +178,8 @@ ok(count(app, "state.mode === 'builtin'") + count(app, 'state.mode === \"builtin
   'every place that describes the built-in account tests the same mode');
 ok(app.includes('getContractEvents(') && /explorer\.arc\.io\/block\//.test(app),
   'the activity record is read from the chain, and every row cites a real block');
+ok(app.includes('You have no key in this tab, so you can read this vault but not spend from it'),
+  'a visitor with no key is told they are reading, not told the vault belongs to someone else');
 ok(app.includes('7,856') || app.includes('7856'), 'the app states the real signature size');
 
 const appRefs = [...app.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);
