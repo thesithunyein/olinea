@@ -10,11 +10,25 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Added
 
+- **A vault on Arc mainnet, used end to end.** `0x88fCbF5896902527C175A9114584d5E92Cac8eB9`, created
+  through the deployed factory, 0.10 USDC deposited with `deposit()`, then 0.05 USDC released against an
+  SLH-DSA-SHA2-128s signature that Arc's precompile returned `true` for — before the transaction was
+  broadcast, in an `eth_call` that cost nothing. 0.05 USDC is still in the vault, and nonce 1 is spent.
+  Every hash is in the README's Deployment table.
 - Project files: this changelog, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, an
   architecture diagram, and a CI workflow that runs the Foundry suite and the structural checks.
 
 ### Changed
 
+- **A vault no longer needs a key to be read.** Its address, balance and record come from Arc, not from
+  a secret, so the Vault tab now opens on a vault that is in view instead of asking for a key first. The
+  key is still what creates a vault and what moves money — a visitor with no wallet can now check
+  someone else's vault against the chain instead of taking a screenshot's word for it.
+- **The console ships the deployed factory as its default.** `/app/` works from a bare link; the
+  `?factory=` parameter and `localStorage` remain overrides rather than requirements.
+- **The README's first screen survives GitHub.** GitHub strips inline `style`, so the centered wrapper
+  never centered anything — the logo now uses `<picture>` inside `align="center"`, which GitHub keeps,
+  and the Deployment badge no longer swallows the `## The problem` heading it was welded to.
 - **The console opens on a dashboard.** Five tiles — Key, Proof, Vault, Gas account and Chain — say
   where you are without a paragraph, and each one opens the tab that owns the work. The page title
   shrank to an application's size, and the section tabs pin themselves under the app bar rather than
@@ -23,6 +37,11 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Fixed
 
+- **`scripts/check-site.mjs` had been cut from 449 lines to 14** — the header and one constant. It still
+  exited 0, so CI's structural check passed without checking anything. The whole file is back, it reads
+  `CONFIG_factory` from the environment instead of crashing on it, and it now holds at 182 assertions.
+- **The README's `#verify-it-yourself` anchor had no section**, though the badge row and the table of
+  contents both linked to it. The section is back, and every anchor in the file resolves again.
 - **A hidden flex row painted anyway.** `.row { display: flex }` outranks the browser's own `[hidden]`
   rule, so the disabled "Create my key" button was on the first screen before any words existed.
   Nothing marked hidden can be drawn now, whatever an author rule says.

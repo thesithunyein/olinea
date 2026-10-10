@@ -1,10 +1,13 @@
-<div style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:6px">
-  <img src="assets/favicon.png" width="56" height="56" alt="Olinea" style="background:#000;border:1px solid #1f2937;border-radius:14px;padding:6px;flex:none;display:block;margin:0 auto 14px">
-  <div>
-    <h1 style="margin:0;font-size:clamp(22px,3vw,30px);letter-spacing:-.02em">Olinea</h1>
-    <p style="margin:4px 0 0;color:#868e96">Post-quantum USDC vault on Arc mainnet · SLH-DSA-SHA2-128s · no owner, no admin, no pause, no upgrade path</p>
-  </div>
-</div>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-mark.png">
+    <img src="assets/logo-mark-ink.png" alt="Olinea" width="88" height="88">
+  </picture>
+</p>
+
+<h1 align="center">Olinea</h1>
+
+<p align="center">Post-quantum USDC vault on Arc mainnet · SLH-DSA-SHA2-128s · no owner, no admin, no pause, no upgrade path</p>
 
 **USDC a quantum computer can't move.**
 
@@ -17,7 +20,9 @@ including for the people who wrote it.
 [![Chain](https://img.shields.io/badge/chain-Arc%20mainnet%20%C2%B7%205042-6ee7b7?style=flat-square)](#the-primitive)
 [![Signature](https://img.shields.io/badge/signature-SLH--DSA--SHA2--128s%20%C2%B7%207%2C856%20B-6ee7b7?style=flat-square)](#the-primitive)
 [![Audit](https://img.shields.io/badge/audit-none-fca5a5?style=flat-square)](#security)
-[![Deployment](https://img.shields.io/badge/deployed-factory%20on%20Arc%20mainnet-6ee7b7?style=flat-square)](#deployment)## The problem
+[![Deployment](https://img.shields.io/badge/deployed-factory%20on%20Arc%20mainnet-6ee7b7?style=flat-square)](#deployment)
+
+## The problem
 
 Every USDC account on every chain today is guarded by an elliptic-curve key. A quantum computer running
 Shor's algorithm breaks that, retroactively for recorded signatures. By the time that is a practical 
@@ -40,8 +45,16 @@ recipient, amount and nonce, and an on-chain check against Arc's PQ precompile b
 ## Status
 
 - [x] The factory is deployed on Arc mainnet: `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`, deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
-- [x] The live console opens against it: `olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`.
-- [ ] A vault created through the deployed factory and used end to end in the console. The console's vault path (create → deposit → authorize → release) is wired to the deployed factory, and a funded vault on the deployed factory is the remaining demo.
+- [x] A vault created through that factory, funded, and released from end to end on mainnet:
+  `0x88fCbF5896902527C175A9114584d5E92Cac8eB9`. 0.10 USDC deposited, 0.05 USDC released against a
+  signature Arc's precompile returned `true` for, 0.05 USDC still held. The whole path was signed by a
+  key from `scripts/pq.mjs keygen` — not by a phrase made in the browser.
+- [x] The live console opens it, and needs no wallet to do it:
+  `olinea.sithunyein.com/app/?vault=0x88fCbF5896902527C175A9114584d5E92Cac8eB9` reads the vault's
+  address, balance and record straight off Arc mainnet.
+- [ ] The same path driven from the console's own 24-word backup. The console's create → deposit →
+  authorize → release path is wired to the deployed factory and its digest is checked by the same
+  precompile, but a vault created from a phrase made in the tab has not run yet.
 - [ ] A third-party audit. There has not been one.
 
 ## Deployment
@@ -49,13 +62,23 @@ recipient, amount and nonce, and an on-chain check against Arc's PQ precompile b
 | Thing | Value |
 |---|---|
 | Factory | `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB` |
-| Deploy tx | `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405` |
+| Factory deploy tx | `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405` |
+| Vault created through it | `0x88fCbF5896902527C175A9114584d5E92Cac8eB9` |
+| Vault created by | `0x21aa83cede65ebcc31564225e471f52821579422b82b8d2d59edd5ab4d124605` |
+| Deposit tx (0.10 USDC) | `0x5ef9a9b9453f11a161e1ce725b1dfa5ceca5ee2acf347a20788555d25846090d` |
+| Release tx (0.05 USDC) | `0x983129eeed46931305393eb831042244b23fa8f50aa89acc0889db9daf3ed5ed` |
+| Signed digest | `0x971bf6bebc77db014b5cbc24df9daf932b719a9aaad1cfaf24e813ee1d287162` |
 | Chain | Arc mainnet · 5042 |
-| Console | `olinea.sithunyein.com/app/?factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB` |
+| Console | `olinea.sithunyein.com/app/?vault=0x88fCbF5896902527C175A9114584d5E92Cac8eB9` |
+
+Every one of those is on `explorer.arc.io`. A reviewer can open the console link above with no wallet,
+no key and no gas, and read the vault's balance and its two events off the chain.
 
 ## Table of contents
 
 - [The problem](#the-problem)
+- [Status](#status)
+- [Deployment](#deployment)
 - [How a release works](#how-a-release-works)
 - [The primitive](#the-primitive)
 - [The footgun](#the-footgun)
@@ -125,6 +148,29 @@ require(ok && abi.decode(ret, (bool)), "invalid PQ signature");
 `contracts/src/mocks/NaiveVault.sol` is this mistake, written out on purpose and kept in the tree with a
 test that lets the attacker walk away with the balance. Do not copy it.
 
+## Verify it yourself
+
+No API key, no wallet, no Arc account, and no dependency on this project being honest: every command
+below reads public state or runs locally.
+
+```bash
+git clone --recurse-submodules https://github.com/thesithunyein/olinea
+cd olinea
+
+# 1. the contracts
+cd contracts && forge test                       # 27 tests, 0 failed
+
+# 2. a real signature, verified by Arc's real precompile on mainnet
+cd ../scripts && npm install
+node pq.mjs conformance                          # valid → true; tampered / wrong key / wrong message → false
+
+# 3. the site and console still agree with the contracts
+cd .. && node scripts/check-site.mjs             # no network, no dependencies
+```
+
+Point the last one at the deployed factory and it checks the deployed claims too:
+`CONFIG_factory=0x09574E49690ad378b21D2cb42a529f71A0D1DAdB node scripts/check-site.mjs`.
+
 ## Project structure
 
 ```
@@ -183,10 +229,10 @@ Read [**SECURITY.md**](SECURITY.md) before trusting this with money. The short v
 
 Ordered by how much it would change an honest reader's mind, not by how impressive it sounds.
 
-1. **A funded vault end to end in the console.** About two cents of gas converts the last untested seam
-   in this repository — "the vault runs on a local chain, the precompile was proven on mainnet" — into a
-   single tested path: create a vault through the deployed factory, deposit USDC, authorize a release,
-   and release it, all from the live console.
+1. **The same path from the browser's own backup.** A vault has now been created through the deployed
+   factory, funded, authorized and released on Arc mainnet — but with a key from `scripts/pq.mjs`, not
+   with a phrase made in the console. What is left is the seam between the tab and that same run: create
+   the vault from a 24-word backup, then deposit and release from the same page.
 2. **M-of-N release.** k-of-n SLH-DSA signatures over the same digest, reusing the same precompile.
    The digest already binds the whole intent, so the contract change is small and the story is not:
    a vault that no single compromised machine can open.

@@ -538,20 +538,19 @@
     <div id="vault-soon" class="card" hidden>
       <div class="between">
         <div>
-          <h2 style="margin:0">Your vault opens with the next deployment</h2>
-          <p class="muted" style="margin-top:5px">One transaction. About two cents of gas.</p>
+          <h2 style="margin:0">This build has no factory address</h2>
+          <p class="muted" style="margin-top:5px">The Vault tab creates a vault through a factory on Arc mainnet.</p>
         </div>
-        <span class="chip warn" id="v-soon-chip">not live yet</span>
+        <span class="chip warn" id="v-soon-chip">no factory configured</span>
       </div>
-      <p style="margin-top:16px">The rest is ready: this console creates the vault from your key, funds it, and moves USDC only when your key signs. What is missing is two cents of gas — the project has no funding and Arc mainnet has no faucet.</p>
-      <p class="muted" style="margin-top:14px">The factory is already deployed on Arc mainnet (${CONFIG.factory || 'factory address'}), so the console that is missing is not the application — it is one funded vault to demonstrate the money path.</p>
+      <p style="margin-top:16px">Nothing is broken and nothing is lost: the console, your key and Arc's precompile all work. A vault just needs a factory address in the URL — <code>?factory=0x…</code> — or the shipped default.</p>
+      <p class="muted" style="margin-top:14px">The factory is already deployed on Arc mainnet: <code>0x09574E49690ad378b21D2cb42a529f71A0D1DAdB</code>. It has created a vault that holds USDC, so a vault is one transaction, not a deployment.</p>
       <ul class="plain">
         <li>Nothing is lost by waiting. Your key works the moment a vault exists.</li>
         <li><strong>Authorize</strong> works today: give it the address your vault will live at, sign, and Arc's precompile verifies it free — the same check a real release makes.</li>
         <li>The <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">repository status</a>
           is the source of truth for this.</li>
       </ul>
-      <p class="muted" style="margin-top:16px">Nothing to paste. This page grows a Create button when the factory is published.</p>
     </div>
 
     <div id="vault-live" hidden>
@@ -724,7 +723,7 @@
     </p>
     <div id="limits" hidden>
       <p>
-        <strong>Status.</strong> The factory is deployed on Arc mainnet — see the repository <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> for the address and the deployment transaction. A user vault created through that factory and used end to end in the console is the remaining demo.
+        <strong>Status.</strong> The factory is deployed on Arc mainnet, and a vault created through it has been funded and released from end to end — <code>0x88fCbF5896902527C175A9114584d5E92Cac8eB9</code>, still holding USDC. See the repository <a href="https://github.com/thesithunyein/olinea#status" target="_blank" rel="noopener">status</a> for the addresses and every transaction.
       </p>
       <ul class="plain">
         <li><strong>Unaudited.</strong> New code, and a test suite is not a review.</li>
@@ -749,9 +748,10 @@ const CONFIG = {
   rpcAlt: 'https://rpc.blockdaemon.mainnet.arc.io',
   usdc: q.get('usdc') || '0x3600000000000000000000000000000000000000',
   precompile: '0x1800000000000000000000000000000000000004',
-  /* Published when the factory is deployed. Until then the Vault tab explains itself instead of
-     asking the user to paste an address — a real app does not hand someone an infrastructure field. */
-  factory: q.get('factory') || localStorage.getItem('olinea:factory') || '',
+  /* The factory on Arc mainnet, so the console works from a bare /app/ link. The query string and
+     localStorage remain overrides for a preview pointed somewhere else; the console never asks the
+     user to paste an infrastructure address. */
+  factory: q.get('factory') || localStorage.getItem('olinea:factory') || '0x09574E49690ad378b21D2cb42a529f71A0D1DAdB',
 };
 
 const PQ_ABI = [{ name: 'verifySlhDsaSha2128s', type: 'function', stateMutability: 'view',
@@ -1079,13 +1079,16 @@ function renderKey() {
   /* With no vault to inherit an address from, the Authorize tab's address field is the only way in,
    * so it is open by default rather than hidden behind an "advanced" disclosure nobody opens. */
   if (hasKey && !state.vault) $('auth-adv').open = true;
-  $('lock-vault').hidden = hasKey;
+  /* A vault is readable without a key: its address, its balance and its record come from Arc, not
+     from a secret. The key is what *creates* one and what *moves* money — so a visitor with no key
+     can still open a vault someone else made and check it against the chain. */
+  $('lock-vault').hidden = hasKey || !!state.vault;
   $('lock-auth').hidden = hasKey;
   $('vault-soon').hidden = !hasKey || !!CONFIG.factory;
-  $('vault-live').hidden = !hasKey || !CONFIG.factory;
+  $('vault-live').hidden = !CONFIG.factory || (!hasKey && !state.vault);
   /* When the factory is deployed, the Vault tab still explains itself plainly — but now it says the factory is live and the missing piece is a funded vault, not the application. */
   if (CONFIG.factory && hasKey) {
-    $('vault-soon-chip').textContent = 'factory deployed — one funded vault remains';
+    $('vault-soon-chip').textContent = 'factory deployed — vault 0x88fCb…8eb9 live';
     $('vault-soon-chip').className = 'chip warn';
   }
   $('auth-body').hidden = !hasKey;  renderStats();

@@ -13,6 +13,11 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
+/* The one thing this file cannot read off disk: whether the site is being checked against a
+   deployed factory. Set CONFIG_factory to the deployed address to check the deployed claims;
+   leave it unset and the check still runs, and still holds the site to the undeployed wording. */
+const CONFIG = { factory: process.env.CONFIG_factory ?? null };
+
 const fails = [];
 const ok = (cond, msg) => { console.log((cond ? 'PASS  ' : 'FAIL  ') + msg); if (!cond) fails.push(msg); };
 const count = (hay, needle) => hay.split(needle).length - 1;
