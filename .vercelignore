@@ -10,8 +10,11 @@
 LOCAL/
 contracts/
 scripts/
-# The artwork the site's marks were cut from: kept in the repository, not served.
+# The artwork the site's marks were cut from, and the draft cuts taken while choosing between them:
+# kept on disk, never served. The deploy uploads this directory rather than a git tree, so an
+# uncommitted file is a published file unless it is named here.
 assets/logo.jpg
+assets/*-test.png
 *.md
 LICENSE
 # the local static server's log and pid, if one is running while a deploy happens
