@@ -84,4 +84,4 @@ cast call $VAULT "balance()(uint256)" --rpc-url $ARC_RPC
   escape hatch. That is the property, not an oversight.
 - **Denylist still applies.** A forged SLH-DSA signature cannot move funds, but Circle's USDC
   denylist can still block transfers. Post-quantum authorization is not denylist resistance.
-- **Verification cost.** 448,502 gas per release (0.00897 USDC paid, at Arc's base fee of about 20 Gwei).
+- **Verification cost.** 444,122–448,502 gas per release across two measured releases (0.00888–0.00897 USDC paid, at Arc's base fee of about 20 Gwei).

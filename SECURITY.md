@@ -164,12 +164,15 @@ the failure is visible rather than theoretical. Do not copy it.
 
 The factory is deployed on Arc mainnet: `0x09574E49690ad378b21D2cb42a529f71A0D1DAdB`,
 deployed by `0x6a801dfb7213b78a45b4eccd39ba324f18e68e2d2ac1ba677a35cf9662faf405`.
-The status section of the [README](README.md) is the single source of truth; when an address appears
-there, the code at that commit is what is running, and its SHA-256 is checkable against the site.
+The **Deployment** section of the [README](README.md#deployment) is the single source of truth; when an
+address appears there, the code at that commit is what is running, and its SHA-256 is checkable
+against the site.
 
-What is **not** deployed yet: a user vault created through the factory and used end to end in the
-console. The console's vault path (create → deposit → authorize → release) is wired to the deployed
-factory, and a funded vault on the deployed factory is the remaining demo.
+What has **not** happened yet: a vault created and used end to end by anyone other than the author.
+The path itself is exercised on mainnet: the vault at `0xA36f07eEB907C0eBc09ecb79802f5037a0382A22`
+was created through this factory, funded with 0.20 USDC, and released 0.10 USDC under a signature
+made from its 24 words — `node scripts/vendor/parity.mjs` re-derives that key from those words and
+finds it on chain. What remains is a third party walking the same path.
 
 ## Supported versions
 

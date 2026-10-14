@@ -109,11 +109,21 @@ The factory is deployed on Arc mainnet — see below — so some versions below 
 
 ### Fixed
 
-- **The cost of a release was stated as 382,879 gas and $0.0077 on every surface, and the chain says
-  448,502 gas and 0.008970824 USDC.** Read from the release transaction's own receipt. The old figure
-  was a verification-only estimate wearing the label of a release, so the README, the docs table, the
-  docs limitations list, the two architecture drawings and the landing page now state what the chain
-  charged, and `scripts/check-site.mjs` pins the measured number and fails if the stale one returns.
+- **SECURITY.md no longer contradicts the chain about what is deployed.** Two statements had gone
+  stale: a pointer to "the status section of the README" (there is no such section - it is
+  *Deployment*), and "what is **not** deployed yet", which called a vault created through the factory
+  and used end to end the remaining demo - when `vaultAt(1)` on the deployed factory is exactly that
+  vault, created, funded with 0.20 USDC and released under a signature made from its 24 words. The
+  paragraph now states what has not happened (a third party walking the path) rather than denying what
+  had already shipped.
+
+- **The cost of a release was stated as 382,879 gas and $0.0077 on every surface, and the chain charged
+  448,502 gas and 0.008970824 USDC on one release and 444,122 gas and 0.008882440 USDC on another.**
+  Read from each transaction's own receipt — two releases, two figures, so the docs now state the
+  range rather than a constant. The old figure was a verification-only estimate wearing the label of a
+  release, so the README, the docs table, the docs limitations list, the two architecture drawings and
+  the landing page all carry the range, and `scripts/check-site.mjs` requires a measured range and
+  still fails if the stale one returns.
   The "about 1,300× a plain transfer" comparison is gone rather than adjusted: no plain USDC transfer
   on Arc could be measured to support any ratio. `contracts/README.md` also advertised `forge test`
   as 17 tests; the suite is 31, 19 for the vault and 12 for the factory.
