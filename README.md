@@ -62,7 +62,7 @@ recipient, amount and nonce, and an on-chain check against Arc's PQ precompile b
 | Its createVault tx | `0x21aa83cede65ebcc31564225e471f52821579422b82b8d2d59edd5ab4d124605` |
 | Its deposit tx (0.10 USDC) | `0x5ef9a9b9453f11a161e1ce725b1dfa5ceca5ee2acf347a20788555d25846090d` |
 | Its release tx (0.05 USDC) | `0x983129eeed46931305393eb831042244b23fa8f50aa89acc0889db9daf3ed5ed` |
-| Console | `olinea.sithunyein.com/app/?vault=0xA36f07eEB907C0eBc09ecb79802f5037a0382A22` |
+| Console | `olinea.vercel.app/app/?vault=0xA36f07eEB907C0eBc09ecb79802f5037a0382A22` |
 
 Every one of those is on `explorer.arc.io`. A reviewer can open the console link above with no wallet,
 no key and no gas, and read the vault's address, balance and both events off Arc mainnet. That vault is
